@@ -1,0 +1,211 @@
+---
+title: "**realPSD**: Development Notes"
+author: "Martin Lysy"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{realPSD Development Notes}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: { autoNumber: "AMS" } }
+});
+</script>
+
+\newcommand{\bm}[1]{\boldsymbol{#1}}
+\newcommand{\tx}[1]{\textrm{#1}}
+\newcommand{\XX}{{\bm{X}}}
+\newcommand{\YY}{{\bm{Y}}}
+\newcommand{\ZZ}{{\bm{Z}}}
+\newcommand{\tth}{{\bm{\theta}}}
+\newcommand{\pph}{{\bm{\varphi}}}
+\newcommand{\s}{\sigma}
+\newcommand{\f}{f}
+\newcommand{\psd}{\operatorname{\mathcal S}}
+\newcommand{\cov}{\operatorname{cov}}
+\newcommand{\var}{\operatorname{var}}
+\newcommand{\acf}{\operatorname{\gamma}}
+\newcommand{\rv}[3][1]{#2_{#1},\ldots,#2_{#3}}
+\newcommand{\fs}{\f_s}
+\newcommand{\kbt}{k_BT}
+\newcommand{\Aw}{A_{\tx{w}}}
+\newcommand{\Rw}{R_{\tx{w}}}
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+# link to packages
+pkg_link <- function(pkg, link) {
+  if(link == "github") {
+    link <- paste0("https://github.com/mlysy/", pkg)
+  } else if(link == "cran") {
+    link <- paste0("https://CRAN.R-project.org/package=", pkg)
+  }
+  paste0("[**", pkg, "**](", link, ")")
+}
+cran_link <- function(pkg) pkg_link(pkg, "cran")
+github_link <- function(pkg) pkg_link(pkg, "github")
+```
+
+## Overview
+
+Let $X(t)$ denote a continuous time mean-zero stationary process with autocorrelation $\acf(t) = \cov(X_s, X_{s+t})$. with power spectral density (PSD) defined via the inverse Fourier transform relation
+$$
+\acf(t) = \int_{-\infty}^\infty e^{-2\pi i t\f} \psd(\f) \, \mathrm{d} \f,
+$$
+where $\f \in \mathbb R$ is the frequency in Hertz.  The **realPSD** package provides tools for estimation of parametric PSDs of the form
+$$
+\psd(\f,\tth) = \s^2 \cdot U(\f, \pph),
+$$
+where the PSD parameters are $\tth = (\s, \pph)$.   The data $\XX = (\rv [0] X {N-1})$ consist of discrete observations of $X(t)$ recorded at sampling frequency $\fs$, such that $X_n = X(n/\fs)$.  
+
+This package is essentially a port of `r github_link("realSHO")`, but with the option of adding one's own models.  This interface is written in Python, and uses [automatic differentiation](https://en.wikipedia.org/wiki/Automatic_differentiation) (AD) to use gradient-based optimization algorithms to efficiently perform parameter estimation.
+
+~~Currently the interface is through the R `r cran_link("TMB")` package, which makes the underlying C++ code difficult to interface from a different language (e.g., Python, Matlab).  A later step is to create a self-contained C++ library relying only on `r pkg_link("CppAD", "https://coin-or.github.io/CppAD/doc/cppad.htm")`, the C++ automated differentiation (AD) library on top of which **TMB** is built.~~
+
+## Methods
+
+**realPSD** provides three different methods for parameter estimation outlined below.  For each method, estimation is via optimization over a function of $\pph$, with the fitted value of $\s$ being profiled out.  In all cases the estimators are built on the discrete Fourier transform of the data, $\YY = (\rv Y K)$, where $N = 2K + 1$ and
+$$
+Y_k = \frac 1 N \left\vert \sum_{n=0}^{N-1} e^{-2\pi i k n} X_n\right\vert^2.
+$$
+
+### Maximum Likelihood
+
+The maximum likelihood estimator is obtained my maximizing the so-called Whittle loglikelihood function,
+\begin{equation}
+\label{eq:mle}
+\ell_W(\tth \mid \YY) = - \sum_{k=1}^K(Y_k / \psd_k(\tth) + \log \psd_k(\tth)),
+\end{equation}
+where $\psd_k(\tth) = \fs \cdot \psd(\f_k, \tth)$ and $f_k = \tfrac k N \fs$.  Note that for given $\pph$, the value of $\s^2$ maximizing \\eqref{eq:mle} is
+$$
+\hat \s^2(\pph) = \frac 1 K \sum_{k=1}^K \frac{Y_k}{U(\f_k,\pph)}.
+$$
+Therefore, upon maximizing the profile likelihood
+$$
+\ell_{W,\tx{prof}}(\pph \mid \YY) = \ell_W(\pph, \hat \s(\pph) \mid \YY),
+$$
+we obtain the MLE $\hat \tth = (\hat \pph, \hat \s(\hat \pph))$.
+
+### Nonlinear Least-Squares
+
+In many situations with high-throughput (HTP) data, $K$ is very large, such that calculating the MLE becomes very computationally intensive.  An approximation to the MLE involves binning the periodogram ordinates.  That is, let $K = B \cdot N_B$, and
+$$
+\bar Y_m = \frac 1 B \sum_{k \in I_m} Y_k, \qquad I_m = \{k \in \mathbb N: (m-1)B < k \le mB\}.
+$$
+Then the nonlinear least-squares (NLS) estimator minimizes the objective function
+\begin{equation}
+\label{eq:nls}
+Q_{\tx{NLS}}(\tth) = \sum_{m=1}^{N_B} (\bar Y_m - \bar{\psd}_m(\tth))^2,
+\end{equation}
+where $\bar{\psd}_m(\tth) = \fs \cdot \psd(\bar \f_m, \tth)$ and $\bar \f_m = \tfrac 1 B \sum_{k\in I_m} \f_k$.  For given $\pph$, the value of $\s^2$ minimizing \\eqref{eq:nls} is
+$$
+\hat \s^2(\pph) = \frac{\sum_{m=1}^{N_B} U(\bar \f_m,\pph) \bar Y_m }{\sum_{m=1}^{N_B} U(\bar \f_m,\pph)^2}.
+$$
+By plugging this value into \\eqref{eq:nls} we obtain an objective function in only $\pph$.
+
+### Variance-Stabilized Least-Squares
+
+Let $Z_m = \log(\bar Y_m)$.  Then an approximate loglikelihood is
+\begin{equation}
+\label{eq:lp}
+\ell_{\tx{LP}}(\tth \mid \YY) = -\frac B 2 \sum_{m=1}^{N_B} (Z_m + C_B - \log \bar{\psd}_m(\tth))^2,
+\end{equation}
+where $C_B = \log B - \psi(B)$ and $\psi(x)$ is the [digamma function](https://en.wikipedia.org/wiki/Digamma_function).  For given $\pph$, the value of $\s^2$ minimizing \\eqref{eq:lp} is
+$$
+\hat \s^2(\pph) = \exp\left\{\frac{1}{N_B} \sum_{m=1}^{N_B} Z_m + C_B - \log U(\bar \f_m,\pph)\right\}.
+$$
+
+### Variance Estimators
+
+Both the MLE and LP loglikelihoods \\eqref{eq:mle} and \\eqref{eq:lp} can be used to calculate the observed Fisher information, which in turn can be used to produce the variance estimates
+$$
+\begin{aligned}
+\hat{\var}(\hat \tth_{\tx{MLE}}) & = -\left[\frac{\partial^2}{\partial \tth^2} \ell_W(\hat\tth_{\tx{MLE}} \mid \YY)\right]^{-1} \\
+\hat{\var}(\hat \tth_{\tx{LP}}) & = -\left[\frac{\partial^2}{\partial \tth^2} \ell_{\tx{LP}}(\hat\tth_{\tx{LP}} \mid \YY)\right]^{-1}.
+\end{aligned}
+$$
+The variance of the NLS estimator is defined by the sandwich formula
+$$
+\hat{\var}(\hat \tth_{\tx{NLS}}) = - \bm A^{-1} \bm B \bm A^{-1},
+$$
+where for $g_m(\tth) = (\bar Y_m - \bar{\psd}_m(\tth))^2$, we have
+$$
+\begin{aligned}
+\bm A & = \sum_{m=1}^{N_B} \frac{\partial^2}{\partial \tth^2} g_m(\hat \tth_{\tx{NLS}}) \\
+\bm B & = \sum_{m=1}^{N_B} \left[\frac{\partial}{\partial \tth} g_m(\hat \tth_{\tx{NLS}})\right]\left[\frac{\partial}{\partial \tth} g_m(\hat \tth_{\tx{NLS}})\right]'.
+\end{aligned}
+$$
+
+## Implementation
+
+### Python
+
+I'm not sure about OOP in Python, but in pseudo C++ I suggest we have a base class for each PSD model defined by $U(\f, \pph)$, and derived class for each method.  So for example:
+
+```{Rcpp, eval = FALSE}
+class showModel {
+// private/protected members here
+public:
+  double UFun(const double f, const Vector& phi);  
+};
+
+template <class Model>
+class LPFit : public Model {
+public:
+  // constructor: copy + allocate memory here
+  LPFit(const Vector& xPSD, const Vector& yPSD, const int binSize);
+  // conditional optimum of log_tau = log(tau) = log(sigma^2)
+  double logTauFit(const Vector& phi);		 
+  // objective function: set up to minimize it
+  double obj(const Vector& phi);
+  // gradient & hessian
+  void grad(Vector& g, const Vector& phi);
+  void hess(Matrix& H, const Vector& phi);
+  // sometimes these re-use calculations from OFun.
+  // In that case, it's more efficient to have something like
+  double obj(Vector& g, Matrix& H, const Vector& phi);
+  // default optimization method.
+  //user has the option to do this manually with `obj`, `grad`, `hess` if
+  // default doesn't work.
+  // Or, simply don't provide a default if it's too complicated!
+  void fit(Vector& phi, double& logTau, const Vector& phiInit,
+           ...); // ellipsis is for additional tuning parameters
+  // variance estimator
+  void var(Matrix& V, const Vector& phi, const double logTau);
+};
+```
+
+Some useful Python packages:
+
+- [**autograd**](https://github.com/HIPS/autograd): Automatic differentiation of Python and Numpy functions.
+- [**NLopt**](https://nlopt.readthedocs.io/en/latest/): Excellent nonlinear optimization library, with Python interface.  I suggest using gradient-based algorithms in combination with the above.
+
+Other functions the library should contain:
+
+- `tsSim`: Simulate time series with given PSD.
+- `periodogram`: Calculate the periodogram of a time series.
+- `fisherGstat`: For denoising.
+
+
+## Examples
+
+### Simple Harmonic Oscillator with Noise Floor
+
+The SHOW model is given by
+\begin{equation}
+\label{eq:show}
+\begin{aligned}
+\psd(\f, \tth) & = \Aw + \frac{\kbt/(k \cdot \pi \f_0 Q)}{[(\f/\f_0)^2-1]^2 + [f/(\f_0Q)]^2} \\
+& = \sigma^2 \times \left\{\Rw + \frac{1}{[(\f/\f_0)^2-1]^2 + [f/\gamma]^2}\right\},
+\end{aligned}
+\end{equation}
+where $\sigma^2 = \kbt/(k\cdot \pi \f_0Q)$, $\Rw = \Aw/\sigma^2$, $\gamma = \f_0Q$, and $\pph = (\f_0, \gamma, \Rw)$.
+
+### Fractional Gaussian Noise
+
