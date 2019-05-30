@@ -50,10 +50,22 @@ namespace realPSD {
   /// Parameters are: `phi = (f0, gamma = f0/Q, Rw = Aw/sigma^2)`.
   template <class Type>
   inline void UFun<Type>::eval(RefMatrix_t U, cRefMatrix_t& phi) {
+    // U = f2_.array() + Type(1.0);
+    // Type phi2inv = 1.0/(phi(0,0) * phi(0,0));
+    // U = f2_ * phi2inv;
+    // U.array() += 1.0;
+    // U = f2_ / phi(0,0);
+    // return;
     U = (f2_/(phi(0,0) * phi(0,0))).array() - Type(1.0);
     U = U.cwiseProduct(U);
     U += f2_/(phi(1,0) * phi(1,0));
     U = 1.0/U.array() + phi(2,0);
+    // for(int ii=0; ii<U.size(); ii++) {
+    //   U(ii,0) = f2_(ii,0)/(phi(0,0) * phi(0,0)) - Type(1.0);
+    //   U(ii,0) *= U(ii,0);
+    //   U(ii,0) += f2_(ii,0)/(phi(1,0) * phi(1,0));
+    //   U(ii,0) = 1.0/U(ii,0) + phi(2,0);
+    // }
     return;
   }
 

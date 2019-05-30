@@ -25,6 +25,8 @@ namespace realPSD {
     Type zeta_;
     // allocate internal memory
     void init(int N);
+    // Objective function with internal `ZLU_`.
+    Type nll(const Type zeta);
   public:
     /// Constructor.
     LP(int N);
@@ -33,7 +35,9 @@ namespace realPSD {
     /// Optimal value of `zeta = log(sigma^2)` given `phi`.
     Type zeta(cRefMatrix_t& logUbar);
     /// Objective function for the LP method.
-    Type nll(cRefMatrix_t& logUbar);
+    Type nll(cRefMatrix_t& logUbar, const Type zeta);
+    /// Profiled objective function for the LP method.
+    Type nlp(cRefMatrix_t& logUbar);
   };
 
   template <class Type>
@@ -73,11 +77,33 @@ namespace realPSD {
   ///
   /// @return Scalar value of the objective function.
   template <class Type>
-  inline Type LP<Type>::nll(cRefMatrix_t& logUbar) {
+  inline Type LP<Type>::nlp(cRefMatrix_t& logUbar) {
     zeta_ = zeta(logUbar);
-    ZLU_.array() -= zeta_;
+    return nll(zeta_);
+    // ZLU_.array() -= zeta_;
+    // return ZLU_.squaredNorm();
+  }
+
+  template <class Type>
+  inline Type LP<Type>::nll(cRefMatrix_t& logUbar, const Type zeta) {
+    // return logUbar(0,0);
+    ZLU_ = Zbar_ - logUbar;
+    // ZLU_.array() -= zeta_;
+    // return ZLU_.squaredNorm();
+    // return ((Zbar_ - logUbar).array() - zeta).matrix().squaredNorm();
+    // return logUbar(0,0);
+    // ZLU_ = logUbar;
+    // return logUbar(0,0);
+    // return ZLU_.sum();
+    return nll(zeta);
+  }
+
+  template <class Type>
+  inline Type LP<Type>::nll(const Type zeta) {
+    ZLU_.array() -= zeta;
     return ZLU_.squaredNorm();
   }
+
 
 }
   
