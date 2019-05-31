@@ -31,10 +31,23 @@ mle_tau_r <- function(f, Y, phi, ufun) {
   mean(Y/U)
 }
 mle_nlp_r <- function(phi, Y, f, ufun) {
-  U <- ufun(f, phi)
   tau <- mle_tau_r(f, Y, phi, ufun)
   mle_nll_r(phi, tau, Y, f, ufun)
   ## length(Y) * (1 + log(tau)) + sum(log(U))
+}
+
+# nls functions
+nls_nll_r <- function(phi, tau, Ybar, fbar, ufun) {
+  Ubar <- ufun(fbar, phi)
+  sum((Ybar - tau * Ubar)^2)
+}
+nls_tau_r <- function(fbar, Ybar, phi, ufun) {
+  Ubar <- ufun(fbar, phi)
+  sum(Ybar * Ubar) / sum(Ubar * Ubar)
+}
+nls_nlp_r <- function(phi, Ybar, fbar, ufun) {
+  tau <- nls_tau_r(fbar, Ybar, phi, ufun)
+  nls_nll_r(phi, tau, Ybar, fbar, ufun)
 }
 
 # show model normalized PSD

@@ -33,7 +33,7 @@ namespace realPSD {
     LP(int N);
     /// Setter for `Zbar`.
     void set_Zbar(cRefMatrix_t& Zbar);
-    /// Optimal value of `zeta = log(sigma^2)` given `phi`.
+    /// Optimal value of `zeta = log(sigma^2)` given `Ubar`.
     Type zeta(cRefMatrix_t& Ubar);
     /// Objective function for the LP method.
     Type nll(cRefMatrix_t& Ubar, const Type zeta);
@@ -78,22 +78,17 @@ namespace realPSD {
     return ZLU_.sum() / N_;
   }
 
-  /// @param[in] Ubar Vector of bin-averaged normalized PSDs.
+  /// The LP objective function is given by
   ///
-  /// @return Value of the objective function (scalar).
-  template <class Type>
-  inline Type LP<Type>::nlp(cRefMatrix_t& Ubar) {
-    // logUbar_ = Ubar.array().log();
-    zeta_ = zeta(Ubar);
-    return nll(zeta_);
-    // ZLU_.array() -= zeta_;
-    // return ZLU_.squaredNorm();
-  }
-
-  /// The LP objective function is the negative loglikelihood of logs of binned periodograms, times `B/2`, i.e., half the bin size.
+  /// \f[
+  /// Q(\bar{\boldsymbol{U}}, \zeta) = \sum_{m=1}^{N_B} (\bar Z_m - \zeta - \bar U_m)^2.
+  /// \f]
+  ///
+  /// It is the negative loglikelihood of a delta-method approximation of the distribution of logs of binned periodogram values, up to a factor of `B/2`, where `B` is the bin size.
   ///
   /// @param[in] Ubar Vector of bin-averaged normalized PSDs.
   /// @param[in] zeta Log of the PSD scale factor, `zeta = log(sigma^2)`.
+  ///
   /// @return Value of the objective function (scalar).
   template <class Type>
   inline Type LP<Type>::nll(cRefMatrix_t& Ubar, const Type zeta) {
@@ -111,11 +106,26 @@ namespace realPSD {
   }
 
   /// @param[in] zeta Log of the PSD scale factor, `zeta = log(sigma^2)`.
+  /// 
   /// @return Value of the objective function (scalar).
   template <class Type>
   inline Type LP<Type>::nll(const Type zeta) {
     ZLU_.array() -= zeta;
     return ZLU_.squaredNorm();
+  }
+
+  /// Calculates the objective function given `Ubar` at the optimal value of `zeta(Ubar)`.
+  ///
+  /// @param[in] Ubar Vector of bin-averaged normalized PSDs.
+  ///
+  /// @return Value of the objective function (scalar).
+  template <class Type>
+  inline Type LP<Type>::nlp(cRefMatrix_t& Ubar) {
+    // logUbar_ = Ubar.array().log();
+    zeta_ = zeta(Ubar);
+    return nll(zeta_);
+    // ZLU_.array() -= zeta_;
+    // return ZLU_.squaredNorm();
   }
 
 

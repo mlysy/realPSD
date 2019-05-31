@@ -7,7 +7,7 @@
 
 namespace realPSD {
 
-  /// Class for the MLE fitting method
+  /// Class for the MLE fitting method.
   template <class Type>
   class MLE {
   private:
@@ -26,14 +26,14 @@ namespace realPSD {
     Type tau_;
     // allocate internal memory
     void init(int N);
-    // Objective function with internal `YU`.
+    // Objective function with internal `YU` and `logU`.
     Type nll(const Type tau);
   public:
     /// Constructor
     MLE(int N);
     /// setter for internal `Y`.
     void set_Y(cRefMatrix_t& Y);
-    /// Optimal value of `tau = sigma^2` given `phi`.
+    /// Optimal value of `tau = sigma^2` given `U`.
     Type tau(cRefMatrix_t& U);
     /// Objective function for the MLE method.
     Type nll(cRefMatrix_t& U, const Type tau);
@@ -41,11 +41,14 @@ namespace realPSD {
     Type nlp(cRefMatrix_t& U);
   };
 
+  /// @param[in] N Length of `Y`.
   template <class Type>
   inline MLE<Type>::MLE(int N) {
     init(N);
   }
 
+  /// Initializes `Y_`, `YU_` and `logU_` as one-column matrices of size `N x 1`.
+  /// @param[in] N Length of `Y`.
   template <class Type>
   inline void MLE<Type>::init(int N) {
     N_ = N;
@@ -56,6 +59,9 @@ namespace realPSD {
   }
 
 
+  /// Resets the internal value of `Y`.  Optionally reallocates memory if `Y.size() != Y_size()`.
+  ///
+  /// @param[in] Y Vector of periodogram values.
   template <class Type>
   inline void MLE<Type>::set_Y(cRefMatrix_t& Y) {
     if(Y.size() != N_) init(Y.size());
@@ -63,7 +69,7 @@ namespace realPSD {
     return;
   }
 
-  /// @param[in] Vector of normalized PSD values.
+  /// @param[in] U Vector of normalized PSD values.
   ///
   /// @return Scalar estimate of `tau`.
   template <class Type>
@@ -72,13 +78,18 @@ namespace realPSD {
     return YU_.sum() / N_;
   }
 
-  /// Objective function for the MLE method.
+  /// The MLE objective function is given by
   ///
-  /// This corresponds to the negative Whittle loglikelihood.
+  /// \f[
+  /// Q(\boldsymbol{U}, \tau) = K \log \tau + \sum_{k=1}^{K} \frac{Y_k}{\tau U_k} + \log U_k.
+  /// \f]
   ///
-  /// @param[in] Vector of normalized PSD values.
+  /// It is the negative of the Whittle loglikelihood.
   ///
-  /// @return Scalar value of the objective function.
+  /// @param[in] U Vector of normalized PSD values.
+  /// @param[in] tau PSD scale factor `tau = sigma^2`.
+  ///
+  /// @return Value of the objective function (scalar).
   template <class Type>
   inline Type MLE<Type>::nll(cRefMatrix_t& U, const Type tau) {
     YU_ = Y_.array() / U.array();
@@ -86,12 +97,19 @@ namespace realPSD {
     return nll(tau);
   }
 
+  /// @param[in] tau PSD scale factor `tau = sigma^2`.
+  ///
+  /// @return Value of the objective function (scalar).
   template <class Type>
   inline Type MLE<Type>::nll(const Type tau) {
     YU_ = YU_/tau + logU_;
     return YU_.sum() + N_ * log(tau);
   }
 
+  /// Calculates the objective function given `U` at the optimal value of `tau(U)`.
+  /// @param[in] U Vector of normalized PSD values.
+  ///
+  /// @return Value of the objective function (scalar).
   template <class Type>
   inline Type MLE<Type>::nlp(cRefMatrix_t& U) {
     tau_ = tau(U);
