@@ -4,33 +4,11 @@
 ## require(TMB)
 ## require(testthat)
 
-context("SHOWFit")
+context("LPFit")
 
 source("realPSD-testfunctions.R")
 
-test_that("UFun is the same in R and TMB", {
-  ntest <- 20
-  nphi <- sample(2:5,1)
-  for(ii in 1:ntest) {
-    # simulate data
-    N <- sample(10:20,1)
-    f <- sim_f(N)
-    # create TMB model and functions
-    tmod <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
-                                       method = "UFun",
-                                       f = matrix(f)),
-                           parameters = list(phi = matrix(rep(0, 3))),
-                           silent = TRUE, DLL = "realPSD_TMBExports")
-    ufun_tmb <- function(phi) c(tmod$simulate(phi)$U)
-    # check they are equal
-    Phi <- replicate(nphi, sim_phi())
-    U_r <- apply(Phi, 2, ufun_r, f = f)
-    U_tmb <- apply(Phi, 2, ufun_tmb)
-    expect_equal(U_r, U_tmb)
-  }
-})
-
-test_that("zeta is the same in R and TMB", {
+test_that("LP_zeta is the same in R and TMB", {
   ntest <- 20
   nphi <- sample(2:5, 1)
   for(ii in 1:ntest) {
@@ -40,21 +18,22 @@ test_that("zeta is the same in R and TMB", {
     Zbar <- sim_Zbar(N)
     # create TMB model and functions
     tmod <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
-                                       method = "zeta",
+                                       method = "LP_zeta",
                                        fbar = matrix(fbar),
                                        Zbar = matrix(Zbar)),
                            parameters = list(phi = matrix(rep(0, 3))),
                            silent = TRUE, DLL = "realPSD_TMBExports")
-    zeta_tmb <- function(phi) tmod$fn(phi)
+    lp_zeta_tmb <- function(phi) tmod$fn(phi)
     # check they are equal
     Phi <- replicate(nphi, sim_phi())
-    z_r <- apply(Phi, 2, zeta_r, fbar = fbar, Zbar = Zbar)
-    z_tmb <- apply(Phi, 2, zeta_tmb)
-    expect_equal(z_r, z_tmb)
+    zeta_r <- apply(Phi, 2, lp_zeta_r, fbar = fbar, Zbar = Zbar,
+                    ufun = show_ufun)
+    zeta_tmb <- apply(Phi, 2, lp_zeta_tmb)
+    expect_equal(zeta_r, zeta_tmb)
   }
 })
 
-test_that("nll is the same in R and TMB", {
+test_that("LP_nll is the same in R and TMB", {
   ntest <- 20
   nphi <- sample(2:5, 1)
   for(ii in 1:ntest) {
@@ -64,25 +43,26 @@ test_that("nll is the same in R and TMB", {
     Zbar <- sim_Zbar(N)
     # create TMB model and functions
     tmod <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
-                                       method = "nll",
+                                       method = "LP_nll",
                                        fbar = matrix(fbar),
                                        Zbar = matrix(Zbar)),
                            parameters = list(phi = matrix(rep(0, 3)),
                                              zeta = 0),
                            silent = TRUE, DLL = "realPSD_TMBExports")
-    nllik_tmb <- function(phi, zeta) tmod$fn(c(phi, zeta))
+    lp_nll_tmb <- function(phi, zeta) tmod$fn(c(phi, zeta))
     # check they are equal
     Phi <- replicate(nphi, sim_phi())
     zeta <- replicate(nphi, sim_zeta())
     nll_r <- sapply(1:nphi, function(ii) {
-      nllik_r(Phi[,ii], zeta[ii], Zbar, fbar)
+      lp_nll_r(phi = Phi[,ii], zeta = zeta[ii],
+               Zbar = Zbar, fbar = fbar, ufun = show_ufun)
     })
-    nll_tmb <- sapply(1:nphi, function(ii) nllik_tmb(Phi[,ii], zeta[ii]))
+    nll_tmb <- sapply(1:nphi, function(ii) lp_nll_tmb(Phi[,ii], zeta[ii]))
     expect_equal(nll_r, nll_tmb)
   }
 })
 
-test_that("nlp is the same in R and TMB", {
+test_that("LP_nlp is the same in R and TMB", {
   ntest <- 20
   nphi <- sample(2:5, 1)
   for(ii in 1:ntest) {
@@ -92,19 +72,20 @@ test_that("nlp is the same in R and TMB", {
     Zbar <- sim_Zbar(N)
     # create TMB model and functions
     tmod <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
-                                       method = "nlp",
+                                       method = "LP_nlp",
                                        fbar = matrix(fbar),
                                        Zbar = matrix(Zbar)),
                            parameters = list(phi = matrix(rep(0, 3))),
                            silent = TRUE, DLL = "realPSD_TMBExports")
-    nlprof_tmb <- function(phi) tmod$fn(phi)
+    lp_nlp_tmb <- function(phi) tmod$fn(phi)
     # check they are equal
     Phi <- replicate(nphi, sim_phi())
     nlp_r <- apply(Phi, 2, function(phi) {
-      zeta <- zeta_r(fbar, Zbar, phi)
-      nllik_r(phi, zeta, Zbar, fbar)
+      lp_nlp_r(phi = phi, Zbar = Zbar, fbar = fbar, ufun = show_ufun)
+      ## zeta <- zeta_r(fbar, Zbar, phi)
+      ## nllik_r(phi, zeta, Zbar, fbar)
     })
-    nlp_tmb <- apply(Phi, 2, nlprof_tmb)
+    nlp_tmb <- apply(Phi, 2, lp_nlp_tmb)
     expect_equal(nlp_r, nlp_tmb)
   }
 })

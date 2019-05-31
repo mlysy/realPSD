@@ -88,7 +88,10 @@ $$
 $$
 Therefore, upon maximizing the profile likelihood
 $$
-\ell_{W,\tx{prof}}(\pph \mid \YY) = \ell_W(\pph, \hat \s(\pph) \mid \YY),
+\begin{aligned}
+\ell_{W,\tx{prof}}(\pph \mid \YY) & = \ell_W(\pph, \hat \s(\pph) \mid \YY) \\
+& = - K (1 + \log \sigma^2(\pph)) - \sum_{k=1}^K \log U_k(\pph),
+\end{aligned}
 $$
 we obtain the MLE $\hat \tth = (\hat \pph, \hat \s(\hat \pph))$.
 
