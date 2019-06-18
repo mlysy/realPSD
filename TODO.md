@@ -12,7 +12,7 @@
 	
 	The usual MO for github contributions is:
 	
-	    1. Clone the repo locally.
-		2. Create your own branch, e.g., `ferris-devel`.
-		3. Make modifications on your branch.
-		4. Push your branch to remote and create PR of `ferris-devel` to `master`.
+    1. Clone the repo locally.
+    2. Create your own branch, e.g., `ferris-devel`.
+    3. Make modifications on your branch.
+    4. Push your branch to remote and create PR of `ferris-devel` to `master`.
