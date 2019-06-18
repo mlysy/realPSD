@@ -27,7 +27,7 @@ knitr::opts_chunk$set(
 # github_link <- function(pkg) pkg_link(pkg, "github")
 
 require(fftw)
-# require(realPSD)
+require(realPSD)
 ```
 
 This script runs through how to fit for SHOW estimates, baseline enviroment WITHOUT added sine-wave noise, in addition to time series to PSD conversion.
@@ -63,5 +63,26 @@ yTime = ans_sim$yTime
 ans_per = periodogram(yTime, SF_s, T_s)
 xFreq = ans_per$xFreq
 yFreq = ans_per$yFreq
+```
+
+## Visualization
+
+```{r}
+# Perform binning top help visuals
+bin_size = 100
+f2 = xFreq
+N = length(f2)
+N = N - N%%bin_size
+f2 = apply(matrix(f2[1:N], bin_size, N/bin_size), 2, mean) # Take average freq of each bin
+S = apply(matrix(yFreq[1:N], bin_size, N/bin_size), 2, mean) # Mean decimation
+```
+
+```{r}
+par(mfrow = c(2,1))
+plot(xTime, yTime, xlab = "Time (s)", ylab = "Signal", title = "Time Domain")
+plot(f2, S, xlab = "Frequency (Hz)", log = "xy", ylab = "PSD", title = "Frequency Domain")
+lines(xAPSD, yAPSD, col = "blue")
+legend("topleft", legend = c("Theoretical PSD", "location"), 
+  col = c("black", "blue"), cex = .8)
 ```
 
