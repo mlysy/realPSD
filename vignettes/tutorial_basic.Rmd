@@ -27,7 +27,7 @@ knitr::opts_chunk$set(
 # github_link <- function(pkg) pkg_link(pkg, "github")
 
 require(fftw)
-require(realPSD)
+# require(realPSD)
 ```
 
 This script runs through how to fit for SHOW estimates, baseline enviroment WITHOUT added sine-wave noise, in addition to time series to PSD conversion.
@@ -57,9 +57,11 @@ xAPSD = f # Change naming convention
 yAPSD = (4*Kb*T*g) * abs_C^2 * CONST # Thermal physics
 yAPSD = yAPSD + Aw_s
 # TIME DOMAIN
-result = tsSim(SF_s, SF_s*T_s, xAPSD, yAPSD);
-xTime = result$xTime
-yTime = result$yTime
-# [xFreq,yFreq] = get_periodogram(yTime, SF_s, T_s);
+ans_sim = tsSim(SF_s, SF_s*T_s, xAPSD, yAPSD)
+xTime = ans_sim$xTime
+yTime = ans_sim$yTime
+ans_per = periodogram(yTime, SF_s, T_s)
+xFreq = ans_per$xFreq
+yFreq = ans_per$yFreq
 ```
 

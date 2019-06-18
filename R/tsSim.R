@@ -25,20 +25,20 @@ tsSim <- function(SF, N, xPSD, yPSD) {
   yFreq <- rnorm(length(fTs)) + 1i*rnorm(length(fTs))
   # One sqrt(2) is for unfolding, the other is for the mean of the sum of
   # squares of two iid Gaussians
-  yFreq <- yFreq * sqrt(PTs)/2;
+  yFreq <- yFreq * sqrt(PTs)/2
   # Unfold (Nyquist frequency doesn't undergo aliasing and is real)
   n <- length(yFreq)
-  yFreq[n] <- Re(yFreq[n])*sqrt(2);
-  yConj <- Conj(rev(yFreq[1:n-1]));
+  yFreq[n] <- Re(yFreq[n])*sqrt(2)
+  yConj <- Conj(rev(yFreq[1:(n-1)]))
   # DC offset
-  dcOffset <- (xPSD[1] == 0) * yPSD[1];
+  dcOffset <- (xPSD[1] == 0) * yPSD[1]
   # combine them together
   yFreq <- c(dcOffset, yFreq, yConj)
   # Recover the time series
   FR <- SF/N;
-  yTime = IFFT(yFreq*sqrt(FR)*N);
-  yTime = Re(yTime[1:length(yTime)/2]);
-  xTime = (0: (length(yTime)-1))/SF;
+  yTime = IFFT(yFreq*sqrt(FR)*N)
+  yTime = Re(yTime[1: (length(yTime)/2)])
+  xTime = (0: (length(yTime)-1))/SF
   # return
   return(list(xTime = xTime, yTime = yTime))
 }
