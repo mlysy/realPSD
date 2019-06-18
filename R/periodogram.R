@@ -4,6 +4,7 @@
 #' @param SF_s Sampling frequecy (Hz)
 #' @param T_s Total time (seconds)
 #' @return List of xFreq: One-sided periodogram frequencies and yFreq: One-sidede periodogram ordinates
+#' @export
 periodogram <- function(yTime, SF_s, T_s) {
   # fft(yTime)
   N = length(yTime) - (length(yTime) %% 2) # use even PSD's only

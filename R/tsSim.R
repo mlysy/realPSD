@@ -6,7 +6,7 @@
 #' @param yPSD Power spectrum up to Nyquist frequency
 #' @return a list of xTime (Time observation times) and yTime (Time series, i.e., amplitude)
 #' @details ...
-#' @example
+#' @export
 tsSim <- function(SF, N, xPSD, yPSD) {
   # sampling frequency
   N <- 2*N # double time series length, throw out 
