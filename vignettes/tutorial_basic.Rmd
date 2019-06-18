@@ -77,12 +77,13 @@ f2 = apply(matrix(f2[1:N], bin_size, N/bin_size), 2, mean) # Take average freq o
 S = apply(matrix(yFreq[1:N], bin_size, N/bin_size), 2, mean) # Mean decimation
 ```
 
-```{r}
+```{r, eval = "FALSE"}
 par(mfrow = c(2,1))
-plot(xTime, yTime, xlab = "Time (s)", ylab = "Signal", title = "Time Domain")
-plot(f2, S, xlab = "Frequency (Hz)", log = "xy", ylab = "PSD", title = "Frequency Domain")
-lines(xAPSD, yAPSD, col = "blue")
-legend("topleft", legend = c("Theoretical PSD", "location"), 
-  col = c("black", "blue"), cex = .8)
+plot(xTime, yTime, xlab = "Time (s)", ylab = "Signal", main = "Time Domain", cex = .3, type = "l", col = "blue")
+plot(f2, S, xlab = "Frequency (Hz)", log = "xy", ylab = "PSD", main = "Frequency Domain", cex = .3, type = "l", col = "blue")
+lines(xAPSD, yAPSD, col = "red")
+legend("topleft", legend = c("PSD after binning", "Theoretical PSD"),
+  lty = c(1,1), 
+  col = c("blue", "red"), cex = .3)
 ```
 
