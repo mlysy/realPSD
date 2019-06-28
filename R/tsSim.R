@@ -1,10 +1,10 @@
-#' Simulates a time series from a given PSD at a given sampling frequency
-#' require(fftw)
-#' @param SF Sampling frequency
-#' @param N Total number of samples
+#' @title Simulates a time series from a given PSD at a given sampling frequency.
+#' 
+#' @param SF Sampling frequency.
+#' @param N Total number of samples.
 #' @param xPSD Frequency basis, possibly including DC offset (xPSD(1) = 0) if DC offset is not provided then it is set to 0.
-#' @param yPSD Power spectrum up to Nyquist frequency
-#' @return a list of xTime (Time observation times) and yTime (Time series, i.e., amplitude)
+#' @param yPSD Power spectrum up to Nyquist frequency.
+#' @return A list of xTime (Time observation times) and yTime (Time series, i.e., amplitude).
 #' @details ...
 #' @export
 tsSim <- function(SF, N, xPSD, yPSD) {
@@ -36,7 +36,7 @@ tsSim <- function(SF, N, xPSD, yPSD) {
   yFreq <- c(dcOffset, yFreq, yConj)
   # Recover the time series
   FR <- SF/N;
-  yTime = IFFT(yFreq*sqrt(FR)*N)
+  yTime = fftw::IFFT(yFreq*sqrt(FR)*N)
   yTime = Re(yTime[1: (length(yTime)/2)])
   xTime = (0: (length(yTime)-1))/SF
   # return

@@ -1,8 +1,9 @@
-#' FISHERGSTAT 
-#' @param a threshold
-#' @param q q-1 iid Uniforms
-#' @param logSort Flag, true or false
-#' @return prob
+#' @title Fisher's g test statistics.
+#' 
+#' @param a Threshold.
+#' @param q q-1 iid Uniforms.
+#' @param logSort Flag, true or false.
+#' @return Probability.
 #' @details Let U = U0 < ... < Uq, where U1,...,U{q-1} are the _order statistics_ of q-1 iid Uniforms, and U0 = 0, Uq = 1.  Let Mq = max(diff(U)). Then this function calculates P(Mq > a). It turns out that if yPSD with no decimation is applied to white noise, then Mq = max(yPSD)/sum(yPSD), so you can use this to test the hypothesis of white noise, if Mq is too high you reject H0.
 #' @export
 fisherGstat <- function(a, q, logSort) {
