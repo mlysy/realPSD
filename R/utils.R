@@ -55,3 +55,40 @@ unwrap <- function(a, tol = pi, dim = 1) {
 # P1 = Arg(Z)
 # P2 = atan2(Im(Z), Re(Z))
 # P3 = Im(log(Z))
+
+#' @title noise_sin: This function returns one-sided, unfolded, FFT of sine, with DC component removed. 
+#' @param A Amplitude.
+#' @param f Frequency.
+#' @param T Total time.
+#' @param SF Sampling Freq (Hz).
+#' @param detrend_flag 1 = True, 0 = False.
+#' @return A list of 
+#' xTime: Time values, 
+#' yTime: Sine signal values, 
+#' xFreq: Frequencies,
+#' yFreq: First freq. up to Nyquist freq of: fft(yTime)/(sqrt(FR)*N)
+#' @details NOTE: Removes DC component, select first frequency up to the Nyquist frequency. NOTE: Uses even PSD's only so it will round yTime to multiple of 2
+noise_sin <- function(f_noise, A_noise, T, SF, detrend_flag) {
+  ## Begin
+  # Generate sine-wave in time domain
+  # xTime = [1/SF:1/SF:T]
+  xTime = seq(from = 1/SF, to = T, by = 1/SF)
+  yTime = A_noise * sin(2*pi*xTime*f_noise)
+
+  # FFT to frequency domain
+  if(detrend_flag == 1)
+      yTime = detrend(yTime) # detrend
+  N = length(yTime) - length(yTime)%%2 # use even PSD's only
+  yTime = yTime[1:N]
+  FR = 1/T # frequency resolution (Hz)
+
+  yFreq = fftw::FFT(yTime)
+  # remove DC component, select first frequency up to the Nyquist frequency.
+  # drop negative frequencies. For a real signal, negative frequencies are redundant.
+  yFreq = yFreq[2: (N/2+1)] # underwent folding so must double to counter loss of power
+  xFreq = seq(from = FR, to = SF/2, length.out = N/2)
+  # assert(length(xFreq) == length(yFreq))
+  if(length(xFreq != yFreq)) stop("The length of xFreq must be equal to that of yFreq!")
+
+  return(list(xTime = xTime, yTime = yTime, xFreq = xFreq, yFreq = yFreq))
+}
