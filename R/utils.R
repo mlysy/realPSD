@@ -92,3 +92,36 @@ noise_sin <- function(f_noise, A_noise, T, SF, detrend_flag) {
 
   return(list(xTime = xTime, yTime = yTime, xFreq = xFreq, yFreq = yFreq))
 }
+# 
+log10.axis <- function(side, at, ...) {
+    at.minor <- log10(outer(1:9, 10^(min(at):max(at))))
+    lab <- sapply(at, function(i) as.expression(bquote(10^ .(i))))
+    axis(side=side, at=at.minor, labels=NA, tcl=par("tcl")*0.5, ...)
+    axis(side=side, at=at, labels=lab, ...)
+}
+minor.ticks.axis <- function(ax,n,t.ratio=0.5,mn,mx,...){
+
+  lims <- par("usr")
+  if(ax %in%c(1,3)) lims <- lims[1:2] else lims[3:4]
+
+  major.ticks <- pretty(lims,n=5)
+  if(missing(mn)) mn <- min(major.ticks)
+  if(missing(mx)) mx <- max(major.ticks)
+
+  major.ticks <- major.ticks[major.ticks >= mn & major.ticks <= mx]
+
+  labels <- sapply(major.ticks,function(i)
+            as.expression(bquote(10^ .(i)))
+          )
+  axis(ax,at=major.ticks,labels=labels,...)
+
+  n <- n+2
+  minors <- log10(pretty(10^major.ticks[1:2],n))-major.ticks[1]
+  minors <- minors[-c(1,n)]
+
+  minor.ticks = c(outer(minors,major.ticks,`+`))
+  minor.ticks <- minor.ticks[minor.ticks > mn & minor.ticks < mx]
+
+
+  axis(ax,at=minor.ticks,tcl=par("tcl")*t.ratio,labels=FALSE)
+}
