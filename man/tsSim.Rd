@@ -2,26 +2,24 @@
 % Please edit documentation in R/tsSim.R
 \name{tsSim}
 \alias{tsSim}
-\title{Simulates a time series from a given PSD at a given sampling frequency
-require(fftw)}
+\title{Simulates a time series from a given PSD at a given sampling frequency.}
 \usage{
 tsSim(SF, N, xPSD, yPSD)
 }
 \arguments{
-\item{SF}{Sampling frequency}
+\item{SF}{Sampling frequency.}
 
-\item{N}{Total number of samples}
+\item{N}{Total number of samples.}
 
 \item{xPSD}{Frequency basis, possibly including DC offset (xPSD(1) = 0) if DC offset is not provided then it is set to 0.}
 
-\item{yPSD}{Power spectrum up to Nyquist frequency}
+\item{yPSD}{Power spectrum up to Nyquist frequency.}
 }
 \value{
-a list of xTime (Time observation times) and yTime (Time series, i.e., amplitude)
+A list of xTime (Time observation times) and yTime (Time series, i.e., amplitude).
 }
 \description{
-Simulates a time series from a given PSD at a given sampling frequency
-require(fftw)
+Simulates a time series from a given PSD at a given sampling frequency.
 }
 \details{
 ...

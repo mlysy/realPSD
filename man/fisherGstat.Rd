@@ -2,22 +2,22 @@
 % Please edit documentation in R/fisherGstat.R
 \name{fisherGstat}
 \alias{fisherGstat}
-\title{FISHERGSTAT}
+\title{Fisher's g test statistics.}
 \usage{
 fisherGstat(a, q, logSort)
 }
 \arguments{
-\item{a}{threshold}
+\item{a}{Threshold.}
 
-\item{q}{q-1 iid Uniforms}
+\item{q}{q-1 iid Uniforms.}
 
-\item{logSort}{Flag, true or false}
+\item{logSort}{Flag, true or false.}
 }
 \value{
-prob
+Probability.
 }
 \description{
-FISHERGSTAT
+Fisher's g test statistics.
 }
 \details{
 Let U = U0 < ... < Uq, where U1,...,U{q-1} are the _order statistics_ of q-1 iid Uniforms, and U0 = 0, Uq = 1.  Let Mq = max(diff(U)). Then this function calculates P(Mq > a). It turns out that if yPSD with no decimation is applied to white noise, then Mq = max(yPSD)/sum(yPSD), so you can use this to test the hypothesis of white noise, if Mq is too high you reject H0.

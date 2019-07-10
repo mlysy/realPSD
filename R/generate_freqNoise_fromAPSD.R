@@ -8,7 +8,6 @@
 #' @param Q     Quality factor to scale sine-wave amplitude by.
 #' @param displ 1: display information, 0, don't display information.
 #' @return A list of xTime = time (s) and yTime = amplitude (u)
-#' @export
 generate_freqNoise_fromAPSD <- function(xAPSD, yAPSD, 
   SF, T, Q, CORRUPT, displ, varargin) {
   yPSD_noise = NA
@@ -36,13 +35,13 @@ generate_freqNoise_fromAPSD <- function(xAPSD, yAPSD,
     yAPSD = c(yAPSD, yAPSD[length(yAPSD)])
   }
 
-  # Determine total size N of the output yTime vector
-  N = floor(T*SF/2)*2   # round to nearest even integer
-  T = N/SF              # redefine the total duration after rounding
+  # # Determine total size N of the output yTime vector
+  # N = floor(T*SF/2)*2   # round to nearest even integer
+  # T = N/SF              # redefine the total duration after rounding
 
-  # Construct the desired xPSD vector, corresponding to xTime
-  FR = 1/T              # frequency resolution
-  xPSD = [FR:FR:SF/2]   # where SF/2 is the Nyquist frequency
+  # # Construct the desired xPSD vector, corresponding to xTime
+  # FR = 1/T              # frequency resolution
+  # xPSD = [FR:FR:SF/2]   # where SF/2 is the Nyquist frequency
 
 #   # -------------------- ongoing -----------------
 #   if(!is.null('displ', 'var') && displ==1){

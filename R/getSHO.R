@@ -6,9 +6,9 @@
 #' @return ...
 #' @export
 getSHO <- function(f, f0, Q, k) {
-  C = funcSHO(c(f0, Q, k), f); 
-  abs_C = abs(C); 
-  theta_C = unwrap(Arg(C))*180/pi;
+  C <- funcSHO(c(f0, Q, k), f); 
+  abs_C <- abs(C); 
+  theta_C <- unwrap(Arg(C))*180/pi;
   return(list(C = C, abs_C = abs_C, theta_C = theta_C))
 }
 

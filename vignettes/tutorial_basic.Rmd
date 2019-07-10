@@ -36,45 +36,44 @@ This script runs through how to fit for SHOW estimates, baseline enviroment WITH
 
 ```{r}
 set.seed(10)           # Fix seed for repeatability
-T_s = 5                # Total time
-SF_s = 1e6             # Sampling frequency
-f0_s = 3.5e4           # Hz
-Q_s  = 100             # Quality factor
-k_s  = 0.172           # N/m
-Kb = 1.381e-23         # Boltzmann's constant
-T = 298                # Kelvin
-CONST = 1e30           # Unit conversion
-As_s = 4*Kb*T/(k_s*Q_s*f0_s*2*pi) * CONST # SHO
-Aw_s = 25000                              # White noise
+T_s <- 5                # Total time
+SF_s <- 1e6             # Sampling frequency
+f0_s <- 3.5e4           # Hz
+Q_s  <- 100             # Quality factor
+k_s  <- 0.172           # N/m
+Kb <- 1.381e-23         # Boltzmann's constant
+T <- 298                # Kelvin
+CONST <- 1e30           # Unit conversion
+As_s <- 4*Kb*T/(k_s*Q_s*f0_s*2*pi) * CONST # SHO
+Aw_s <- 25000                              # White noise
 ```
 
 ```{r}
-# Transfer Functions
-f  = seq(from = 1/T_s, to = SF_s, length.out = SF_s*T_s) # freq space.
-abs_C = abs((1/k_s) * 1 / ( (1-(f/f0_s)^2) + 1i*f/f0_s/Q_s))
-g = k_s/2/pi/f0_s/Q_s
-xAPSD = f # Change naming convention
-yAPSD = (4*Kb*T*g) * abs_C^2 * CONST # Thermal physics
-yAPSD = yAPSD + Aw_s
+f  <- seq(from = 1/T_s, to = SF_s, length.out = SF_s*T_s) # freq space.
+abs_C <- abs((1/k_s) * 1 / ( (1-(f/f0_s)^2) + 1i*f/f0_s/Q_s))
+g <- k_s/2/pi/f0_s/Q_s
+xAPSD <- f # Change naming convention
+yAPSD <- (4*Kb*T*g) * abs_C^2 * CONST # Thermal physics
+yAPSD <- yAPSD + Aw_s
 # TIME DOMAIN
-ans_sim = tsSim(SF_s, SF_s*T_s, xAPSD, yAPSD)
-xTime = ans_sim$xTime
-yTime = ans_sim$yTime
-ans_per = periodogram(yTime, SF_s, T_s)
-xFreq = ans_per$xFreq
-yFreq = ans_per$yFreq
+ans_sim <- tsSim(SF_s, SF_s*T_s, xAPSD, yAPSD)
+xTime <- ans_sim$xTime
+yTime <- ans_sim$yTime
+ans_per <- periodogram(yTime, SF_s, T_s)
+xFreq <- ans_per$xFreq
+yFreq <- ans_per$yFreq
 ```
 
 ## Visualization
 
 ```{r}
 # Perform binning top help visuals
-bin_size = 100
-f2 = xFreq
-N = length(f2)
-N = N - N%%bin_size
-f2 = apply(matrix(f2[1:N], bin_size, N/bin_size), 2, mean) # Take average freq of each bin
-S = apply(matrix(yFreq[1:N], bin_size, N/bin_size), 2, mean) # Mean decimation
+bin_size <- 100
+f2 <- xFreq
+N <- length(f2)
+N <- N - N%%bin_size
+f2 <- apply(matrix(f2[1:N], bin_size, N/bin_size), 2, mean) # Take average freq of each bin
+S <- apply(matrix(yFreq[1:N], bin_size, N/bin_size), 2, mean) # Mean decimation
 ```
 
 ```{r, eval = "FALSE"}

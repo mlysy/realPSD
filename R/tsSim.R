@@ -36,9 +36,9 @@ tsSim <- function(SF, N, xPSD, yPSD) {
   yFreq <- c(dcOffset, yFreq, yConj)
   # Recover the time series
   FR <- SF/N;
-  yTime = fftw::IFFT(yFreq*sqrt(FR)*N)
-  yTime = Re(yTime[1: (length(yTime)/2)])
-  xTime = (0: (length(yTime)-1))/SF
+  yTime <- fftw::IFFT(yFreq*sqrt(FR)*N)
+  yTime <- Re(yTime[1: (length(yTime)/2)])
+  xTime <- (0: (length(yTime)-1))/SF
   # return
   return(list(xTime = xTime, yTime = yTime))
 }

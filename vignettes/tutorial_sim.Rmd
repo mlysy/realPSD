@@ -24,57 +24,57 @@ We first simulate the data from SHO model by using the following code
 
 ```{r sim}
 # save name
-save_name = 'Jul_2';
+save_name <- 'Jul_2';
 # Simulation Parameters
-simNum = 10            # Number of simulations to run (per each Q_s)
+simNum <- 10            # Number of simulations to run (per each Q_s)
 # random_seed = rng('shuffle'); # Seeds the random number generator based on the current time
-random_seed = 123
-model_type = 'SHOW'    # SHOW or SHOWF
-binfit_size = 100      # size of bins for fitting
-T_s = 5                # Total time
-SF_s = 1e7             # Sampling frequency
-f0_s = 33553           # Hz
-Q_s  = 500             # Quality factor
-alpha_s = 0.55         # 1/f decay exponent
-k_s  = 0.172           # N/m
-Kb = 1.381e-23 # Boltzmann's constant
-T = 298        # Kelvin
-CONST = 1e30   # yes, unit conversion
-As_s = 4*Kb*T/(k_s*Q_s*f0_s*2*pi) * CONST  # SHO
-Aw_s = 19000                               # white noise
-Af_s = 0                                   # 1/f noise
-f_lowerBound = f0_s - f0_s/sqrt(2)
-f_upperBound = f0_s + f0_s/sqrt(2)
+random_seed <- 123
+model_type <- 'SHOW'    # SHOW or SHOWF
+binfit_size <- 100      # size of bins for fitting
+T_s <- 5                # Total time
+SF_s <- 1e7             # Sampling frequency
+f0_s <- 33553           # Hz
+Q_s  <- 500             # Quality factor
+alpha_s <- 0.55         # 1/f decay exponent
+k_s  <- 0.172           # N/m
+Kb <- 1.381e-23 # Boltzmann's constant
+T <- 298        # Kelvin
+CONST <- 1e30   # yes, unit conversion
+As_s <- 4*Kb*T/(k_s*Q_s*f0_s*2*pi) * CONST  # SHO
+Aw_s <- 19000                               # white noise
+Af_s <- 0                                   # 1/f noise
+f_lowerBound <- f0_s - f0_s/sqrt(2)
+f_upperBound <- f0_s + f0_s/sqrt(2)
 # Transfer Functions
-f = seq(from = 1/T_s, to = SF_s, length.out = SF_s*T_s) # freq space.
+f <- seq(from = 1/T_s, to = SF_s, length.out = SF_s*T_s) # freq space.
 # [C, abs_C, theta_C, funcSHO] = Get_SHO(f, f0_s, Q_s, k_s)
-sho = getSHO(f, f0_s, Q_s, k_s)
-C = sho$C
-abs_C = sho$abs_C
-theta_C = sho$theta_C
-g = k_s/2/pi/f0_s/Q_s
+sho <- getSHO(f, f0_s, Q_s, k_s)
+C <- sho$C
+abs_C <- sho$abs_C
+theta_C <- sho$theta_C
+g <- k_s/2/pi/f0_s/Q_s
 
-xAPSD = f # change naming convention
-yAPSD = (4*Kb*T*g) * abs_C^2 * CONST # drive by thermal physics
-yAPSD = yAPSD + Aw_s
-yAPSD = yAPSD + Af_s * 1/xAPSD^alpha_s
+xAPSD <- f # change naming convention
+yAPSD <- (4*Kb*T*g) * abs_C^2 * CONST # drive by thermal physics
+yAPSD <- yAPSD + Aw_s
+yAPSD <- yAPSD + Af_s * 1/xAPSD^alpha_s
 
 # -----------------------------
 # Simulation
-CORRUPT = 1
-res = list("Baseline" = list(), "Noised" = list(), "Denoised" = list())
-id = paste0('Q', Q_s, "_SFM", SF_s/1e6, "_C", CORRUPT, "_B", binfit_size)
+CORRUPT <- 1
+res <- list("Baseline" = list(), "Noised" = list(), "Denoised" = list())
+id <- paste0('Q', Q_s, "_SFM", SF_s/1e6, "_C", CORRUPT, "_B", binfit_size)
 
 # Row: Sim #
 # Col: 1: Clean, 2: Noised, 3: Denoised
 # Depth: Layer 1: NLSQ, Layer 2: LOGP, Layer 3: MLE
-As_vec = array(NA, dim = c(3,3,simNum))
-Aw_vec = array(NA, dim = c(3,3,simNum))
-f0_vec = array(NA, dim = c(3,3,simNum))
-Q_vec = array(NA, dim = c(3,3,simNum))
-Af_vec = array(NA, dim = c(3,3,simNum))
-alpha_vec = array(NA, dim = c(3,3,simNum))
-exitflag_vec = array(NA, dim = c(3,3,simNum))
+As_vec <- array(NA, dim = c(3,3,simNum))
+Aw_vec <- array(NA, dim = c(3,3,simNum))
+f0_vec <- array(NA, dim = c(3,3,simNum))
+Q_vec <- array(NA, dim = c(3,3,simNum))
+Af_vec <- array(NA, dim = c(3,3,simNum))
+alpha_vec <- array(NA, dim = c(3,3,simNum))
+exitflag_vec <- array(NA, dim = c(3,3,simNum))
 
 # simulation for loop
 system.time(
