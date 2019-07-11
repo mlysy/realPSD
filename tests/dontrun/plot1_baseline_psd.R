@@ -31,7 +31,7 @@ Q <- c(Q1, Q10, Q100, Q500)
 yPSD <- matrix(NA, length(f), length(Q)) # each column corresponds to a Q factor
 # when we assign the values, we also convert the unit of yPSD
 for(ii in 1:length(Q)) {
-  yPSD[,ii] <- psd_sho(f, f0_s, Q[ii], k_s, Kb, T, TRUE) + Aw_s
+  yPSD[,ii] <- psdSHO(f, f0_s, Q[ii], k_s, Kb, T, TRUE) + Aw_s
 }
 # change x-axis unit to kHz
 xPSD <- xPSD / 1000
