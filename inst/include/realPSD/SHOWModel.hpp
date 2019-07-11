@@ -48,6 +48,7 @@ namespace realPSD {
   }
 
   /// Parameters are: `phi = (f0, gamma = f0/Q, Rw = Aw/sigma^2)`.
+  /// I think gamma should be f0*Q
   template <class Type>
   inline void UFun<Type>::eval(RefMatrix_t U, cRefMatrix_t& phi) {
     // U = f2_.array() + Type(1.0);
