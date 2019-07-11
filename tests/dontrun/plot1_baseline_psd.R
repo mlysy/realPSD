@@ -18,9 +18,9 @@ k_s <- 0.172
 Kb <- 1.381e-23 
 # Kelvin
 T <- 298 
-# unit conversion
-CONST <- 1e30   
-# white noise
+# unit conversion (incorporated in psdSHO.R)
+# CONST <- 1e30   
+# white noise (unit: fm2/Hz)
 Aw_s <- 19000  
 # frequency domain (frequency grid)
 f <- seq(from = 1/T_s, to = SF_s, length.out = SF_s*T_s)
@@ -31,7 +31,7 @@ Q <- c(Q1, Q10, Q100, Q500)
 yPSD <- matrix(NA, length(f), length(Q)) # each column corresponds to a Q factor
 # when we assign the values, we also convert the unit of yPSD
 for(ii in 1:length(Q)) {
-  yPSD[,ii] <- psd_sho(f, f0_s, Q[ii], k_s, Kb, T)*CONST + Aw_s
+  yPSD[,ii] <- psd_sho(f, f0_s, Q[ii], k_s, Kb, T, TRUE) + Aw_s
 }
 # change x-axis unit to kHz
 xPSD <- xPSD / 1000

@@ -23,23 +23,20 @@ require(realPSD)
 We first simulate the data from SHO model by using the following code
 
 ```{r sim}
-# save name
-save_name <- 'Jul_2';
-# Simulation Parameters
-simNum <- 10            # Number of simulations to run (per each Q_s)
-# random_seed = rng('shuffle'); # Seeds the random number generator based on the current time
-random_seed <- 123
-model_type <- 'SHOW'    # SHOW or SHOWF
-binfit_size <- 100      # size of bins for fitting
-T_s <- 5                # Total time
-SF_s <- 1e7             # Sampling frequency
-f0_s <- 33553           # Resonance frequency, Hz
-Q_s  <- 500             # Quality factor
-alpha_s <- 0.55         # 1/f decay exponent
-k_s  <- 0.172           # Cantilever stiffness, N/m
+save_name <- 'Jul_2'  # save name
+simNum <- 10          # number of simulated datasets 
+seed <- 123           # random seed
+model_type <- 'SHOW'  # SHOW or SHOWF
+bin_size <- 100       # size of bins for fitting
+T  <- 5               # Total time
+SF <- 1e7             # Sampling frequency
+f0 <- 33553           # Resonance frequency, Hz
+Q  <- 500             # Quality factor
+alpha <- 0.55         # 1/f decay exponent
+k  <- 0.172           # Cantilever stiffness, N/m
 Kb <- 1.381e-23 # Boltzmann's constant
-T <- 298        # Kelvin
-CONST <- 1e30   # yes, unit conversion
+T <- 298        # Temperature, Kelvin
+CONST <- 1e30   # unit conversion constant
 As_s <- 4*Kb*T/(k_s*Q_s*f0_s*2*pi) * CONST  # SHO
 Aw_s <- 19000                               # white noise
 Af_s <- 0                                   # 1/f noise
