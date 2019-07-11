@@ -3,12 +3,12 @@
 #' @param f_0 Resonance frequency f_0.
 #' @param Q Quality factor.
 #' @param k Cantilever stiffness.
-#' @param kb Boltzmann constant.
+#' @param Kb Boltzmann constant.
 #' @param T Temperature in Kelvin.
 #' @param convert Indicator of whether or not to convert the unit of PSD to fm2/Hz. The femtometer (fm) is an SI unit of length equal to 1e-15 meters.
 #' @export
-psd_sho <- function(f, f0, Q, k, kb, T, convert = TRUE) {
-  numerator <- kb * T / (k * pi * f0 * Q)
+psd_sho <- function(f, f0, Q, k, Kb, T, convert = TRUE) {
+  numerator <- Kb * T / (k * pi * f0 * Q)
   denominator <- ((f/f0)^2 - 1)^2 + (f/(f0*Q))^2
   psd <- numerator/denominator
   CONSTANT <- 1
