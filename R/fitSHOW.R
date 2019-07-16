@@ -27,12 +27,30 @@ fitSHOW <- function(f, rfreq, fs, f0, Q, k, T, Aw,
   Ybar <- binning(Y, binSize = binSize)
   Zbar <- log(Ybar)
   # ---------- fitting ----------
-  tmod <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+  if (method == "LP_nlp") {
+    tmod <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
                                        method = method,
                                        fbar = matrix(fbar),
                                        Zbar = matrix(Zbar)),
                            parameters = list(phi = matrix(phi)),
                            silent = TRUE, DLL = "realPSD_TMBExports")
+  } else if (method == "NLS_nlp") {
+    tmod <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+                                       method = method,
+                                       fbar = matrix(fbar),
+                                       Zbar = matrix(Ybar)),
+                           parameters = list(phi = matrix(phi)),
+                           silent = TRUE, DLL = "realPSD_TMBExports")
+  } else if (method == "MLE_nlp") {
+    tmod <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+                                       method = method,
+                                       fbar = matrix(f),
+                                       Zbar = matrix(Y)),
+                           parameters = list(phi = matrix(phi)),
+                           silent = TRUE, DLL = "realPSD_TMBExports")
+  } else {
+    stop("method should be chosen from LP_nlp, NLS_nlp and MLE_nlp.")
+  }
   opt <- optim(tmod$par, fn = tmod$fn, gr = tmod$gr, control = list(maxit = 1000))
   phi_hat <- opt$par # extract the fitted parameters
   param <- rep(NA, 3) # allocate space for storage
