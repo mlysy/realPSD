@@ -12,6 +12,6 @@ psdSHO <- function(f, f0, Q, k, Kb, T, unit_conversion = TRUE) {
   denominator <- ((f/f0)^2 - 1)^2 + (f/(f0*Q))^2
   psd <- numerator/denominator
   CONSTANT <- 1
-  if(convert == TRUE) CONSTANT = 1e30
+  if(unit_conversion == TRUE) CONSTANT = 1e30
   return(psd * CONSTANT)
 }
