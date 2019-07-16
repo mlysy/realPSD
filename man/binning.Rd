@@ -2,7 +2,7 @@
 % Please edit documentation in R/binning.R
 \name{binning}
 \alias{binning}
-\title{binning}
+\title{binning a long vector and return the bin average values}
 \usage{
 binning(x, binSize)
 }

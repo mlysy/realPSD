@@ -1,4 +1,4 @@
-# fit simulated datasets
+#' @title fit simulated datasets to get fitted parameters
 #' @param f Vector of frequencies, usually from f0 - f0/sqrt(2) to f0 + f0/sqrt(2).
 #' @param rfreq Vector of exponential random variables Exp(1) with the same length as f.
 #' @param fs Sampling frequency, Hz.

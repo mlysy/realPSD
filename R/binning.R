@@ -1,4 +1,4 @@
-#' @title binning
+#' @title binning a long vector and return the bin average values
 #' @description
 #' Compute average values of a series in pre-determined bins (column-wise subsets).
 #' The bin size can be determined either directly or by specifying the number of bins.
