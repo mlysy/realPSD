@@ -38,14 +38,14 @@ fitSHOW <- function(f, rfreq, fs, f0, Q, k, T, Aw,
     tmod <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
                                        method = method,
                                        fbar = matrix(fbar),
-                                       Zbar = matrix(Ybar)),
+                                       Ybar = matrix(Ybar)),
                            parameters = list(phi = matrix(phi)),
                            silent = TRUE, DLL = "realPSD_TMBExports")
   } else if (method == "MLE_nlp") {
     tmod <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
                                        method = method,
-                                       fbar = matrix(f),
-                                       Zbar = matrix(Y)),
+                                       f = matrix(f),
+                                       Y = matrix(Y)),
                            parameters = list(phi = matrix(phi)),
                            silent = TRUE, DLL = "realPSD_TMBExports")
   } else {

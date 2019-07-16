@@ -4,7 +4,7 @@
 \alias{psdSHO}
 \title{Power spectral density of SHO model.}
 \usage{
-psdSHO(f, f0, Q, k, Kb, T, convert = TRUE)
+psdSHO(f, f0, Q, k, Kb, T, unit_conversion = TRUE)
 }
 \arguments{
 \item{f}{Frequency or a vector of frequencies in Hz.}
@@ -17,7 +17,7 @@ psdSHO(f, f0, Q, k, Kb, T, convert = TRUE)
 
 \item{T}{Temperature in Kelvin.}
 
-\item{convert}{Indicator of whether or not to convert the unit of PSD to fm2/Hz. The femtometer (fm) is an SI unit of length equal to 1e-15 meters.}
+\item{unit_conversion}{Indicator of whether or not to convert the unit of PSD to fm2/Hz. The femtometer (fm) is an SI unit of length equal to 1e-15 meters.}
 
 \item{f_0}{Resonance frequency f_0.}
 }

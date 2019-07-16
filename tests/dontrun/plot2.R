@@ -1,12 +1,13 @@
 # to reproduce Figure 2 in the paper
 require(realPSD)
+require(TMB)
 # ---------- SHO model parameters ----------
 T  <- 5                   # Total time, second
 fs <- 1e7                 # Sampling frequency, Hz
 f0 <- 33553               # Resonance frequency, Hz
 Q_vec  <- c(1, 10, 100, 500)  # Quality factors
 k  <- 0.172               # Cantilever stiffness, N/m
-Kb <- 1.381e-23           # Boltzmann's constant
+# Kb <- 1.381e-23           # Boltzmann's constant
 T <- 298                  # Temperature, Kelvin
 Aw <- 19000               # white noise, fm2/Hz
 # sig2 <- Kb*T/(k*pi*f0*Q)  # variance sig2
