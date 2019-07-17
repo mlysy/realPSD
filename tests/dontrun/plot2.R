@@ -2,6 +2,7 @@
 require(realPSD)
 require(TMB)
 require(tidyverse)
+require(parallel)
 # ---------- SHO model parameters ----------
 T  <- 5                   # Total time, second
 fs <- 1e7                 # Sampling frequency, Hz
@@ -25,8 +26,11 @@ f <- seq(from = f_lb, to = f_ub, by = 1/T) # frequency domain, Hz
 # )
 # print(object.size(tmp), units = "GB")
 
-# for loop
+# simulation
 nsim <- 10
+binSize <- 100
+# detect the number of cores
+ncores <- detectCores()
 # pre-allocate space for storage
 fit_Q1_lp <- matrix(NA, nsim, 3)
 fit_Q1_nls <- matrix(NA, nsim, 3) 
@@ -45,46 +49,80 @@ Q1 <- Q_vec[1]
 Q10 <- Q_vec[2]
 Q100 <- Q_vec[3]
 Q500 <- Q_vec[4]
+# -------- parallel version ----------
+# set the seed by using L'Ecuyer-CMRG
+# please see the official docs for the reason
+set.seed(123, kind = "L'Ecuyer-CMRG")
+# Q = 1, method: log periodogram
 system.time(
-for(ii in 1:nsim) {
-  # generate a vector of exponential random variables 
-  # which is the same for all Q1, Q10, Q100, Q500 but different for each iteration/simulation 
-  rfreq <- rexp(length(f), rate = 1) 
-  # ----- fitting simulated data -----
-  # # specify the Q factor
-  # Q1 <- Q_vec[1] 
-  fit_Q1_lp[ii, ] <- fitSHOW(f, rfreq, fs, f0, Q1, k, T, Aw, 
-    binSize = 100, method = "LP_nlp")  # log-periodogram
-  fit_Q1_nls[ii, ] <- fitSHOW(f, rfreq, fs, f0, Q1, k, T, Aw, 
-    binSize = 100, method = "NLS_nlp") # Nonlinear least-squares
-  fit_Q1_mle[ii, ] <- fitSHOW(f, rfreq, fs, f0, Q1, k, T, Aw, 
-    binSize = 100, method = "MLE_nlp") # Whittle likelihood
-  # # specify the Q factor
-  # Q10 <- Q_vec[2]
-  fit_Q10_lp[ii, ] <- fitSHOW(f, rfreq, fs, f0, Q10, k, T, Aw, 
-    binSize = 100, method = "LP_nlp")  # log-periodogram
-  fit_Q10_nls[ii, ] <- fitSHOW(f, rfreq, fs, f0, Q10, k, T, Aw, 
-    binSize = 100, method = "NLS_nlp") # Nonlinear least-squares
-  fit_Q10_mle[ii, ] <- fitSHOW(f, rfreq, fs, f0, Q10, k, T, Aw, 
-    binSize = 100, method = "MLE_nlp") # Whittle likelihood  
-  # # specify the Q factor
-  # Q100 <- Q_vec[3]
-  fit_Q100_lp[ii, ] <- fitSHOW(f, rfreq, fs, f0, Q100, k, T, Aw, 
-    binSize = 100, method = "LP_nlp")  # log-periodogram
-  fit_Q100_nls[ii, ] <- fitSHOW(f, rfreq, fs, f0, Q100, k, T, Aw, 
-    binSize = 100, method = "NLS_nlp") # Nonlinear least-squares
-  fit_Q100_mle[ii, ] <- fitSHOW(f, rfreq, fs, f0, Q100, k, T, Aw, 
-    binSize = 100, method = "MLE_nlp") # Whittle likelihood  
-  # # specify the Q factor
-  # Q500 <- Q_vec[4]
-  fit_Q500_lp[ii, ] <- fitSHOW(f, rfreq, fs, f0, Q500, k, T, Aw, 
-    binSize = 100, method = "LP_nlp")  # log-periodogram
-  fit_Q500_nls[ii, ] <- fitSHOW(f, rfreq, fs, f0, Q500, k, T, Aw, 
-    binSize = 100, method = "NLS_nlp") # Nonlinear least-squares
-  fit_Q500_mle[ii, ] <- fitSHOW(f, rfreq, fs, f0, Q500, k, T, Aw, 
-    binSize = 100, method = "MLE_nlp") # Whittle likelihood  
-}
+  fit_Q1_lp <- do.call(rbind, mclapply(1:nsim, function(ii) {
+    # generate exponential random variables
+    rfreq <- rexp(length(f), rate = 1)
+    # save for later use
+    saveRDS(rfreq, file = paste0("./data/rfreq_", ii, ".rds"))
+    # fit the parameter
+    # return each vector of estimated parameters as a row
+    fitSHOW(f, rfreq, fs, f0, Q1, k, T, Aw, binSize, method = "LP_nlp")
+}, mc.cores = ncores))
 )
+# Q = 1, method: nonlinear least squares
+system.time(
+  fit_Q1_nls <- do.call(rbind, mclapply(1:nsim, function(ii) {
+    rfreq <- readRDS(paste0("./data/rfreq_", ii, ".rds"))
+    fitSHOW(f, rfreq, fs, f0, Q1, k, T, Aw, binSize, method = "NLS_nlp")
+  }, mc.cores = ncores))
+)
+# Q = 1, method: Whittle MLE
+system.time(
+  fit_Q1_mle <- do.call(rbind, mclapply(1:nsim, function(ii) {
+    rfreq <- readRDS(paste0("./data/rfreq_", ii, ".rds"))
+    fitSHOW(f, rfreq, fs, f0, Q1, k, T, Aw, binSize, method = "MLE_nlp")
+  }, mc.cores = ncores))
+)
+
+
+# for-loop sequential version
+# system.time(
+# for(ii in 1:nsim) {
+#   # generate a vector of exponential random variables 
+#   # which is the same for all Q1, Q10, Q100, Q500 but different for each iteration/simulation 
+#   rfreq <- rexp(length(f), rate = 1) 
+#   # saveRDS(rfreq, file = paste0("rfreq_", ii, ".rds")) # saving is slow
+#   # ----- fitting simulated data -----
+#   # # specify the Q factor
+#   # Q1 <- Q_vec[1] 
+#   fit_Q1_lp[ii, ] <- fitSHOW(f, rfreq, fs, f0, Q1, k, T, Aw, 
+#     binSize = 100, method = "LP_nlp")  # log-periodogram
+#   fit_Q1_nls[ii, ] <- fitSHOW(f, rfreq, fs, f0, Q1, k, T, Aw, 
+#     binSize = 100, method = "NLS_nlp") # Nonlinear least-squares
+#   fit_Q1_mle[ii, ] <- fitSHOW(f, rfreq, fs, f0, Q1, k, T, Aw, 
+#     binSize = 100, method = "MLE_nlp") # Whittle likelihood
+#   # # specify the Q factor
+#   # Q10 <- Q_vec[2]
+#   fit_Q10_lp[ii, ] <- fitSHOW(f, rfreq, fs, f0, Q10, k, T, Aw, 
+#     binSize = 100, method = "LP_nlp")  # log-periodogram
+#   fit_Q10_nls[ii, ] <- fitSHOW(f, rfreq, fs, f0, Q10, k, T, Aw, 
+#     binSize = 100, method = "NLS_nlp") # Nonlinear least-squares
+#   fit_Q10_mle[ii, ] <- fitSHOW(f, rfreq, fs, f0, Q10, k, T, Aw, 
+#     binSize = 100, method = "MLE_nlp") # Whittle likelihood  
+#   # # specify the Q factor
+#   # Q100 <- Q_vec[3]
+#   fit_Q100_lp[ii, ] <- fitSHOW(f, rfreq, fs, f0, Q100, k, T, Aw, 
+#     binSize = 100, method = "LP_nlp")  # log-periodogram
+#   fit_Q100_nls[ii, ] <- fitSHOW(f, rfreq, fs, f0, Q100, k, T, Aw, 
+#     binSize = 100, method = "NLS_nlp") # Nonlinear least-squares
+#   fit_Q100_mle[ii, ] <- fitSHOW(f, rfreq, fs, f0, Q100, k, T, Aw, 
+#     binSize = 100, method = "MLE_nlp") # Whittle likelihood  
+#   # # specify the Q factor
+#   # Q500 <- Q_vec[4]
+#   fit_Q500_lp[ii, ] <- fitSHOW(f, rfreq, fs, f0, Q500, k, T, Aw, 
+#     binSize = 100, method = "LP_nlp")  # log-periodogram
+#   fit_Q500_nls[ii, ] <- fitSHOW(f, rfreq, fs, f0, Q500, k, T, Aw, 
+#     binSize = 100, method = "NLS_nlp") # Nonlinear least-squares
+#   fit_Q500_mle[ii, ] <- fitSHOW(f, rfreq, fs, f0, Q500, k, T, Aw, 
+#     binSize = 100, method = "MLE_nlp") # Whittle likelihood  
+# }
+# )
 # covnert the estimated parameters to ratios
 # Q = 1
 fit_Q1_lp <- fit_Q1_lp %*% diag(c(1/f0, 1/Q1, 1/k))
