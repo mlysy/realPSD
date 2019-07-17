@@ -26,7 +26,7 @@ f <- seq(from = f_lb, to = f_ub, by = 1/T) # frequency domain, Hz
 # )
 # print(object.size(tmp), units = "GB")
 
-# simulation
+# ---------- simulation ----------
 nsim <- 10
 binSize <- 100
 # detect the number of cores
@@ -55,29 +55,41 @@ Q500 <- Q_vec[4]
 set.seed(123, kind = "L'Ecuyer-CMRG")
 # Q = 1, method: log periodogram
 system.time(
-  fit_Q1_lp <- do.call(rbind, mclapply(1:nsim, function(ii) {
-    # generate exponential random variables
-    rfreq <- rexp(length(f), rate = 1)
-    # save for later use
-    saveRDS(rfreq, file = paste0("./data/rfreq_", ii, ".rds"))
-    # fit the parameter
-    # return each vector of estimated parameters as a row
-    fitSHOW(f, rfreq, fs, f0, Q1, k, T, Aw, binSize, method = "LP_nlp")
+fit_Q1_lp <- do.call(rbind, mclapply(1:nsim, function(ii) {
+  # generate exponential random variables
+  rfreq <- rexp(length(f), rate = 1)
+  # save for later use
+  saveRDS(rfreq, file = paste0("./data/rfreq_", ii, ".rds"))
+  # fit the parameter
+  # return each vector of estimated parameters as a row
+  ans <- tryCatch(
+  fitSHOW(f, rfreq, fs, f0, Q1, k, T, Aw, binSize, method = "LP_nlp"), 
+  error = function(err) 
+    message(paste0("Fitting error found in the ", ii, "-th iteration."))
+  )
 }, mc.cores = ncores))
 )
 # Q = 1, method: nonlinear least squares
 system.time(
-  fit_Q1_nls <- do.call(rbind, mclapply(1:nsim, function(ii) {
-    rfreq <- readRDS(paste0("./data/rfreq_", ii, ".rds"))
-    fitSHOW(f, rfreq, fs, f0, Q1, k, T, Aw, binSize, method = "NLS_nlp")
-  }, mc.cores = ncores))
+fit_Q1_nls <- do.call(rbind, mclapply(1:nsim, function(ii) {
+  rfreq <- readRDS(paste0("./data/rfreq_", ii, ".rds"))
+  ans <- tryCatch(
+  fitSHOW(f, rfreq, fs, f0, Q1, k, T, Aw, binSize, method = "NLS_nlp"),
+  error = function(err) 
+    message(paste0("Fitting error found in the ", ii, "-th iteration."))
+  )
+}, mc.cores = ncores))
 )
 # Q = 1, method: Whittle MLE
 system.time(
-  fit_Q1_mle <- do.call(rbind, mclapply(1:nsim, function(ii) {
-    rfreq <- readRDS(paste0("./data/rfreq_", ii, ".rds"))
-    fitSHOW(f, rfreq, fs, f0, Q1, k, T, Aw, binSize, method = "MLE_nlp")
-  }, mc.cores = ncores))
+fit_Q1_mle <- do.call(rbind, mclapply(1:nsim, function(ii) {
+  rfreq <- readRDS(paste0("./data/rfreq_", ii, ".rds"))
+  ans <- tryCatch(
+  fitSHOW(f, rfreq, fs, f0, Q1, k, T, Aw, binSize, method = "MLE_nlp"),
+  error = function(err)
+    message(paste0("Fitting error found in the ", ii, "-th iteration."))
+  )
+}, mc.cores = ncores))
 )
 
 
