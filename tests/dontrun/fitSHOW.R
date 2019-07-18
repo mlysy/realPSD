@@ -1,18 +1,17 @@
 #' @title fit simulated datasets to get fitted parameters
-#' @param f Vector of frequencies, usually from f0 - f0/sqrt(2) to f0 + f0/sqrt(2).
-#' @param rfreq Vector of exponential random variables Exp(1) with the same length as f.
+#' @param fseq Sequence of frequencies, usually from f0 - f0/sqrt(2) to f0 + f0/sqrt(2).
+#' @param sim_exp Vector of exponential random variables Exp(1) with the same length as fseq.
 #' @param fs Sampling frequency, Hz.
 #' @param f0 Resonance frequency, Hz.
 #' @param Q Quality factor.
 #' @param k Cantilever stiffness, N/m.
-#' @param Kb Boltzmann's constant.
-#' @param T Temperature, Kelvin.
+#' @param Temp Temperature, Kelvin.
 #' @param Aw White noise psd.
-#' @param binSize Integer number, bin size.
+#' @param bin_size Integer number, bin size.
 #' @param method Fitting method, i.e. lp, mle, nls.
 #' @export
-fitSHOW <- function(f, rfreq, fs, f0, Q, k, T, Aw,
-                    binSize = 100, method = c("lp", "mle", "nls")) {
+fitSHOW <- function(fseq, sim_exp, fs, f0, Q, k, Temp, Aw,
+                    bin_size = 100, method = c("lp", "mle", "nls")) {
   method <- match.arg(method)
   Kb <- 1.381e-23           # Boltzmann's constant
   sig2 <- Kb*T/(k*pi*f0*Q) # variance

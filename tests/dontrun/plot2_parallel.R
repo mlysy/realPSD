@@ -62,7 +62,7 @@ success <- mclapply(1:nfit, function(ii) {
   psd <- readRDS(file.path(data_path,
                            paste0("exp_sim_", data_id, ".rds")))
   theta_hat <- tryCatch({
-    fitSHOW(fseq, rfreq = psd,
+    fitSHOW(fseq, sim_exp = psd,
             fs = fs, f0 = f0, Q = Q,
             k = k, T = Temp, Aw = Aw,
             binSize = bin_size, method = method)
