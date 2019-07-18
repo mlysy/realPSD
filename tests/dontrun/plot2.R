@@ -27,7 +27,7 @@ f <- seq(from = f_lb, to = f_ub, by = 1/T) # frequency domain, Hz
 # print(object.size(tmp), units = "GB")
 
 # ---------- simulation ----------
-nsim <- 20
+nsim <- 100
 binSize <- 100
 # detect the number of cores
 ncores <- detectCores()
