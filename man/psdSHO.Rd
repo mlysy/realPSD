@@ -4,10 +4,10 @@
 \alias{psdSHO}
 \title{Power spectral density of SHO model.}
 \usage{
-psdSHO(f, f0, Q, k, Kb, T, unit_conversion = TRUE)
+psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion = TRUE)
 }
 \arguments{
-\item{f}{Frequency or a vector of frequencies in Hz.}
+\item{fseq}{Frequency or a vector of frequencies in Hz.}
 
 \item{Q}{Quality factor.}
 
@@ -15,7 +15,7 @@ psdSHO(f, f0, Q, k, Kb, T, unit_conversion = TRUE)
 
 \item{Kb}{Boltzmann constant.}
 
-\item{T}{Temperature in Kelvin.}
+\item{Temp}{Temperature in Kelvin.}
 
 \item{unit_conversion}{Indicator of whether or not to convert the unit of PSD to fm2/Hz. The femtometer (fm) is an SI unit of length equal to 1e-15 meters.}
 

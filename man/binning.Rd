@@ -4,12 +4,12 @@
 \alias{binning}
 \title{binning a long vector and return the bin average values}
 \usage{
-binning(x, binSize)
+binning(x, bin_size)
 }
 \arguments{
 \item{x}{numeric \code{vector} to process}
 
-\item{binSize}{length of each bin}
+\item{bin_size}{length of each bin}
 }
 \value{
 a \code{matrix} or \code{vector} with average values per bin
