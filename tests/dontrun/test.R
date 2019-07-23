@@ -1,4 +1,9 @@
 # test
+# read fitted data
+tmp <- readRDS(file = file.path(data_path_fit, paste0("show_fit_", 1, ".rds")))
+
+
+
 tmp <- readRDS("fit_Q1_lp_20.rds")
 
 # covnert the estimated parameters to ratios

@@ -7,7 +7,11 @@ require(parallel)
 # and perhaps a non-exported function show_fsim (f is for freq)
 source("fitSHOW.R")
 # data folder
-data_path <- "~/Documents/data/R/realPSD/show_sim"
+data_path_sim <- "~/Documents/data/R/realPSD/show_sim"
+data_path_fit <- "~/Documents/data/R/realPSD/show_fit"
+# clear any existing files
+unlink(file.path(data_path_sim, "*"), recursive = TRUE)
+unlink(file.path(data_path_fit, "*"), recursive = TRUE)
 
 # ---------- SHO model parameters ----------
 Time  <- 5                   # Total time, second
@@ -29,16 +33,16 @@ fseq <- seq(from = f_lb, to = f_ub, by = 1/Time) # frequency domain, Hz
 nf <- length(fseq) # number of frequencies
 
 # ---------- simulation ----------
-nsim <- 20
+nsim <- 10
 bin_size <- 100
 
 # first, pregenerate exponentials
-sim_expo <- FALSE
+sim_expo <- TRUE
 if(sim_expo) {
   for(ii in 1:nsim) {
     saveRDS(rexp(nf, rate = 1),
-            file = file.path(data_path,
-                             paste0("exp_sim_", ii, ".rds")))
+            file = file.path(data_path_sim,
+                            paste0("exp_sim_", ii, ".rds")))
   }
 }
 
@@ -47,32 +51,33 @@ if(sim_expo) {
 # i would probably do all the Q's and methods in the same loop,
 # i.e., loop over only the datasets
 fit_descr <- expand.grid(Q = Q_vec,
-                         method = c("lp", "nls"),
-                         data_id = 1:nsim,
-                         stringsAsFactors = FALSE) %>% as_tibble()
+                        method = c("lp", "nls", "mle"),
+                        data_id = 1:nsim,
+                        stringsAsFactors = FALSE) %>% as_tibble()
 nfit <- nrow(fit_descr)
 
+system.time(
 success <- mclapply(1:nfit, function(ii) {
   # multi-assign elements of job: data_id, Q, method
   list2env(as.list(fit_descr[ii,]), envir = environment())
   # long form:
-  ## data_id <- fit_descr$data_id[ii]
-  ## Q <- fit_descr$Q[ii]
-  ## method <- fit_descr$method[ii]
-  psd <- readRDS(file.path(data_path,
-                           paste0("exp_sim_", data_id, ".rds")))
+  data_id <- fit_descr$data_id[ii]
+  Q <- fit_descr$Q[ii]
+  method <- fit_descr$method[ii]
+  r_exp <- readRDS(file.path(data_path_sim,
+                          paste0("exp_sim_", data_id, ".rds")))
   theta_hat <- tryCatch({
-    fitSHOW(fseq, sim_exp = psd,
+    fitSHOW(fseq, sim_exp = r_exp,
             fs = fs, f0 = f0, Q = Q,
-            k = k, T = Temp, Aw = Aw,
-            binSize = bin_size, method = method)
+            k = k, Temp = Temp, Aw = Aw,
+            bin_size = bin_size, method = method)
   }, error = function(err) message("fitting error on job ", ii))
   if(!is.null(theta_hat)) {
     saveRDS(theta_hat,
-            file = file.path(data_path,
-                             paste0("show_fit_", ii, ".rds")))
+            file = file.path(data_path_fit,
+                            paste0("show_fit_", ii, ".rds")))
     out <- TRUE
   } else out <- FALSE
   out
 })
-
+)
