@@ -3,6 +3,7 @@ require(realPSD)
 # require(TMB)
 require(parallel)
 require(tidyverse)
+require(tikzDevice)
 # TODO: factor out an exportable function show_fit
 # and perhaps a non-exported function show_fsim (f is for freq)
 source("fitSHOW.R")
@@ -36,7 +37,7 @@ fseq <- seq(from = f_lb, to = f_ub, by = 1/Time) # frequency domain, Hz
 nf <- length(fseq) # number of frequencies
 
 # ---------- simulation ----------
-nsim <- 20
+nsim <- 1000
 bin_size <- 100
 
 # detect the number of cores
@@ -56,7 +57,7 @@ sim_expo <- TRUE
 # }
 # )
 # parallel version of generating random expo variables
-message("Time spent on generating exponential random variables:\n")
+message("\nTime spent on generating exponential random variables:\n")
 system.time(
   if(sim_expo) {
     sim_success <- mclapply(1:nsim, function(ii) {
@@ -90,7 +91,7 @@ fit_descr <- expand.grid(Q_level = Q_vec,
 nfit <- nrow(fit_descr)
 
 # run the simulation
-message("Time spent on fitting the parameters:\n")
+message("\nTime spent on fitting the parameters:\n")
 system.time(
 fit_success <- mclapply(1:nfit, function(ii) {
   # multi-assign elements of job: data_id, Q, method
@@ -154,11 +155,35 @@ ratio_data <- fit_data %>%
   mutate(Q_hat = ifelse(Q_level == "Q = 500", Q_hat/Q_vec[4], Q_hat))
   # boxplot
 # Q_hat / Q
-ggplot(ratio_data, aes(x = Q_level, y = Q_hat, fill = method)) + geom_boxplot()
-ggsave("boxplot_Q.pdf")
+tikzDevice::tikz(file = "boxplot_Q.tex", width = 8, height = 2)
+fig_Q <- ggplot(ratio_data, aes(x = Q_level, y = Q_hat, fill = method)) + 
+  geom_boxplot(outlier.size = 0.8) +
+  xlab(label = NULL)  +
+  ylab(label = "$\\hat{Q}/Q$")
+# ggsave("boxplot_Q.pdf")
+print(fig_Q)
+dev.off()
+
 # k_hat / k
-ggplot(ratio_data, aes(x = Q_level, y = k_hat, fill = method)) + geom_boxplot()
-ggsave("boxplot_k.pdf")
+tikzDevice::tikz(file = "./boxplot_k.tex", width = 8, height = 2)
+fig_k <- ggplot(ratio_data, aes(x = Q_level, y = k_hat, fill = method)) + 
+  geom_boxplot(outlier.size = 0.8) +
+  xlab(label = NULL)  +
+  ylab(label = "$\\hat{k}/k$")
+print(fig_k)
+# ggsave("boxplot_k.pdf")
+dev.off()
+
 # f0_hat / f0
-ggplot(ratio_data, aes(x = Q_level, y = f0_hat, fill = method)) + geom_boxplot()
-ggsave("boxplot_f0.pdf")
+tikzDevice::tikz(file = "./boxplot_f0.tex", width = 8, height = 2)
+fig_f0 <- ggplot(ratio_data, aes(x = Q_level, y = f0_hat, fill = method)) + 
+  geom_boxplot(outlier.size = 0.8) + 
+  xlab(label = NULL)  +
+  ylab(label = "$\\hat{f_0}/f_0$")
+print(fig_f0)
+# ggsave("boxplot_f0.pdf")
+dev.off()
+
+# # arrange all the plots in one layout
+# fig_all <- gridExtra::arrangeGrob(fig_Q, fig_k, fig_f0, ncol = 1)
+# # ggsave(file = "boxplot_all.pdf", fig_all)
