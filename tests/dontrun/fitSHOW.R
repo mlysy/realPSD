@@ -15,13 +15,13 @@ fitSHOW <- function(fseq, sim_exp, fs, f0, Q, k, Temp, Aw,
   # ---------- setup -----------
   method <- match.arg(method)
   Kb <- 1.381e-23           # Boltzmann's constant
-  sig2 <- Kb*Temp/(k*pi*f0*Q) # variance
-  Rw <- Aw/sig2 # re-parameterization
+  sig2 <- Kb*Temp/(k*pi*f0*Q) # variance, unit: m2/Hz
+  Rw <- Aw/sig2 # re-parameterization, note we input Aw with unit fm2/Hz
   phi <- c(f0, f0*Q, Rw) # parameter vector for SHOW model
   # psd values at each frequency point of f with given Q
-  psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion = TRUE) + Aw
+  psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion = FALSE) + Aw
   # generate the periodogram values
-  Y <- sim_exp * fs * psd
+  Y <- sim_exp * psd # we should not multiply it by fs (so our original thm1 is not exactly correct)
   # ---------- binning ----------
   # bin_size <- 100
   fbar <- binning(fseq, bin_size = bin_size)
@@ -83,7 +83,7 @@ fitSHOW <- function(fseq, sim_exp, fs, f0, Q, k, Temp, Aw,
   opt <- optim(phi, fn = obj$fn, gr = obj$gr,
               control = list(maxit = 1000))
   phi_hat <- opt$par # extract the fitted phi = c(f0_hat, gamma_hat, Rw_hat)
-  tau_hat <- get_tau(phi_hat) # fitted tau = sigma^2
+  tau_hat <- get_tau(phi_hat) # fitted tau = sigma^2, unit: fm^2/Hz which should be the same as Aw
   param <- rep(NA, 4) # allocate space for storage
   param[1] <- phi_hat[1] # f0_hat
   param[2] <- phi_hat[2]/phi_hat[1] # Q_hat

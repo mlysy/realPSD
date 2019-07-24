@@ -1,18 +1,18 @@
 # to reproduce Figure 2 in the paper
 require(realPSD)
 # require(TMB)
-# require(tidyverse)
 require(parallel)
+require(tidyverse)
 # TODO: factor out an exportable function show_fit
 # and perhaps a non-exported function show_fsim (f is for freq)
 source("fitSHOW.R")
 # data folder
-# data_path_sim <- "~/Documents/data/R/realPSD/show_sim"
-data_path_sim <- "~/realPSD/show_sim"
-# data_path_fit <- "~/Documents/data/R/realPSD/show_fit"
-data_path_fit <- "~/realPSD/show_fit"
+data_path_sim <- "~/Documents/data/R/realPSD/show_sim"
+# data_path_sim <- "~/realPSD/show_sim"
+data_path_fit <- "~/Documents/data/R/realPSD/show_fit"
+# data_path_fit <- "~/realPSD/show_fit"
 # clear any existing files
-unlink(file.path(data_path_sim, "*"), recursive = TRUE)
+# unlink(file.path(data_path_sim, "*"), recursive = TRUE) # we should keep the simulated expo rv's to save time
 unlink(file.path(data_path_fit, "*"), recursive = TRUE)
 
 # ---------- SHO model parameters ----------
@@ -23,7 +23,8 @@ Q_vec  <- c(1, 10, 100, 500)  # Quality factors
 k  <- 0.172               # Cantilever stiffness, N/m
 # Kb <- 1.381e-23           # Boltzmann's constant
 Temp <- 298                  # Temperature, Kelvin
-Aw <- 19000               # white noise, fm2/Hz
+Const <- 1e30
+Aw <- 19000 / Const            # white noise, fm2/Hz to m2/Hz
 # sig2 <- Kb*T/(k*pi*f0*Q)  # variance sig2
 # Rw <- Aw/sig2
 # alpha <- 0.55           # 1/f decay exponent
@@ -35,36 +36,63 @@ fseq <- seq(from = f_lb, to = f_ub, by = 1/Time) # frequency domain, Hz
 nf <- length(fseq) # number of frequencies
 
 # ---------- simulation ----------
-nsim <- 1000
+nsim <- 20
 bin_size <- 100
+
+# detect the number of cores
+ncores <- detectCores()
+# set seed for reproducibility
+set.seed(123, kind = "L'Ecuyer-CMRG")
 
 # first, pregenerate exponentials
 sim_expo <- TRUE
-if(sim_expo) {
-  for(ii in 1:nsim) {
-    saveRDS(rexp(nf, rate = 1),
+# system.time(
+# if(sim_expo) {
+#   for(ii in 1:nsim) {
+#     saveRDS(rexp(nf, rate = 1),
+#             file = file.path(data_path_sim,
+#                             paste0("exp_sim_", ii, ".rds")))
+#   }
+# }
+# )
+# parallel version of generating random expo variables
+message("Time spent on generating exponential random variables:\n")
+system.time(
+  if(sim_expo) {
+    sim_success <- mclapply(1:nsim, function(ii) {
+      tryCatch(
+        saveRDS(rexp(nf, rate = 1),
             file = file.path(data_path_sim,
-                            paste0("exp_sim_", ii, ".rds")))
+                            paste0("exp_sim_", ii, ".rds"))),
+        error = function(err) 
+          message(paste0("The ", ii, "-th simulation went wrong..."))
+      )
+      return(TRUE)
+    }, mc.cores = ncores)
   }
-}
+)
+# # check if all simulations were successful
+# if(all(sim_success == TRUE)) {
+#   message("Great! All simulations were successful!")
+# } else {
+#   err_index <- which(sim_success == FALSE)
+#   message(paste0("The ", unname(err_index), "-th simulation(s) went wrong..."))
+# }
 
 # now fitting
 # this is for illustrative purposes mainly.
 # i would probably do all the Q's and methods in the same loop,
 # i.e., loop over only the datasets
 fit_descr <- expand.grid(Q_level = Q_vec,
-                        method = c("lp", "nls", "mle"),
+                        method = c("nls", "lp", "mle"),
                         data_id = 1:nsim,
                         stringsAsFactors = FALSE)
 nfit <- nrow(fit_descr)
 
-# detect the number of cores
-ncores <- detectCores()
-# set seed for reproducibility
-set.seed(123, kind = "L'Ecuyer-CMRG")
 # run the simulation
+message("Time spent on fitting the parameters:\n")
 system.time(
-success <- mclapply(1:nfit, function(ii) {
+fit_success <- mclapply(1:nfit, function(ii) {
   # multi-assign elements of job: data_id, Q, method
   list2env(as.list(fit_descr[ii,]), envir = environment())
   # long form:
@@ -88,10 +116,16 @@ success <- mclapply(1:nfit, function(ii) {
   out
 }, mc.cores = ncores)
 )
-# check if all iterations were successful
-all(success == TRUE)
+# # check if all iterations were successful
+# if(all(fit_success == TRUE)) {
+#   message("Great! All fitting jobs were successful!")
+# } else {
+#   err_index <- which(fit_success == FALSE)
+#   message(paste0("The fitting job(s): ", unname(err_index), " had some errors..."))
+# }
+all(fit_success == TRUE)
 
-# ---------- Code below should be commented out for server computing ---------------
+# ---------- Code below can be commented out for server computing ---------------
 # read simulated data into workspace
 for(ii in 1:nfit) {
   assign(paste0("fit_", ii), 
@@ -121,7 +155,10 @@ ratio_data <- fit_data %>%
   # boxplot
 # Q_hat / Q
 ggplot(ratio_data, aes(x = Q_level, y = Q_hat, fill = method)) + geom_boxplot()
+ggsave("boxplot_Q.pdf")
 # k_hat / k
 ggplot(ratio_data, aes(x = Q_level, y = k_hat, fill = method)) + geom_boxplot()
+ggsave("boxplot_k.pdf")
 # f0_hat / f0
 ggplot(ratio_data, aes(x = Q_level, y = f0_hat, fill = method)) + geom_boxplot()
+ggsave("boxplot_f0.pdf")
