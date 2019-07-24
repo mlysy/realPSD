@@ -20,7 +20,7 @@ fitSHOW <- function(fseq, sim_exp, f0, Q, k, Temp, Aw,
   # psd values at each frequency point of f with given Q
   psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion = FALSE) + Aw
   # generate the periodogram values
-  Y <- sim_exp * psd # we should not multiply it by fs (so our original thm1 is not exactly correct)
+  Y <- sim_exp * psd # we should not multiply it by fs since psdSHO gives analytic continuous-time psd
   # ---------- binning ----------
   # bin_size <- 100
   fbar <- binning(fseq, bin_size = bin_size)

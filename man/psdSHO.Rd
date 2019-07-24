@@ -2,7 +2,7 @@
 % Please edit documentation in R/psdSHO.R
 \name{psdSHO}
 \alias{psdSHO}
-\title{Power spectral density of SHO model.}
+\title{Power spectral density of continuous-time SHO model.}
 \usage{
 psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion = TRUE)
 }
@@ -22,5 +22,5 @@ psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion = TRUE)
 \item{f_0}{Resonance frequency f_0.}
 }
 \description{
-Power spectral density of SHO model.
+Power spectral density of continuous-time SHO model.
 }

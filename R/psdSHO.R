@@ -1,4 +1,4 @@
-#' @title Power spectral density of SHO model.
+#' @title Power spectral density of continuous-time SHO model.
 #' @param fseq Frequency or a vector of frequencies in Hz.
 #' @param f_0 Resonance frequency f_0.
 #' @param Q Quality factor.
