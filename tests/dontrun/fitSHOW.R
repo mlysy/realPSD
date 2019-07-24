@@ -2,7 +2,6 @@
 #' 
 #' @param fseq Sequence of frequencies, usually from f0 - f0/sqrt(2) to f0 + f0/sqrt(2).
 #' @param sim_exp Vector of exponential random variables Exp(1) with the same length as fseq.
-#' @param fs Sampling frequency, Hz.
 #' @param f0 Resonance frequency, Hz.
 #' @param Q Quality factor.
 #' @param k Cantilever stiffness, N/m.
@@ -10,7 +9,7 @@
 #' @param Aw White noise psd.
 #' @param bin_size Integer number, bin size.
 #' @param method Fitting method, i.e. lp, mle, nls.
-fitSHOW <- function(fseq, sim_exp, fs, f0, Q, k, Temp, Aw,
+fitSHOW <- function(fseq, sim_exp, f0, Q, k, Temp, Aw,
                     bin_size = 100, method = c("lp", "mle", "nls")) {
   # ---------- setup -----------
   method <- match.arg(method)

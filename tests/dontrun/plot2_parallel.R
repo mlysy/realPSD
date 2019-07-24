@@ -104,7 +104,7 @@ fit_success <- mclapply(1:nfit, function(ii) {
                           paste0("exp_sim_", data_id, ".rds")))
   theta_hat <- tryCatch({
     fitSHOW(fseq, sim_exp = r_exp,
-            fs = fs, f0 = f0, Q = Q,
+            f0 = f0, Q = Q,
             k = k, Temp = Temp, Aw = Aw,
             bin_size = bin_size, method = method)
   }, error = function(err) message("fitting error on job ", ii))
