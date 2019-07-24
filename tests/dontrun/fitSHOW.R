@@ -37,11 +37,11 @@ fitSHOW <- function(fseq, sim_exp, fs, f0, Q, k, Temp, Aw,
                           silent = TRUE, DLL = "realPSD_TMBExports")
     get_tau <- function(phi) {
       gz <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
-                                       method = "LP_zeta",
-                                       fbar = matrix(fbar),
-                                       Zbar = matrix(Zbar)),
-                           parameters = list(phi = matrix(0, 3, 1)),
-                           silent = TRUE, DLL = "realPSD_TMBExports")
+                                      method = "LP_zeta",
+                                      fbar = matrix(fbar),
+                                      Zbar = matrix(Zbar)),
+                          parameters = list(phi = matrix(0, 3, 1)),
+                          silent = TRUE, DLL = "realPSD_TMBExports")
       zeta <- gz$fn(phi)
       exp(zeta)
     }
@@ -50,15 +50,15 @@ fitSHOW <- function(fseq, sim_exp, fs, f0, Q, k, Temp, Aw,
                                       method = "NLS_nlp",
                                       fbar = matrix(fbar),
                                       Ybar = matrix(Ybar)),
-                           parameters = list(phi = matrix(0, 3, 1)),
+                          parameters = list(phi = matrix(0, 3, 1)),
                           silent = TRUE, DLL = "realPSD_TMBExports")
     get_tau <- function(phi) {
       gt <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
-                                       method = "NLS_tau",
-                                       fbar = matrix(fbar),
-                                       Ybar = matrix(Ybar)),
-                           parameters = list(phi = matrix(0, 3, 1)),
-                           silent = TRUE, DLL = "realPSD_TMBExports")
+                                      method = "NLS_tau",
+                                      fbar = matrix(fbar),
+                                      Ybar = matrix(Ybar)),
+                          parameters = list(phi = matrix(0, 3, 1)),
+                          silent = TRUE, DLL = "realPSD_TMBExports")
       gt$fn(phi)
     }
   } else if (method == "mle") {
@@ -66,22 +66,22 @@ fitSHOW <- function(fseq, sim_exp, fs, f0, Q, k, Temp, Aw,
                                       method = "MLE_nlp",
                                       f = matrix(fseq),
                                       Y = matrix(Y)),
-                           parameters = list(phi = matrix(0, 3, 1)),
+                          parameters = list(phi = matrix(0, 3, 1)),
                           silent = TRUE, DLL = "realPSD_TMBExports")
     get_tau <- function(phi) {
       gt <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
-                                       method = "MLE_tau",
-                                       f = matrix(fseq),
-                                       Y = matrix(Y)),
-                           parameters = list(phi = matrix(0, 3, 1)),
-                           silent = TRUE, DLL = "realPSD_TMBExports")
+                                      method = "MLE_tau",
+                                      f = matrix(fseq),
+                                      Y = matrix(Y)),
+                          parameters = list(phi = matrix(0, 3, 1)),
+                          silent = TRUE, DLL = "realPSD_TMBExports")
       gt$fn(phi)
     }
   } else {
     stop("method should be chosen from lp, nls and mle.")
   }
   opt <- optim(phi, fn = obj$fn, gr = obj$gr,
-               control = list(maxit = 1000))
+              control = list(maxit = 1000))
   phi_hat <- opt$par # extract the fitted phi = c(f0_hat, gamma_hat, Rw_hat)
   tau_hat <- get_tau(phi_hat) # fitted tau = sigma^2
   param <- rep(NA, 4) # allocate space for storage
@@ -89,6 +89,6 @@ fitSHOW <- function(fseq, sim_exp, fs, f0, Q, k, Temp, Aw,
   param[2] <- phi_hat[2]/phi_hat[1] # Q_hat
   param[3] <- Kb * Temp / (tau_hat * pi * phi_hat[2]) # k_hat
   param[4] <- phi_hat[3] * tau_hat # Aw_hat
-  names(param) <- c("f0", "Q", "k", "Aw")
+  names(param) <- c("f0_hat", "Q_hat", "k_hat", "Aw_hat")
   return(param)
 }
