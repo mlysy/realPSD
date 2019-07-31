@@ -22,18 +22,18 @@ lp_nlp_r <- function(phi, Zbar, fbar, ufun, fs) {
 }
 
 # mle functions
-mle_nll_r <- function(phi, tau, Y, f, ufun) {
-  U <- ufun(f, phi)
+mle_nll_r <- function(phi, tau, Y, f, ufun, fs) {
+  U <- fs * ufun(f, phi)
   S <- tau * U
   sum(Y/S + log(S))
 }
-mle_tau_r <- function(f, Y, phi, ufun) {
-  U <- ufun(f, phi)
+mle_tau_r <- function(f, Y, phi, ufun, fs) {
+  U <- fs * ufun(f, phi)
   mean(Y/U)
 }
-mle_nlp_r <- function(phi, Y, f, ufun) {
-  tau <- mle_tau_r(f, Y, phi, ufun)
-  mle_nll_r(phi, tau, Y, f, ufun)
+mle_nlp_r <- function(phi, Y, f, ufun, fs) {
+  tau <- mle_tau_r(f, Y, phi, ufun, fs)
+  mle_nll_r(phi, tau, Y, f, ufun, fs)
   ## length(Y) * (1 + log(tau)) + sum(log(U))
 }
 

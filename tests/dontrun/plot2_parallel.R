@@ -37,7 +37,7 @@ fseq <- seq(from = f_lb, to = f_ub, by = 1/Time) # frequency domain, Hz
 nf <- length(fseq) # number of frequencies
 
 # ---------- simulation ----------
-nsim <- 10
+nsim <- 1000
 bin_size <- 100
 
 # detect the number of cores

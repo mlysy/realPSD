@@ -69,14 +69,16 @@ fitSHOW <- function(fseq, sim_exp, f0, fs, Q, k, Temp, Aw,
     obj <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
                                       method = "MLE_nlp",
                                       f = matrix(fseq),
-                                      Y = matrix(Y)),
+                                      Y = matrix(Y),
+                                      fs = fs),
                           parameters = list(phi = matrix(0, 3, 1)),
                           silent = TRUE, DLL = "realPSD_TMBExports")
     get_tau <- function(phi) {
       gt <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
                                       method = "MLE_tau",
                                       f = matrix(fseq),
-                                      Y = matrix(Y)),
+                                      Y = matrix(Y),
+                                      fs = fs),
                           parameters = list(phi = matrix(0, 3, 1)),
                           silent = TRUE, DLL = "realPSD_TMBExports")
       gt$fn(phi)

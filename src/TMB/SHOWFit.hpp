@@ -87,6 +87,7 @@ Type SHOWFit(objective_function<Type>* obj) {
     // data
     DATA_MATRIX(f);
     DATA_MATRIX(Y);
+    DATA_VECTOR(fs);
     // parameters
     PARAMETER_MATRIX(phi);
     // intermediate variables
@@ -98,12 +99,14 @@ Type SHOWFit(objective_function<Type>* obj) {
     mle.set_Y(Y);
     // calculate U
     Ufun.eval(U, phi);
+    U = U * fs;
     // calculate tau_hat
     return mle.tau(U);
   } else if(method == "MLE_nll") {
     // data
     DATA_MATRIX(f);
     DATA_MATRIX(Y);
+    DATA_VECTOR(fs);
     // parameters
     PARAMETER_MATRIX(phi);
     PARAMETER(tau);
@@ -116,12 +119,14 @@ Type SHOWFit(objective_function<Type>* obj) {
     mle.set_Y(Y);
     // calculate U
     Ufun.eval(U, phi);
+    U = U * fs;
     // calculate nll
     return mle.nll(U, tau);
   } else if(method == "MLE_nlp") {
     // data
     DATA_MATRIX(f);
     DATA_MATRIX(Y);
+    DATA_VECTOR(fs);
     // parameters
     PARAMETER_MATRIX(phi);
     // intermediate variables
@@ -133,6 +138,7 @@ Type SHOWFit(objective_function<Type>* obj) {
     mle.set_Y(Y);
     // calculate U
     Ufun.eval(U, phi);
+    U = U * fs;
     // calculate nlp
     return mle.nlp(U);
   } else if(method == "NLS_tau") {

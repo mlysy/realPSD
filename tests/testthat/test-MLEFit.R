@@ -10,18 +10,20 @@ test_that("MLE_tau is the same in R and TMB", {
     N <- sample(10:20,1)
     f <- sim_f(N)
     Y <- sim_Y(N)
+    fs <- sim_fs()
     # create TMB model and functions
     tmod <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
                                        method = "MLE_tau",
                                        f = matrix(f),
-                                       Y = matrix(Y)),
+                                       Y = matrix(Y),
+                                       fs = fs),
                            parameters = list(phi = matrix(rep(0, 3))),
                            silent = TRUE, DLL = "realPSD_TMBExports")
     mle_tau_tmb <- function(phi) tmod$fn(phi)
     # check they are equal
     Phi <- replicate(nphi, sim_phi())
     tau_r <- apply(Phi, 2, mle_tau_r, f = f, Y = Y,
-                    ufun = show_ufun)
+                    ufun = show_ufun, fs = fs)
     tau_tmb <- apply(Phi, 2, mle_tau_tmb)
     expect_equal(tau_r, tau_tmb)
   }
@@ -35,11 +37,13 @@ test_that("MLE_nll is the same in R and TMB", {
     N <- sample(10:20,1)
     f <- sim_f(N)
     Y <- sim_Y(N)
+    fs <- sim_fs()
     # create TMB model and functions
     tmod <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
                                        method = "MLE_nll",
                                        f = matrix(f),
-                                       Y = matrix(Y)),
+                                       Y = matrix(Y),
+                                       fs = fs),
                            parameters = list(phi = matrix(rep(0, 3)),
                                              tau = 0),
                            silent = TRUE, DLL = "realPSD_TMBExports")
@@ -48,7 +52,8 @@ test_that("MLE_nll is the same in R and TMB", {
     Phi <- replicate(nphi, sim_phi())
     tau <- replicate(nphi, sim_tau())
     nll_r <- sapply(1:nphi, function(ii) {
-      mle_nll_r(phi = Phi[,ii], tau = tau[ii], Y = Y, f = f, ufun = show_ufun)
+      mle_nll_r(phi = Phi[,ii], tau = tau[ii], Y = Y, 
+        f = f, ufun = show_ufun, fs = fs)
     })
     nll_tmb <- sapply(1:nphi, function(ii) mle_nll_tmb(Phi[,ii], tau[ii]))
     expect_equal(nll_r, nll_tmb)
@@ -63,18 +68,20 @@ test_that("MLE_nlp is the same in R and TMB", {
     N <- sample(10:20,1)
     f <- sim_f(N)
     Y <- sim_Y(N)
+    fs <- sim_fs()
     # create TMB model and functions
     tmod <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
                                        method = "MLE_nlp",
                                        f = matrix(f),
-                                       Y = matrix(Y)),
+                                       Y = matrix(Y),
+                                       fs = fs),
                            parameters = list(phi = matrix(rep(0, 3))),
                            silent = TRUE, DLL = "realPSD_TMBExports")
     mle_nlp_tmb <- function(phi) tmod$fn(phi)
     # check they are equal
     Phi <- replicate(nphi, sim_phi())
     nlp_r <- apply(Phi, 2, function(phi) {
-      mle_nlp_r(phi = phi, Y = Y, f = f, ufun = show_ufun)
+      mle_nlp_r(phi = phi, Y = Y, f = f, ufun = show_ufun, fs = fs)
     })
     nlp_tmb <- apply(Phi, 2, mle_nlp_tmb)
     expect_equal(nlp_r, nlp_tmb)
