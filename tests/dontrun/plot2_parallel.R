@@ -191,7 +191,7 @@ dev.off()
 # fig_all <- gridExtra::arrangeGrob(fig_Q, fig_k, fig_f0, ncol = 1)
 # # ggsave(file = "boxplot_all.pdf", fig_all)
 
-ratio_Q500 <- ratio_data %>% filter(Q_level == "Q = 500")
-ggplot(ratio_Q500, aes(x = method, y = Q_hat)) + geom_boxplot(outlier.size = .8)
+# ratio_Q500 <- ratio_data %>% filter(Q_level == "Q = 500")
+# ggplot(ratio_Q500, aes(x = method, y = Q_hat)) + geom_boxplot(outlier.size = .8)
 
 
