@@ -30,6 +30,7 @@ Type SHOWFit(objective_function<Type>* obj) {
     // data
     DATA_MATRIX(fbar);
     DATA_MATRIX(Zbar);
+    DATA_VECTOR(fs);
     // parameters
     PARAMETER_MATRIX(phi);
     // intermediate variables
@@ -41,12 +42,14 @@ Type SHOWFit(objective_function<Type>* obj) {
     lp.set_Zbar(Zbar);
     // calculate Ubar
     Ufun.eval(Ubar, phi);
+    Ubar = Ubar * fs;
     // calculate zeta_hat
     return lp.zeta(Ubar);
   } else if(method == "LP_nlp") {
     // data
     DATA_MATRIX(fbar);
     DATA_MATRIX(Zbar);
+    DATA_VECTOR(fs);
     // parameters
     PARAMETER_MATRIX(phi);
     // intermediate variables
@@ -58,12 +61,14 @@ Type SHOWFit(objective_function<Type>* obj) {
     lp.set_Zbar(Zbar);
     // calculate Ubar
     Ufun.eval(Ubar, phi);
+    Ubar = Ubar * fs;
     // calculate nlp
     return lp.nlp(Ubar);
   } else if(method == "LP_nll") {
     // data
     DATA_MATRIX(fbar);
     DATA_MATRIX(Zbar);
+    DATA_VECTOR(fs);
     // parameters
     PARAMETER_MATRIX(phi);
     PARAMETER(zeta);
@@ -76,6 +81,7 @@ Type SHOWFit(objective_function<Type>* obj) {
     lp.set_Zbar(Zbar);
     // calculate Ubar
     Ufun.eval(Ubar, phi);
+    Ubar = Ubar * fs;
     return lp.nll(Ubar, zeta);
   } else if(method == "MLE_tau") {
     // data
@@ -133,6 +139,7 @@ Type SHOWFit(objective_function<Type>* obj) {
     // data
     DATA_MATRIX(fbar);
     DATA_MATRIX(Ybar);
+    DATA_VECTOR(fs);
     // parameters
     PARAMETER_MATRIX(phi);
     // intermediate variables
@@ -144,12 +151,14 @@ Type SHOWFit(objective_function<Type>* obj) {
     nls.set_Ybar(Ybar);
     // calculate Ubar
     Ufun.eval(Ubar, phi);
+    Ubar = Ubar * fs;
     // calculate tau_hat
     return nls.tau(Ubar);
   } else if(method == "NLS_nll") {
     // data
     DATA_MATRIX(fbar);
     DATA_MATRIX(Ybar);
+    DATA_VECTOR(fs);
     // parameters
     PARAMETER_MATRIX(phi);
     PARAMETER(tau);
@@ -162,12 +171,14 @@ Type SHOWFit(objective_function<Type>* obj) {
     nls.set_Ybar(Ybar);
     // calculate Ubar
     Ufun.eval(Ubar, phi);
+    Ubar = Ubar * fs;
     // calculate nll
     return nls.nll(Ubar, tau);
   } else if(method == "NLS_nlp") {
     // data
     DATA_MATRIX(fbar);
     DATA_MATRIX(Ybar);
+    DATA_VECTOR(fs);
     // parameters
     PARAMETER_MATRIX(phi);
     // intermediate variables
@@ -179,6 +190,7 @@ Type SHOWFit(objective_function<Type>* obj) {
     nls.set_Ybar(Ybar);
     // calculate Ubar
     Ufun.eval(Ubar, phi);
+    Ubar = Ubar * fs;
     // calculate nlp
     return nls.nlp(Ubar);
   } else {

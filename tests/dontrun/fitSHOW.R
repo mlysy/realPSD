@@ -32,14 +32,16 @@ fitSHOW <- function(fseq, sim_exp, f0, fs, Q, k, Temp, Aw,
     obj <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
                                       method = "LP_nlp",
                                       fbar = matrix(fbar),
-                                      Zbar = matrix(Zbar)),
+                                      Zbar = matrix(Zbar),
+                                      fs = fs),
                           parameters = list(phi = matrix(0, 3, 1)),
                           silent = TRUE, DLL = "realPSD_TMBExports")
     get_tau <- function(phi) {
       gz <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
                                       method = "LP_zeta",
                                       fbar = matrix(fbar),
-                                      Zbar = matrix(Zbar)),
+                                      Zbar = matrix(Zbar),
+                                      fs = fs),
                           parameters = list(phi = matrix(0, 3, 1)),
                           silent = TRUE, DLL = "realPSD_TMBExports")
       zeta <- gz$fn(phi)
@@ -49,14 +51,16 @@ fitSHOW <- function(fseq, sim_exp, f0, fs, Q, k, Temp, Aw,
     obj <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
                                       method = "NLS_nlp",
                                       fbar = matrix(fbar),
-                                      Ybar = matrix(Ybar)),
+                                      Ybar = matrix(Ybar),
+                                      fs = fs),
                           parameters = list(phi = matrix(0, 3, 1)),
                           silent = TRUE, DLL = "realPSD_TMBExports")
     get_tau <- function(phi) {
       gt <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
                                       method = "NLS_tau",
                                       fbar = matrix(fbar),
-                                      Ybar = matrix(Ybar)),
+                                      Ybar = matrix(Ybar),
+                                      fs = fs),
                           parameters = list(phi = matrix(0, 3, 1)),
                           silent = TRUE, DLL = "realPSD_TMBExports")
       gt$fn(phi)
@@ -87,8 +91,8 @@ fitSHOW <- function(fseq, sim_exp, f0, fs, Q, k, Temp, Aw,
   param <- rep(NA, 4) # allocate space for storage
   param[1] <- phi_hat[1] # f0_hat
   param[2] <- phi_hat[2]/phi_hat[1] # Q_hat
-  param[3] <- Kb * Temp / (tau_hat * pi * phi_hat[2]) * fs # k_hat
-  param[4] <- phi_hat[3] * tau_hat / fs # Aw_hat
+  param[3] <- Kb * Temp / (tau_hat * pi * phi_hat[2]) # k_hat
+  param[4] <- phi_hat[3] * tau_hat # Aw_hat
   names(param) <- c("f0_hat", "Q_hat", "k_hat", "Aw_hat")
   return(param)
 }

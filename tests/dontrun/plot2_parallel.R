@@ -13,7 +13,7 @@ data_path_sim <- "~/realPSD/show_sim"
 # data_path_fit <- "~/Documents/data/R/realPSD/show_fit"
 data_path_fit <- "~/realPSD/show_fit"
 # clear any existing files
-# unlink(file.path(data_path_sim, "*"), recursive = TRUE) # we should keep the simulated expo rv's to save time
+unlink(file.path(data_path_sim, "*"), recursive = TRUE) # we should keep the simulated expo rv's to save time
 unlink(file.path(data_path_fit, "*"), recursive = TRUE)
 
 # ---------- SHO model parameters ----------
@@ -37,13 +37,13 @@ fseq <- seq(from = f_lb, to = f_ub, by = 1/Time) # frequency domain, Hz
 nf <- length(fseq) # number of frequencies
 
 # ---------- simulation ----------
-nsim <- 1000
+nsim <- 10
 bin_size <- 100
 
 # detect the number of cores
 ncores <- detectCores()
 # set seed for reproducibility
-set.seed(2019, kind = "L'Ecuyer-CMRG")
+set.seed(123, kind = "L'Ecuyer-CMRG")
 
 # first, pregenerate exponentials
 sim_expo <- TRUE

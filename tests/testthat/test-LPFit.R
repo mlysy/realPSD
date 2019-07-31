@@ -16,18 +16,20 @@ test_that("LP_zeta is the same in R and TMB", {
     N <- sample(10:20,1)
     fbar <- sim_f(N)
     Zbar <- sim_Zbar(N)
+    fs <- sim_fs()
     # create TMB model and functions
     tmod <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
                                        method = "LP_zeta",
                                        fbar = matrix(fbar),
-                                       Zbar = matrix(Zbar)),
+                                       Zbar = matrix(Zbar),
+                                       fs = fs),
                            parameters = list(phi = matrix(rep(0, 3))),
                            silent = TRUE, DLL = "realPSD_TMBExports")
     lp_zeta_tmb <- function(phi) tmod$fn(phi)
     # check they are equal
     Phi <- replicate(nphi, sim_phi())
     zeta_r <- apply(Phi, 2, lp_zeta_r, fbar = fbar, Zbar = Zbar,
-                    ufun = show_ufun)
+                    ufun = show_ufun, fs = fs)
     zeta_tmb <- apply(Phi, 2, lp_zeta_tmb)
     expect_equal(zeta_r, zeta_tmb)
   }
@@ -41,11 +43,13 @@ test_that("LP_nll is the same in R and TMB", {
     N <- sample(10:20,1)
     fbar <- sim_f(N)
     Zbar <- sim_Zbar(N)
+    fs <- sim_fs()
     # create TMB model and functions
     tmod <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
                                        method = "LP_nll",
                                        fbar = matrix(fbar),
-                                       Zbar = matrix(Zbar)),
+                                       Zbar = matrix(Zbar),
+                                       fs = fs),
                            parameters = list(phi = matrix(rep(0, 3)),
                                              zeta = 0),
                            silent = TRUE, DLL = "realPSD_TMBExports")
@@ -55,7 +59,7 @@ test_that("LP_nll is the same in R and TMB", {
     zeta <- replicate(nphi, sim_zeta())
     nll_r <- sapply(1:nphi, function(ii) {
       lp_nll_r(phi = Phi[,ii], zeta = zeta[ii],
-               Zbar = Zbar, fbar = fbar, ufun = show_ufun)
+               Zbar = Zbar, fbar = fbar, ufun = show_ufun, fs = fs)
     })
     nll_tmb <- sapply(1:nphi, function(ii) lp_nll_tmb(Phi[,ii], zeta[ii]))
     expect_equal(nll_r, nll_tmb)
@@ -70,18 +74,20 @@ test_that("LP_nlp is the same in R and TMB", {
     N <- sample(10:20,1)
     fbar <- sim_f(N)
     Zbar <- sim_Zbar(N)
+    fs <- sim_fs()
     # create TMB model and functions
     tmod <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
                                        method = "LP_nlp",
                                        fbar = matrix(fbar),
-                                       Zbar = matrix(Zbar)),
+                                       Zbar = matrix(Zbar),
+                                       fs = fs),
                            parameters = list(phi = matrix(rep(0, 3))),
                            silent = TRUE, DLL = "realPSD_TMBExports")
     lp_nlp_tmb <- function(phi) tmod$fn(phi)
     # check they are equal
     Phi <- replicate(nphi, sim_phi())
     nlp_r <- apply(Phi, 2, function(phi) {
-      lp_nlp_r(phi = phi, Zbar = Zbar, fbar = fbar, ufun = show_ufun)
+      lp_nlp_r(phi = phi, Zbar = Zbar, fbar = fbar, ufun = show_ufun, fs = fs)
       ## zeta <- zeta_r(fbar, Zbar, phi)
       ## nllik_r(phi, zeta, Zbar, fbar)
     })

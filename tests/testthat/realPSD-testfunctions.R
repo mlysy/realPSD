@@ -5,19 +5,20 @@ sim_Y <- function(n) rchisq(n, df = 2)
 sim_phi <- function() c(f0 = runif(1, 100, 1000), gamma = rexp(1), Rw = rexp(1))
 sim_zeta <- function() rexp(1)
 sim_tau <- function() rexp(1)
+sim_fs <- function() sample(10:1000, size = 1)
 
 # lp functions
-lp_zeta_r <- function(fbar, Zbar, phi, ufun) {
-  logUbar <- log(ufun(fbar, phi))
+lp_zeta_r <- function(fbar, Zbar, phi, ufun, fs) {
+  logUbar <- log(fs * ufun(fbar, phi))
   mean(Zbar - logUbar)
 }
-lp_nll_r <- function(phi, zeta, Zbar, fbar, ufun) {
-  logUbar <- log(ufun(fbar, phi))
+lp_nll_r <- function(phi, zeta, Zbar, fbar, ufun, fs) {
+  logUbar <- log(fs * ufun(fbar, phi))
   sum((Zbar - zeta - logUbar)^2)
 }
-lp_nlp_r <- function(phi, Zbar, fbar, ufun) {
-  zeta <- lp_zeta_r(fbar, Zbar, phi, ufun)
-  lp_nll_r(phi, zeta, Zbar, fbar, ufun)
+lp_nlp_r <- function(phi, Zbar, fbar, ufun, fs) {
+  zeta <- lp_zeta_r(fbar, Zbar, phi, ufun, fs)
+  lp_nll_r(phi, zeta, Zbar, fbar, ufun, fs)
 }
 
 # mle functions
@@ -37,17 +38,17 @@ mle_nlp_r <- function(phi, Y, f, ufun) {
 }
 
 # nls functions
-nls_nll_r <- function(phi, tau, Ybar, fbar, ufun) {
-  Ubar <- ufun(fbar, phi)
+nls_nll_r <- function(phi, tau, Ybar, fbar, ufun, fs) {
+  Ubar <- fs * ufun(fbar, phi)
   sum((Ybar - tau * Ubar)^2)
 }
-nls_tau_r <- function(fbar, Ybar, phi, ufun) {
-  Ubar <- ufun(fbar, phi)
+nls_tau_r <- function(fbar, Ybar, phi, ufun, fs) {
+  Ubar <- fs * ufun(fbar, phi)
   sum(Ybar * Ubar) / sum(Ubar * Ubar)
 }
-nls_nlp_r <- function(phi, Ybar, fbar, ufun) {
-  tau <- nls_tau_r(fbar, Ybar, phi, ufun)
-  nls_nll_r(phi, tau, Ybar, fbar, ufun)
+nls_nlp_r <- function(phi, Ybar, fbar, ufun, fs) {
+  tau <- nls_tau_r(fbar, Ybar, phi, ufun, fs)
+  nls_nll_r(phi, tau, Ybar, fbar, ufun, fs)
 }
 
 # show model normalized PSD
