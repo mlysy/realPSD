@@ -37,7 +37,7 @@ fseq <- seq(from = f_lb, to = f_ub, by = 1/Time) # frequency domain, Hz
 nf <- length(fseq) # number of frequencies
 
 # ---------- simulation ----------
-nsim <- 1000
+nsim <- 10
 bin_size <- 100
 
 # detect the number of cores
@@ -98,13 +98,13 @@ fit_success <- mclapply(1:nfit, function(ii) {
   list2env(as.list(fit_descr[ii,]), envir = environment())
   # long form:
   data_id <- fit_descr$data_id[ii]
-  Q <- fit_descr$Q[ii]
+  Q <- fit_descr$Q_level[ii]
   method <- fit_descr$method[ii]
   r_exp <- readRDS(file.path(data_path_sim,
                           paste0("exp_sim_", data_id, ".rds")))
   theta_hat <- tryCatch({
     fitSHOW(fseq, sim_exp = r_exp,
-            f0 = f0, Q = Q,
+            f0 = f0, fs = fs, Q = Q,
             k = k, Temp = Temp, Aw = Aw,
             bin_size = bin_size, method = method)
   }, error = function(err) message("fitting error on job ", ii))

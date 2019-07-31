@@ -3,13 +3,14 @@
 #' @param fseq Sequence of frequencies, usually from f0 - f0/sqrt(2) to f0 + f0/sqrt(2).
 #' @param sim_exp Vector of exponential random variables Exp(1) with the same length as fseq.
 #' @param f0 Resonance frequency, Hz.
+#' @param fs Sampling frequency, Hz.
 #' @param Q Quality factor.
 #' @param k Cantilever stiffness, N/m.
 #' @param Temp Temperature, Kelvin.
 #' @param Aw White noise psd.
 #' @param bin_size Integer number, bin size.
 #' @param method Fitting method, i.e. lp, mle, nls.
-fitSHOW <- function(fseq, sim_exp, f0, Q, k, Temp, Aw,
+fitSHOW <- function(fseq, sim_exp, f0, fs, Q, k, Temp, Aw,
                     bin_size = 100, method = c("lp", "mle", "nls")) {
   # ---------- setup -----------
   method <- match.arg(method)
@@ -20,7 +21,7 @@ fitSHOW <- function(fseq, sim_exp, f0, Q, k, Temp, Aw,
   # psd values at each frequency point of f with given Q
   psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion = FALSE) + Aw
   # generate the periodogram values
-  Y <- sim_exp * psd # we should not multiply it by fs since psdSHO gives analytic continuous-time psd
+  Y <- sim_exp * psd * fs
   # ---------- binning ----------
   # bin_size <- 100
   fbar <- binning(fseq, bin_size = bin_size)
@@ -86,8 +87,8 @@ fitSHOW <- function(fseq, sim_exp, f0, Q, k, Temp, Aw,
   param <- rep(NA, 4) # allocate space for storage
   param[1] <- phi_hat[1] # f0_hat
   param[2] <- phi_hat[2]/phi_hat[1] # Q_hat
-  param[3] <- Kb * Temp / (tau_hat * pi * phi_hat[2]) # k_hat
-  param[4] <- phi_hat[3] * tau_hat # Aw_hat
+  param[3] <- Kb * Temp / (tau_hat * pi * phi_hat[2]) * fs # k_hat
+  param[4] <- phi_hat[3] * tau_hat / fs # Aw_hat
   names(param) <- c("f0_hat", "Q_hat", "k_hat", "Aw_hat")
   return(param)
 }
