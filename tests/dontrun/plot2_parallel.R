@@ -8,10 +8,10 @@ require(tikzDevice)
 # and perhaps a non-exported function show_fsim (f is for freq)
 source("fitSHOW.R")
 # data folder
-data_path_sim <- "~/Documents/data/R/realPSD/show_sim"
-# data_path_sim <- "~/realPSD/show_sim"
-data_path_fit <- "~/Documents/data/R/realPSD/show_fit"
-# data_path_fit <- "~/realPSD/show_fit"
+# data_path_sim <- "~/Documents/data/R/realPSD/show_sim"
+data_path_sim <- "~/realPSD/show_sim"
+# data_path_fit <- "~/Documents/data/R/realPSD/show_fit"
+data_path_fit <- "~/realPSD/show_fit"
 # clear any existing files
 # unlink(file.path(data_path_sim, "*"), recursive = TRUE) # we should keep the simulated expo rv's to save time
 unlink(file.path(data_path_fit, "*"), recursive = TRUE)
@@ -37,13 +37,13 @@ fseq <- seq(from = f_lb, to = f_ub, by = 1/Time) # frequency domain, Hz
 nf <- length(fseq) # number of frequencies
 
 # ---------- simulation ----------
-nsim <- 10
+nsim <- 1000
 bin_size <- 100
 
 # detect the number of cores
 ncores <- detectCores()
 # set seed for reproducibility
-set.seed(123, kind = "L'Ecuyer-CMRG")
+set.seed(2019, kind = "L'Ecuyer-CMRG")
 
 # first, pregenerate exponentials
 sim_expo <- TRUE
@@ -124,7 +124,7 @@ fit_success <- mclapply(1:nfit, function(ii) {
 #   err_index <- which(fit_success == FALSE)
 #   message(paste0("The fitting job(s): ", unname(err_index), " had some errors..."))
 # }
-all(fit_success == TRUE)
+# all(fit_success == TRUE)
 
 # ---------- Code below can be commented out for server computing ---------------
 # read simulated data into workspace
@@ -143,17 +143,20 @@ fit_data <- cbind(fit_data, fit_descr[,c("Q_level", "method")])
 fit_data <- fit_data %>% as_tibble() %>%
   mutate(Q_level = factor(Q_level,  # convert the column Q_level into a factor
     levels = c(1,10,100,500), labels = c("Q = 1", "Q = 10", "Q = 100", "Q = 500"))) %>% 
-  mutate(method = factor(method, ordered = FALSE)) # factor column method 
+  mutate(method = factor(method, levels = c("nls", "lp", "mle"))) # factor column method 
 # get a new dataset with ratios instead of fitted values
 ratio_data <- fit_data %>% 
   mutate(f0_hat = f0_hat/f0) %>%
   mutate(k_hat = k_hat/k) %>%
   mutate(Aw_hat = Aw_hat/Aw) %>%
-  mutate(Q_hat = ifelse(Q_level == "Q = 1", Q_hat/Q_vec[1], Q_hat)) %>%
-  mutate(Q_hat = ifelse(Q_level == "Q = 10", Q_hat/Q_vec[2], Q_hat)) %>%
-  mutate(Q_hat = ifelse(Q_level == "Q = 100", Q_hat/Q_vec[3], Q_hat)) %>%
-  mutate(Q_hat = ifelse(Q_level == "Q = 500", Q_hat/Q_vec[4], Q_hat))
-  # boxplot
+  mutate(Q_hat = case_when(
+      Q_level == "Q = 1" ~ Q_hat/Q_vec[1],
+      Q_level == "Q = 10" ~ Q_hat/Q_vec[2],
+      Q_level == "Q = 100" ~ Q_hat/Q_vec[3],
+      Q_level == "Q = 500" ~ Q_hat/Q_vec[4]
+    )
+  )
+# boxplot
 # Q_hat / Q
 tikzDevice::tikz(file = "boxplot_Q.tex", width = 8, height = 2)
 fig_Q <- ggplot(ratio_data, aes(x = Q_level, y = Q_hat, fill = method)) + 
@@ -187,3 +190,8 @@ dev.off()
 # # arrange all the plots in one layout
 # fig_all <- gridExtra::arrangeGrob(fig_Q, fig_k, fig_f0, ncol = 1)
 # # ggsave(file = "boxplot_all.pdf", fig_all)
+
+ratio_Q500 <- ratio_data %>% filter(Q_level == "Q = 500")
+ggplot(ratio_Q500, aes(x = method, y = Q_hat)) + geom_boxplot(outlier.size = .8)
+
+
