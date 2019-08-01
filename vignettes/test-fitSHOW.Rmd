@@ -73,7 +73,7 @@ Finally we can plot the smoothed periodogram and superimpose the analytic PSD in
 ```{r, psd_fig_cap, echo = FALSE}
 caption <- rep(NA, length(Q_vec))
 for(ii in 1:length(Q_vec)) {
-  caption[ii] <- paste0("Empirical smoothed periodogram v.s. analytic PSD (Q = ", Q_vec[ii], ").")
+  caption[ii] <- paste0("Empirical smoothed periodogram v.s. analytic PSD of SHOW (Q = ", Q_vec[ii], ").")
 }
 ```
 
@@ -83,7 +83,7 @@ for(ii in 1:length(Q_vec)) {
     Aw, FALSE, bin_size)/fs, 
     xlab = "frequency (Hz)", ylab = expression(paste("PSD (", m^2/Hz, ")")),
     type = "l", lwd = 0.3, log = "xy")
-  lines(x = fbar, y = psdSHO(fbar, f0, Q_vec[ii], k, Kb, Temp, FALSE), col = "red")
+  lines(x = fbar, y = psdSHO(fbar, f0, Q_vec[ii], k, Kb, Temp, FALSE) + Aw, col = "red")
   legend("topright",
     legend = c("Empirical", "Analytic"), 
     col = c("black", "red"),
