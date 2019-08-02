@@ -17,7 +17,11 @@ fitSHOW <- function(fseq, sim_exp, f0, fs, Q, k, Temp, Aw,
   Kb <- 1.381e-23           # Boltzmann's constant
   sig2 <- Kb*Temp/(k*pi*f0*Q) # variance, unit: m2/Hz
   Rw <- Aw/sig2 # re-parameterization, note we input Aw with unit fm2/Hz
-  phi <- c(f0, f0*Q, Rw) # parameter vector for SHOW model
+  # phi <- c(f0, f0*Q, Rw) # parameter vector for SHOW model
+  # set.seed(2019) # just for reproducibility
+  phi <- c(f0 + rnorm(1, 0, sqrt(f0)), 
+    f0*Q + rnorm(1, 0, (f0*Q)^(1/3)), 
+    Rw + rnorm(1, 0, Rw/10)) 
   # psd values at each frequency point of f with given Q
   psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion = FALSE) + Aw
   # generate the periodogram values
@@ -86,9 +90,22 @@ fitSHOW <- function(fseq, sim_exp, f0, fs, Q, k, Temp, Aw,
   } else {
     stop("method should be chosen from lp, nls and mle.")
   }
+  # ---------- optimization -----------
   opt <- optim(phi, fn = obj$fn, gr = obj$gr,
-              method = "BFGS",
-              control = list(maxit = 2000))
+            method = "BFGS",
+            control = list(maxit = 2000))
+  # if(method == "mle" || method == "lp") {
+  #   opt <- optim(phi, fn = obj$fn, gr = obj$gr,
+  #             method = "BFGS",
+  #             control = list(maxit = 2000))
+  # } else if (method == "nls") {
+  #   suppressWarnings(
+  #   opt <- minpack.lm::nls.lm(par = phi,
+  #                           lower = rep(0,3),
+  #                           fn = obj$fn, 
+  #                           control = nls.lm.control(maxiter = 1000))
+  #   )
+  # } 
   phi_hat <- opt$par # extract the fitted phi = c(f0_hat, gamma_hat, Rw_hat)
   tau_hat <- get_tau(phi_hat) # fitted tau = sigma^2, unit should be the same as Aw
   param <- rep(NA, 4) # allocate space for storage

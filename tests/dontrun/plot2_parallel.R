@@ -4,6 +4,7 @@ require(realPSD)
 require(parallel)
 require(tidyverse)
 require(tikzDevice)
+require(minpack.lm)
 # TODO: factor out an exportable function show_fit
 # and perhaps a non-exported function show_fsim (f is for freq)
 source("fitSHOW.R")
