@@ -89,7 +89,7 @@ fitSHOW <- function(fseq, sim_exp, f0, fs, Q, k, Temp, Aw,
   opt <- optim(phi, fn = obj$fn, gr = obj$gr,
               control = list(maxit = 1000))
   phi_hat <- opt$par # extract the fitted phi = c(f0_hat, gamma_hat, Rw_hat)
-  tau_hat <- get_tau(phi_hat) # fitted tau = sigma^2, unit: fm^2/Hz which should be the same as Aw
+  tau_hat <- get_tau(phi_hat) # fitted tau = sigma^2, unit should be the same as Aw
   param <- rep(NA, 4) # allocate space for storage
   param[1] <- phi_hat[1] # f0_hat
   param[2] <- phi_hat[2]/phi_hat[1] # Q_hat

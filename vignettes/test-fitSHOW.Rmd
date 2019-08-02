@@ -51,9 +51,9 @@ By the result of Theorem 1, we can simulate the periodogram values and smooth th
 bin_size <- 100
 # create a function to wrap the simualtion routine
 sim_period <- function(fseq, f0, fs, Q, k, Kb, Temp, 
-  Aw, unit_coversion = FALSE, bin_size = bin_size) {
-  # analytic psd values, unit fm2/Hz
-  psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion = FALSE) + Aw
+  Aw, unit_conversion = FALSE, bin_size = 100) {
+  # analytic psd values, unit m2/Hz
+  psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion) + Aw
   # number of frequencies
   nf <- length(fseq) 
   # simulate exponential random variables
@@ -83,7 +83,8 @@ for(ii in 1:length(Q_vec)) {
     Aw, FALSE, bin_size)/fs, 
     xlab = "frequency (Hz)", ylab = expression(paste("PSD (", m^2/Hz, ")")),
     type = "l", lwd = 0.3, log = "xy")
-  lines(x = fbar, y = psdSHO(fbar, f0, Q_vec[ii], k, Kb, Temp, FALSE) + Aw, col = "red")
+  lines(x = fbar, y = psdSHO(fbar, f0, Q_vec[ii], k, Kb, Temp, FALSE) + Aw, 
+    col = "red")
   legend("topright",
     legend = c("Empirical", "Analytic"), 
     col = c("black", "red"),
@@ -107,14 +108,14 @@ for(ii in 1:length(Q_vec)) {
   gamma <- f0*Q
   sig2 <- Kb*Temp/(k*pi*f0*Q)
   Rw <- Aw/sig2
-  caption_mle[ii] <- paste0("Optim check when Q = ", Q, ". The true parameter vector is ", 
+  caption_mle[ii] <- paste0("Optim check when Q = ", Q, ". The true parameters are ", 
     "f0 = ", f0, 
     ", gamma = ", gamma,
     ", Rw = ", format(round(Rw, 2), nsmall = 2))
 }
 ```
 
-We can use `optimCheck` to check the "projection plot" of each parameter to see if the minimization of negative log-likelihood works. If we set the initial parameter values to their true values (with some small random noise added), the optimization usually works very well for $Q = 1, 10$, as shown in Figure \ref{fig:check_mle_optim1} ~ \ref{fig:check_mle_optim2}. But for $Q = 100, 500$, the estimation of $\gamma = f_0 \cdot Q$ may not always converge to the minimum, see Figure \ref{fig:check_mle_optim3} ~ \ref{fig:check_mle_optim4}.
+We can use `optimCheck` to check the "projection plot" of each parameter to see if the minimization of negative log-likelihood works. If we set the initial parameter values to their true values (even with some small random noise added) and choose `method = BFGS`, the optimization usually works for $Q = 1, 10, 100$, as shown in Figure \ref{fig:check_mle_optim1} ~ \ref{fig:check_mle_optim3}. For $Q = 500$, the optimization sometimes cannot find the minimum, see Figure \ref{fig:check_mle_optim4}.
 
 We should notice that if the initial parameter values supplied to `optim` are far from their true values, the optimization usually fail to converge (for any $Q$).
 
@@ -132,8 +133,21 @@ phi_list <- lapply(1:length(Q_vec), function(ii) {
 })
 ```
 
+```{r, get_tau}
+# define get_tau()
+get_tau <- function(phi) {
+      gt <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+                                      method = "MLE_tau",
+                                      f = matrix(fseq),
+                                      Y = matrix(Y),
+                                      fs = fs),
+                          parameters = list(phi = matrix(0, 3, 1)),
+                          silent = TRUE, DLL = "realPSD_TMBExports")
+      gt$fn(phi)
+  }
+```
+
 ```{r check_mle_optim, fig.cap = caption_mle}
-# method <- "mle"
 # check the optimization process for each Q
 for(ii in 1:length(Q_vec)) {
   Q <- Q_vec[ii]
@@ -143,6 +157,7 @@ for(ii in 1:length(Q_vec)) {
   # analytic psd values, unit fm2/Hz
   psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion = FALSE) + Aw
   # simulate exponential random variables
+  set.seed(123)
   sim_exp <- rexp(nf, rate = 1)
   # empirical psd (periodogram values)
   Y <- sim_exp * psd * fs
@@ -155,12 +170,95 @@ for(ii in 1:length(Q_vec)) {
                             parameters = list(phi = matrix(0, 3, 1)),
                             silent = TRUE, DLL = "realPSD_TMBExports")
   # optimization
-  opt <- optim(par = phi_list[[ii]], fn = obj$fn, gr = obj$gr, 
-    control = list(maxit = 1000))
-  # check optim
+  opt <- optim(par = phi_list[[ii]], fn = obj$fn, gr = obj$gr,
+    method = "BFGS", 
+    control = list(maxit = 2000))
+  # ---------- check optim ----------
   optim_proj(fun = obj$fn, xsol = opt$par, maximize = FALSE,
     xnames = c("f0", "gamma", "Rw"))
+  
 }
 ```
 
+## Is the estimation of $\sigma^2$ accurate enough?
 
+We can also check if the user-defined function `get_tau()` works correctly. The relative error between $\sigma^2$ and the estimation $\hat\tau$ based on the estimated parameter $\hat\phi$ is usually small enough.
+
+## Compare the fitted parametric PSD with the true analytic PSD.
+
+As we can see from Figure \ref{fig:check_mle_psd1} ~ \ref{fig:check_mle_psd4}, the fitted parametric PSD always matches up with the true one.
+
+We should notice that `BFGS` method is usually better than the default Nelder and Mead method under our settings.
+
+```{r, caption_mle_psd, echo = FALSE}
+caption_mle_psd <- rep(NA, length(Q_vec))
+for(ii in 1:length(Q_vec)) {
+  Q <- Q_vec[ii]
+  caption_mle_psd[ii] <- paste0("Fitted PSD v.s. analytic PSD when Q = ", Q, ".")
+}
+```
+
+```{r, check_mle_psd, fig.cap = caption_mle_psd}
+# check the optimization process for each Q
+for(ii in 1:length(Q_vec)) {
+  Q <- Q_vec[ii]
+  # ---------- setup ----------
+  # number of frequencies
+  nf <- length(fseq) 
+  # analytic psd values, unit fm2/Hz
+  psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion = FALSE) + Aw
+  # simulate exponential random variables
+  set.seed(123)
+  sim_exp <- rexp(nf, rate = 1)
+  # empirical psd (periodogram values)
+  Y <- sim_exp * psd * fs
+  # TMB model
+  obj <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+                                        method = "MLE_nlp",
+                                        f = matrix(fseq),
+                                        Y = matrix(Y),
+                                        fs = fs),
+                            parameters = list(phi = matrix(0, 3, 1)),
+                            silent = TRUE, DLL = "realPSD_TMBExports")
+  # optimization
+  opt <- optim(par = phi_list[[ii]], fn = obj$fn, gr = obj$gr,
+    method = "BFGS", 
+    control = list(maxit = 2000))
+  # ---------- check tau_hat ----------
+  phi_hat <- opt$par
+  tau_hat <- get_tau(phi_hat)
+  sig2 <- Kb*Temp/(k*pi*f0*Q)
+  err <- abs(sig2 - tau_hat)/sig2
+  # the difference between sig2 and tau_hat
+  print(paste0("When Q = ", Q, 
+    ". The relative error between sig2 and tau_hat is ", 
+    paste(round(100*err, 2), "%", sep=""), "."))
+  # ---------- check the fitted parametric PSD ----------
+  # get the fitted parameters
+  param <- rep(NA, 4) # allocate space for storage
+  param[1] <- phi_hat[1] # f0_hat
+  param[2] <- phi_hat[2]/phi_hat[1] # Q_hat
+  param[3] <- Kb * Temp / (tau_hat * pi * phi_hat[2]) # k_hat
+  param[4] <- phi_hat[3] * tau_hat # Aw_hat
+  names(param) <- c("f0_hat", "Q_hat", "k_hat", "Aw_hat")
+  # calculate the fitted PSD
+  psd_hat <- psdSHO(fseq, 
+    f0 = param[1],
+    Q = param[2],
+    k = param[3],
+    Kb, Temp, FALSE) + param[4]
+  # compare the analytic true PSD with the fitted one
+  plot(x = fseq, y = psd_hat,
+    xlab = "frequency (Hz)", 
+    ylab = expression(paste("PSD (", m^2/Hz, ")")),
+    type = "l", log = "xy")
+  lines(x = fseq, y = psd, col = "red")
+  legend("topright",
+    legend = c("Fitted", "Analytic"), 
+    col = c("black", "red"),
+    bty = "n", # no box around the legend
+    cex = 0.8, # size of the text,
+    lwd = 1
+  )
+}
+```
