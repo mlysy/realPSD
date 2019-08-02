@@ -437,11 +437,12 @@ for(ii in 1:length(Q_vec)) {
   Y <- sim_exp * psd * fs
   fbar <- binning(fseq, bin_size = bin_size)
   Ybar <- binning(Y, bin_size = bin_size)
+  Zbar <- log(Ybar)
   # TMB model
   obj <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
-                                      method = "NLS_nlp",
+                                      method = "LP_nlp",
                                       fbar = matrix(fbar),
-                                      Ybar = matrix(Ybar),
+                                      Zbar = matrix(Zbar),
                                       fs = fs),
                           parameters = list(phi = matrix(0, 3, 1)),
                           silent = TRUE, DLL = "realPSD_TMBExports")
@@ -463,4 +464,56 @@ for(ii in 1:length(Q_vec)) {
     paste(round(100*err, 2), "%", sep=""), "."))
 }
 ```
+
+## Is the estimation of $\sigma^2$ accurate enough?
+
+The estimatation of $\sigma^2$ works very well by setting `method = BFGS` in `optim`.
+
+## Compare the fitted parametric PSD with the true analytic PSD.
+
+As we can see from Figure \ref{fig:check_lp_psd1} ~ \ref{fig:check_lp_psd4}, the fitted PSD always matches up with the analytic one for each level of $Q$.
+
+```{r, caption_lp_psd, echo = FALSE}
+caption_lp_psd <- rep(NA, length(Q_vec))
+for(ii in 1:length(Q_vec)) {
+  Q <- Q_vec[ii]
+  caption_lp_psd[ii] <- paste0("LP: fitted PSD v.s. analytic PSD when Q = ", Q, ".")
+}
+```
+
+```{r, check_lp_psd, fig.cap = caption_lp_psd}
+# check the optimization process for each Q
+for(ii in 1:length(Q_vec)) {
+  Q <- Q_vec[ii]
+   # simulate exponential random variables
+  set.seed(123)
+  sim_exp <- rexp(nf, rate = 1) # nf = length(fseq)
+  # get estimated parameters from fitSHOW
+  param <- fitSHOW(fseq, sim_exp, f0, fs, Q, k, Temp, Aw, bin_size, "lp")
+  # calculate the fitted PSD
+  psd_hat <- psdSHO(fseq, 
+    f0 = param[1],
+    Q = param[2],
+    k = param[3],
+    Kb, Temp, FALSE) + param[4]
+  # compare the analytic true PSD with the fitted one
+  psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, FALSE) + Aw
+  plot(x = fseq, y = psd_hat,
+    xlab = "frequency (Hz)", 
+    ylab = expression(paste("PSD (", m^2/Hz, ")")),
+    type = "l", log = "xy")
+  lines(x = fseq, y = psd, col = "red")
+  legend("topright",
+    legend = c("Fitted", "Analytic"), 
+    col = c("black", "red"),
+    bty = "n", # no box around the legend
+    cex = 0.8, # size of the text,
+    lwd = 1
+  )
+}
+```
+
+## LP check: the conclusion
+
+Out current default settings (by using `optim` and `method = BFGS`) work pretty well for the LP method. 
 
