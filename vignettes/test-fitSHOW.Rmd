@@ -262,3 +262,9 @@ for(ii in 1:length(Q_vec)) {
   )
 }
 ```
+
+## MLE check: the conclusion
+
+When we fit the model by using MLE, we should set `method = BFGS` in `optim` and choose the initial parameter values not too far from the true ones. Then the result will be perfect.
+
+# Check the NLS estimation/optimization is correct.
