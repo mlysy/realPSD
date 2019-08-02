@@ -87,7 +87,8 @@ fitSHOW <- function(fseq, sim_exp, f0, fs, Q, k, Temp, Aw,
     stop("method should be chosen from lp, nls and mle.")
   }
   opt <- optim(phi, fn = obj$fn, gr = obj$gr,
-              control = list(maxit = 1000))
+              method = "BFGS",
+              control = list(maxit = 2000))
   phi_hat <- opt$par # extract the fitted phi = c(f0_hat, gamma_hat, Rw_hat)
   tau_hat <- get_tau(phi_hat) # fitted tau = sigma^2, unit should be the same as Aw
   param <- rep(NA, 4) # allocate space for storage
