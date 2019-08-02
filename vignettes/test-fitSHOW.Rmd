@@ -16,8 +16,10 @@ vignette: >
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, out.width = '80%', fig.align='center')
 suppressMessages(require(realPSD))
-suppressMessages(require(tidyverse))
+# suppressMessages(require(tidyverse))
 suppressMessages(require(optimCheck))
+suppressMessages(require(minpack.lm)) # for nonlinear LS optim
+source("../tests/dontrun/fitSHOW.R")
 ```
 
 # Check the empirical PSD matches up with the analytic one.
@@ -108,7 +110,7 @@ for(ii in 1:length(Q_vec)) {
   gamma <- f0*Q
   sig2 <- Kb*Temp/(k*pi*f0*Q)
   Rw <- Aw/sig2
-  caption_mle[ii] <- paste0("Optim check when Q = ", Q, ". The true parameters are ", 
+  caption_mle[ii] <- paste0("MLE optim check when Q = ", Q, ". The true parameters are ", 
     "f0 = ", f0, 
     ", gamma = ", gamma,
     ", Rw = ", format(round(Rw, 2), nsmall = 2))
@@ -119,32 +121,55 @@ We can use `optimCheck` to check the "projection plot" of each parameter to see 
 
 We should notice that if the initial parameter values supplied to `optim` are far from their true values, the optimization usually fail to converge (for any $Q$).
 
-```{r, check_mle_init}
+```{r, param_init}
 # set the initial parameter values for each Q
 phi_list <- lapply(1:length(Q_vec), function(ii) {
   Q <- Q_vec[ii]
   sig2 <- Kb*Temp/(k*pi*f0*Q) # variance, unit: m2/Hz
   Rw <- Aw/sig2 # re-parameterization, note we input Aw with unit fm2/Hz
   phi <- c(f0 + rnorm(1, 0, sqrt(f0)), 
-    f0*Q + rnorm(1, 0, sqrt(f0*Q)), 
+    f0*Q + rnorm(1, 0, (f0*Q)^(1/3)), 
     Rw + rnorm(1, 0, Rw/10)) 
   # optimCheck would fail if we adopt a purely random initial phi
   # phi <- runif(3, min = 0, max = 1e5)
 })
 ```
 
-```{r, get_tau}
+```{r, get_tau, echo = FALSE}
 # define get_tau()
-get_tau <- function(phi) {
-      gt <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
-                                      method = "MLE_tau",
-                                      f = matrix(fseq),
-                                      Y = matrix(Y),
-                                      fs = fs),
-                          parameters = list(phi = matrix(0, 3, 1)),
-                          silent = TRUE, DLL = "realPSD_TMBExports")
-      gt$fn(phi)
+get_tau <- function(phi, method) {
+  if (method == "lp") {
+    gz <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+                                    method = "LP_zeta",
+                                    fbar = matrix(fbar),
+                                    Zbar = matrix(Zbar),
+                                    fs = fs),
+                        parameters = list(phi = matrix(0, 3, 1)),
+                        silent = TRUE, DLL = "realPSD_TMBExports")
+    zeta <- gz$fn(phi)
+    exp(zeta)
+  } else if (method == "nls") {
+    gt <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+                                    method = "NLS_tau",
+                                    fbar = matrix(fbar),
+                                    Ybar = matrix(Ybar),
+                                    fs = fs),
+                        parameters = list(phi = matrix(0, 3, 1)),
+                        silent = TRUE, DLL = "realPSD_TMBExports")
+    gt$fn(phi)
+  } else if (method == "mle") {
+    gt <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+                                    method = "MLE_tau",
+                                    f = matrix(fseq),
+                                    Y = matrix(Y),
+                                    fs = fs),
+                        parameters = list(phi = matrix(0, 3, 1)),
+                        silent = TRUE, DLL = "realPSD_TMBExports")
+    gt$fn(phi)
+  } else {
+    stop("method should be chosen from lp, nls and mle.")
   }
+}
 ```
 
 ```{r check_mle_optim, fig.cap = caption_mle}
@@ -176,7 +201,15 @@ for(ii in 1:length(Q_vec)) {
   # ---------- check optim ----------
   optim_proj(fun = obj$fn, xsol = opt$par, maximize = FALSE,
     xnames = c("f0", "gamma", "Rw"))
-  
+  # ---------- check tau_hat ----------
+  phi_hat <- opt$par
+  tau_hat <- get_tau(phi_hat, "mle")
+  sig2 <- Kb*Temp/(k*pi*f0*Q)
+  err <- abs(sig2 - tau_hat)/sig2
+  # the difference between sig2 and tau_hat
+  print(paste0("MLE: When Q = ", Q, 
+    ". The relative error between sig2 and tau_hat is ", 
+    paste(round(100*err, 2), "%", sep=""), "."))
 }
 ```
 
@@ -194,7 +227,7 @@ We should notice that `BFGS` method is usually better than the default Nelder an
 caption_mle_psd <- rep(NA, length(Q_vec))
 for(ii in 1:length(Q_vec)) {
   Q <- Q_vec[ii]
-  caption_mle_psd[ii] <- paste0("Fitted PSD v.s. analytic PSD when Q = ", Q, ".")
+  caption_mle_psd[ii] <- paste0("MLE: fitted PSD v.s. analytic PSD when Q = ", Q, ".")
 }
 ```
 
@@ -202,45 +235,11 @@ for(ii in 1:length(Q_vec)) {
 # check the optimization process for each Q
 for(ii in 1:length(Q_vec)) {
   Q <- Q_vec[ii]
-  # ---------- setup ----------
-  # number of frequencies
-  nf <- length(fseq) 
-  # analytic psd values, unit fm2/Hz
-  psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion = FALSE) + Aw
-  # simulate exponential random variables
+   # simulate exponential random variables
   set.seed(123)
-  sim_exp <- rexp(nf, rate = 1)
-  # empirical psd (periodogram values)
-  Y <- sim_exp * psd * fs
-  # TMB model
-  obj <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
-                                        method = "MLE_nlp",
-                                        f = matrix(fseq),
-                                        Y = matrix(Y),
-                                        fs = fs),
-                            parameters = list(phi = matrix(0, 3, 1)),
-                            silent = TRUE, DLL = "realPSD_TMBExports")
-  # optimization
-  opt <- optim(par = phi_list[[ii]], fn = obj$fn, gr = obj$gr,
-    method = "BFGS", 
-    control = list(maxit = 2000))
-  # ---------- check tau_hat ----------
-  phi_hat <- opt$par
-  tau_hat <- get_tau(phi_hat)
-  sig2 <- Kb*Temp/(k*pi*f0*Q)
-  err <- abs(sig2 - tau_hat)/sig2
-  # the difference between sig2 and tau_hat
-  print(paste0("When Q = ", Q, 
-    ". The relative error between sig2 and tau_hat is ", 
-    paste(round(100*err, 2), "%", sep=""), "."))
-  # ---------- check the fitted parametric PSD ----------
-  # get the fitted parameters
-  param <- rep(NA, 4) # allocate space for storage
-  param[1] <- phi_hat[1] # f0_hat
-  param[2] <- phi_hat[2]/phi_hat[1] # Q_hat
-  param[3] <- Kb * Temp / (tau_hat * pi * phi_hat[2]) # k_hat
-  param[4] <- phi_hat[3] * tau_hat # Aw_hat
-  names(param) <- c("f0_hat", "Q_hat", "k_hat", "Aw_hat")
+  sim_exp <- rexp(nf, rate = 1) # nf = length(fseq)
+  # get estimated parameters from fitSHOW
+  param <- fitSHOW(fseq, sim_exp, f0, fs, Q, k, Temp, Aw, bin_size, "mle")
   # calculate the fitted PSD
   psd_hat <- psdSHO(fseq, 
     f0 = param[1],
@@ -248,6 +247,7 @@ for(ii in 1:length(Q_vec)) {
     k = param[3],
     Kb, Temp, FALSE) + param[4]
   # compare the analytic true PSD with the fitted one
+  psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, FALSE) + Aw
   plot(x = fseq, y = psd_hat,
     xlab = "frequency (Hz)", 
     ylab = expression(paste("PSD (", m^2/Hz, ")")),
@@ -268,3 +268,199 @@ for(ii in 1:length(Q_vec)) {
 When we fit the model by using MLE, we should set `method = BFGS` in `optim` and choose the initial parameter values not too far from the true ones. Then the result will be perfect.
 
 # Check the NLS estimation/optimization is correct.
+
+## Does `optim` converge?
+
+Similarly, we can do the `optimCheck` to see if the estimated parameters are found near the minima in the NLS method. From Figure \ref{fig:check_nls_optim1} ~ \ref{fig:check_nls_optim4}, we can tell that the `BFGS` optimization method fails for NLS.
+
+Many other nonlinear optimization routines have been tried, for example, the Levenberg-Marquardt nonlinear least-squares algorithm supplied by the R package `minpack.lm`, `Rsolnp::solnp` and `pracma::lsqnonlin` etc. But it seems the estiamtion would usually be bad when $Q = 100, 500$.
+
+```{r, check_nle_cap, echo = FALSE}
+caption_nls <- rep(NA, length(Q_vec))
+for(ii in 1:length(Q_vec)) {
+  Q <- Q_vec[ii]
+  gamma <- f0*Q
+  sig2 <- Kb*Temp/(k*pi*f0*Q)
+  Rw <- Aw/sig2
+  caption_nls[ii] <- paste0("NLS optim check when Q = ", Q, ". The true parameters are ", 
+    "f0 = ", f0, 
+    ", gamma = ", gamma,
+    ", Rw = ", format(round(Rw, 2), nsmall = 2))
+}
+```
+
+```{r check_nls_optim, fig.cap = caption_nls}
+# check the optimization process for each Q
+for(ii in 1:length(Q_vec)) {
+  Q <- Q_vec[ii]
+  # ---------- setup ----------
+  # number of frequencies
+  nf <- length(fseq) 
+  # analytic psd values, unit fm2/Hz
+  psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion = FALSE) + Aw
+  # simulate exponential random variables
+  set.seed(123)
+  sim_exp <- rexp(nf, rate = 1)
+  # empirical psd (periodogram values)
+  Y <- sim_exp * psd * fs
+  fbar <- binning(fseq, bin_size = bin_size)
+  Ybar <- binning(Y, bin_size = bin_size)
+  # TMB model
+  obj <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+                                      method = "NLS_nlp",
+                                      fbar = matrix(fbar),
+                                      Ybar = matrix(Ybar),
+                                      fs = fs),
+                          parameters = list(phi = matrix(0, 3, 1)),
+                          silent = TRUE, DLL = "realPSD_TMBExports")
+  # --------- optim BGFS -----------
+  opt <- optim(par = phi_list[[ii]], fn = obj$fn, gr = obj$gr,
+    method = "BFGS", 
+    control = list(maxit = 2000))
+  # ----------- nls.lm (Levenberg-Marquardt) ----------
+  # suppressWarnings(
+  # opt <- minpack.lm::nls.lm(par = phi_list[[ii]],
+  #                           lower = rep(0,3),
+  #                           fn = obj$fn, 
+  #                           control = nls.lm.control(maxiter = 1000))
+  # )
+  # ---------- Rsolnp::solnp -----------
+  # suppressMessages(
+  # opt <- Rsolnp::solnp(pars = phi_list[[ii]],
+  #                      fun = obj$fn,
+  #                      LB = rep(0,3))
+  # )
+  # ---------- pracma::lsqnonlin ----------
+  # opt <- pracma::lsqnonlin(fun = obj$fn, 
+  #                         x0 = phi_list[[ii]], 
+  #                         options = list(maxeval = 1000))
+  # optim_proj(fun = obj$fn, xsol = opt$x, maximize = FALSE,
+  #   xnames = c("f0", "gamma", "Rw"))
+  # ---------- check optim ----------
+  optim_proj(fun = obj$fn, xsol = opt$par, maximize = FALSE,
+    xnames = c("f0", "gamma", "Rw"))
+  # ---------- check tau_hat ----------
+  phi_hat <- opt$par
+  tau_hat <- get_tau(phi_hat, "mle")
+  sig2 <- Kb*Temp/(k*pi*f0*Q)
+  err <- abs(sig2 - tau_hat)/sig2
+  # the difference between sig2 and tau_hat
+  print(paste0("NLS: When Q = ", Q, 
+    ". The relative error between sig2 and tau_hat is ", 
+    paste(round(100*err, 2), "%", sep=""), "."))
+}
+```
+
+## Is the estimation of $\sigma^2$ accurate enough?
+
+The estimatation of $\sigma^2$ when $Q = 100, 500$ may have significantly larger errors.
+
+## Compare the fitted parametric PSD with the true analytic PSD.
+
+When $Q = 1, 10$ the fitted parametric PSD can still match up with its analytic counterpart. But for $Q = 100, 500$ the fitted PSD may be bad.
+
+```{r, caption_nls_psd, echo = FALSE}
+caption_nls_psd <- rep(NA, length(Q_vec))
+for(ii in 1:length(Q_vec)) {
+  Q <- Q_vec[ii]
+  caption_nls_psd[ii] <- paste0("NLS: fitted PSD v.s. analytic PSD when Q = ", Q, ".")
+}
+```
+
+```{r, check_nls_psd, fig.cap = caption_nls_psd}
+# check the optimization process for each Q
+for(ii in 1:length(Q_vec)) {
+  Q <- Q_vec[ii]
+   # simulate exponential random variables
+  set.seed(123)
+  sim_exp <- rexp(nf, rate = 1) # nf = length(fseq)
+  # get estimated parameters from fitSHOW
+  param <- fitSHOW(fseq, sim_exp, f0, fs, Q, k, Temp, Aw, bin_size, "nls")
+  # calculate the fitted PSD
+  psd_hat <- psdSHO(fseq, 
+    f0 = param[1],
+    Q = param[2],
+    k = param[3],
+    Kb, Temp, FALSE) + param[4]
+  # compare the analytic true PSD with the fitted one
+  psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, FALSE) + Aw
+  plot(x = fseq, y = psd_hat,
+    xlab = "frequency (Hz)", 
+    ylab = expression(paste("PSD (", m^2/Hz, ")")),
+    type = "l", log = "xy")
+  lines(x = fseq, y = psd, col = "red")
+  legend("topright",
+    legend = c("Fitted", "Analytic"), 
+    col = c("black", "red"),
+    bty = "n", # no box around the legend
+    cex = 0.8, # size of the text,
+    lwd = 1
+  )
+}
+```
+
+## NLS check: the conclusion
+
+The NLS method cannot always give the minima as the estiamted parameters as the MLE method did, which was expected. To avoid from stucking at the initial true values, when we supply the initial parameters to the optimization rountine, we should not use the true values. Instead, we'd better give the true values a random perturbation.
+
+# Check the LP estimation/optimization is correct.
+
+## Does `optim` converge?
+
+```{r, check_lp_cap, echo = FALSE}
+caption_lp <- rep(NA, length(Q_vec))
+for(ii in 1:length(Q_vec)) {
+  Q <- Q_vec[ii]
+  gamma <- f0*Q
+  sig2 <- Kb*Temp/(k*pi*f0*Q)
+  Rw <- Aw/sig2
+  caption_lp[ii] <- paste0("LP optim check when Q = ", Q, ". The true parameters are ", 
+    "f0 = ", f0, 
+    ", gamma = ", gamma,
+    ", Rw = ", format(round(Rw, 2), nsmall = 2))
+}
+```
+
+```{r check_lp_optim, fig.cap = caption_lp}
+# check the optimization process for each Q
+for(ii in 1:length(Q_vec)) {
+  Q <- Q_vec[ii]
+  # ---------- setup ----------
+  # number of frequencies
+  nf <- length(fseq) 
+  # analytic psd values, unit fm2/Hz
+  psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion = FALSE) + Aw
+  # simulate exponential random variables
+  set.seed(123)
+  sim_exp <- rexp(nf, rate = 1)
+  # empirical psd (periodogram values)
+  Y <- sim_exp * psd * fs
+  fbar <- binning(fseq, bin_size = bin_size)
+  Ybar <- binning(Y, bin_size = bin_size)
+  # TMB model
+  obj <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+                                      method = "NLS_nlp",
+                                      fbar = matrix(fbar),
+                                      Ybar = matrix(Ybar),
+                                      fs = fs),
+                          parameters = list(phi = matrix(0, 3, 1)),
+                          silent = TRUE, DLL = "realPSD_TMBExports")
+  # --------- optim BGFS -----------
+  opt <- optim(par = phi_list[[ii]], fn = obj$fn, gr = obj$gr,
+    method = "BFGS", 
+    control = list(maxit = 2000))
+  # ---------- check optim ----------
+  optim_proj(fun = obj$fn, xsol = opt$par, maximize = FALSE,
+    xnames = c("f0", "gamma", "Rw"))
+  # ---------- check tau_hat ----------
+  phi_hat <- opt$par
+  tau_hat <- get_tau(phi_hat, "mle")
+  sig2 <- Kb*Temp/(k*pi*f0*Q)
+  err <- abs(sig2 - tau_hat)/sig2
+  # the difference between sig2 and tau_hat
+  print(paste0("LP: When Q = ", Q, 
+    ". The relative error between sig2 and tau_hat is ", 
+    paste(round(100*err, 2), "%", sep=""), "."))
+}
+```
+
