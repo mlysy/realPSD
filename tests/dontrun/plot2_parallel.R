@@ -13,9 +13,11 @@ source("fitSHOW.R")
 data_path_sim <- "~/realPSD/show_sim"
 # data_path_fit <- "~/Documents/data/R/realPSD/show_fit"
 data_path_fit <- "~/realPSD/show_fit"
+data_path_result <- "~/realPSD/show_result"
 # clear any existing files
 unlink(file.path(data_path_sim, "*"), recursive = TRUE) # we should keep the simulated expo rv's to save time
 unlink(file.path(data_path_fit, "*"), recursive = TRUE)
+unlink(file.path(data_path_result, "*"), recursive = TRUE)
 
 # ---------- SHO model parameters ----------
 Time  <- 5                   # Total time, second
@@ -145,6 +147,8 @@ fit_data <- fit_data %>% as_tibble() %>%
   mutate(Q_level = factor(Q_level,  # convert the column Q_level into a factor
     levels = c(1,10,100,500), labels = c("Q = 1", "Q = 10", "Q = 100", "Q = 500"))) %>% 
   mutate(method = factor(method, levels = c("nls", "lp", "mle"))) # factor column method 
+saveRDS(fit_data, file = file.path(data_path_result,
+  paste0("fit_data.rds")))
 # get a new dataset with ratios instead of fitted values
 ratio_data <- fit_data %>% 
   mutate(f0_hat = f0_hat/f0) %>%
@@ -157,6 +161,8 @@ ratio_data <- fit_data %>%
       Q_level == "Q = 500" ~ Q_hat/Q_vec[4]
     )
   )
+saveRDS(ratio_data, file = file.path(data_path_result,
+  paste0("ratio_data.rds")))
 # calculate the MSE ratio for each method at each Q level
 # the baseline MLE method should always be 1
 mse_ratio <- ratio_data %>% 
@@ -170,6 +176,8 @@ mse_ratio <- ratio_data %>%
              Q_hat = Q_hat / Q_hat[method == "mle"],
              k_hat = k_hat / k_hat[method == "mle"],
              Aw_hat = Aw_hat / Aw_hat[method == "mle"]) %>% ungroup()
+saveRDS(mse_ratio, file = file.path(data_path_result,
+  paste0("mse_ratio.rds")))
 # print it out
 print(mse_ratio)
 
