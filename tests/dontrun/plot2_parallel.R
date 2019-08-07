@@ -38,7 +38,7 @@ fseq <- seq(from = f_lb, to = f_ub, by = 1/Time) # frequency domain, Hz
 nf <- length(fseq) # number of frequencies
 
 # ---------- simulation ----------
-nsim <- 1000
+nsim <- 10
 bin_size <- 100
 
 # detect the number of cores
@@ -157,6 +157,22 @@ ratio_data <- fit_data %>%
       Q_level == "Q = 500" ~ Q_hat/Q_vec[4]
     )
   )
+# calculate the MSE ratio for each method at each Q level
+# the baseline MLE method should always be 1
+mse_ratio <- ratio_data %>% 
+  mutate(f0_hat = (f0_hat - 1)^2,
+          Q_hat = (Q_hat - 1)^2,
+          k_hat = (k_hat - 1)^2,
+         Aw_hat = (Aw_hat - 1)^2) %>%
+  group_by(Q_level, method) %>%
+  summarize_all(sum) %>%
+  mutate(f0_hat = f0_hat / f0_hat[method == "mle"],
+             Q_hat = Q_hat / Q_hat[method == "mle"],
+             k_hat = k_hat / k_hat[method == "mle"],
+             Aw_hat = Aw_hat / Aw_hat[method == "mle"]) %>% ungroup()
+# print it out
+print(mse_ratio)
+
 # boxplot
 # Q_hat / Q
 tikzDevice::tikz(file = "boxplot_Q.tex", width = 8, height = 2)
