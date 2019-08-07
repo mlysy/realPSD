@@ -18,7 +18,8 @@ knitr::opts_chunk$set(echo = TRUE, out.width = '80%', fig.align='center')
 suppressMessages(require(realPSD))
 # suppressMessages(require(tidyverse))
 suppressMessages(require(optimCheck))
-suppressMessages(require(minpack.lm)) # for nonlinear LS optim
+# suppressMessages(require(minpack.lm)) # for nonlinear LS optim
+suppressMessages(require(minqa)) # for NLS optimization
 source("../tests/dontrun/fitSHOW.R")
 ```
 
@@ -314,9 +315,9 @@ for(ii in 1:length(Q_vec)) {
                           parameters = list(phi = matrix(0, 3, 1)),
                           silent = TRUE, DLL = "realPSD_TMBExports")
   # --------- optim BGFS -----------
-  opt <- optim(par = phi_list[[ii]], fn = obj$fn, gr = obj$gr,
-    method = "BFGS", 
-    control = list(maxit = 2000))
+  opt <- minqa::bobyqa(par = phi_list[[ii]], fn = obj$fn,
+    lower = rep(0,3),
+    control = list(maxfun = 10000))
   # ----------- nls.lm (Levenberg-Marquardt) ----------
   # suppressWarnings(
   # opt <- minpack.lm::nls.lm(par = phi_list[[ii]],
@@ -431,7 +432,7 @@ for(ii in 1:length(Q_vec)) {
   # analytic psd values, unit fm2/Hz
   psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion = FALSE) + Aw
   # simulate exponential random variables
-  set.seed(123)
+  set.seed(1234)
   sim_exp <- rexp(nf, rate = 1)
   # empirical psd (periodogram values)
   Y <- sim_exp * psd * fs
@@ -486,7 +487,7 @@ for(ii in 1:length(Q_vec)) {
 for(ii in 1:length(Q_vec)) {
   Q <- Q_vec[ii]
    # simulate exponential random variables
-  set.seed(123)
+  set.seed(1234)
   sim_exp <- rexp(nf, rate = 1) # nf = length(fseq)
   # get estimated parameters from fitSHOW
   param <- fitSHOW(fseq, sim_exp, f0, fs, Q, k, Temp, Aw, bin_size, "lp")
