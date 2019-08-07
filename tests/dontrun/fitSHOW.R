@@ -91,21 +91,18 @@ fitSHOW <- function(fseq, sim_exp, f0, fs, Q, k, Temp, Aw,
     stop("method should be chosen from lp, nls and mle.")
   }
   # ---------- optimization -----------
-  opt <- optim(phi, fn = obj$fn, gr = obj$gr,
-            method = "BFGS",
-            control = list(maxit = 2000))
-  # if(method == "mle" || method == "lp") {
-  #   opt <- optim(phi, fn = obj$fn, gr = obj$gr,
-  #             method = "BFGS",
-  #             control = list(maxit = 2000))
-  # } else if (method == "nls") {
-  #   suppressWarnings(
-  #   opt <- minpack.lm::nls.lm(par = phi,
-  #                           lower = rep(0,3),
-  #                           fn = obj$fn, 
-  #                           control = nls.lm.control(maxiter = 1000))
-  #   )
-  # } 
+  # opt <- optim(phi, fn = obj$fn, gr = obj$gr,
+  #           method = "BFGS",
+  #           control = list(maxit = 2000))
+  if(method == "mle" || method == "lp") {
+    opt <- optim(phi, fn = obj$fn, gr = obj$gr,
+              method = "BFGS",
+              control = list(maxit = 2000))
+  } else if (method == "nls") {
+    opt <- minqa::bobyqa(par = phi, fn = obj$fn,
+      lower = rep(0,3),
+      control = list(maxfun = 10000))
+  } 
   phi_hat <- opt$par # extract the fitted phi = c(f0_hat, gamma_hat, Rw_hat)
   tau_hat <- get_tau(phi_hat) # fitted tau = sigma^2, unit should be the same as Aw
   param <- rep(NA, 4) # allocate space for storage

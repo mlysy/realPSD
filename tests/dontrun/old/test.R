@@ -1,3 +1,22 @@
+# ----------- nls.lm (Levenberg-Marquardt) ----------
+  # suppressWarnings(
+  # opt <- minpack.lm::nls.lm(par = phi_list[[ii]],
+  #                           lower = rep(0,3),
+  #                           fn = obj$fn, 
+  #                           control = nls.lm.control(maxiter = 1000))
+  # )
+  # ---------- Rsolnp::solnp -----------
+  # suppressMessages(
+  # opt <- Rsolnp::solnp(pars = phi_list[[ii]],
+  #                      fun = obj$fn,
+  #                      LB = rep(0,3))
+  # )
+  # ---------- pracma::lsqnonlin ----------
+  # opt <- pracma::lsqnonlin(fun = obj$fn, 
+  #                         x0 = phi_list[[ii]], 
+  #                         options = list(maxeval = 1000))
+  # optim_proj(fun = obj$fn, xsol = opt$x, maximize = FALSE,
+  #   xnames = c("f0", "gamma", "Rw"))
 # test
 install.packages("realPSD_1.0.tar.gz", type = "source", repos = NULL, INSTALL_opts = "--install-tests")
 require(tidyverse)

@@ -272,9 +272,9 @@ When we fit the model by using MLE, we should set `method = BFGS` in `optim` and
 
 ## Does `optim` converge?
 
-Similarly, we can do the `optimCheck` to see if the estimated parameters are found near the minima in the NLS method. From Figure \ref{fig:check_nls_optim1} ~ \ref{fig:check_nls_optim4}, we can tell that the `BFGS` optimization method fails for NLS.
+Similarly, we can do the `optimCheck` to see if the estimated parameters are found near the minima in the NLS method. In our tests, the `BFGS` optimization method usually fails.
 
-Many other nonlinear optimization routines have been tried, for example, the Levenberg-Marquardt nonlinear least-squares algorithm supplied by the R package `minpack.lm`, `Rsolnp::solnp` and `pracma::lsqnonlin` etc. But it seems the estiamtion would usually be bad when $Q = 100, 500$.
+Many other nonlinear optimization routines have been tried, the derivative-free optimization by quadratic approximation supplied by `minqa::bobyqa` gives the best estimation result, as shown by Figure \ref{fig:check_nls_optim1} ~ \ref{fig:check_nls_optim4}.
 
 ```{r, check_nle_cap, echo = FALSE}
 caption_nls <- rep(NA, length(Q_vec))
@@ -318,25 +318,6 @@ for(ii in 1:length(Q_vec)) {
   opt <- minqa::bobyqa(par = phi_list[[ii]], fn = obj$fn,
     lower = rep(0,3),
     control = list(maxfun = 10000))
-  # ----------- nls.lm (Levenberg-Marquardt) ----------
-  # suppressWarnings(
-  # opt <- minpack.lm::nls.lm(par = phi_list[[ii]],
-  #                           lower = rep(0,3),
-  #                           fn = obj$fn, 
-  #                           control = nls.lm.control(maxiter = 1000))
-  # )
-  # ---------- Rsolnp::solnp -----------
-  # suppressMessages(
-  # opt <- Rsolnp::solnp(pars = phi_list[[ii]],
-  #                      fun = obj$fn,
-  #                      LB = rep(0,3))
-  # )
-  # ---------- pracma::lsqnonlin ----------
-  # opt <- pracma::lsqnonlin(fun = obj$fn, 
-  #                         x0 = phi_list[[ii]], 
-  #                         options = list(maxeval = 1000))
-  # optim_proj(fun = obj$fn, xsol = opt$x, maximize = FALSE,
-  #   xnames = c("f0", "gamma", "Rw"))
   # ---------- check optim ----------
   optim_proj(fun = obj$fn, xsol = opt$par, maximize = FALSE,
     xnames = c("f0", "gamma", "Rw"))
@@ -354,11 +335,11 @@ for(ii in 1:length(Q_vec)) {
 
 ## Is the estimation of $\sigma^2$ accurate enough?
 
-The estimatation of $\sigma^2$ when $Q = 100, 500$ may have significantly larger errors.
+The estimatation of $\sigma^2$ when $Q = 100, 500$ may have significantly larger errors (larger than 1% but less than 5%). But the estimated parameters are still quite close to the true ones.
 
 ## Compare the fitted parametric PSD with the true analytic PSD.
 
-When $Q = 1, 10$ the fitted parametric PSD can still match up with its analytic counterpart. But for $Q = 100, 500$ the fitted PSD may be bad.
+The fitted parametric PSD can still match up with its analytic counterpart. 
 
 ```{r, caption_nls_psd, echo = FALSE}
 caption_nls_psd <- rep(NA, length(Q_vec))
@@ -402,7 +383,7 @@ for(ii in 1:length(Q_vec)) {
 
 ## NLS check: the conclusion
 
-The NLS method cannot always give the minima as the estiamted parameters as the MLE method did, which was expected. To avoid from stucking at the initial true values, when we supply the initial parameters to the optimization rountine, we should not use the true values. Instead, we'd better give the true values a random perturbation.
+The NLS method cannot always give the best estimation as MLE did. But by using `minqa::bobyqa`, we can still get good enough results.
 
 # Check the LP estimation/optimization is correct.
 
@@ -432,7 +413,7 @@ for(ii in 1:length(Q_vec)) {
   # analytic psd values, unit fm2/Hz
   psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion = FALSE) + Aw
   # simulate exponential random variables
-  set.seed(1234)
+  set.seed(123)
   sim_exp <- rexp(nf, rate = 1)
   # empirical psd (periodogram values)
   Y <- sim_exp * psd * fs
@@ -487,7 +468,7 @@ for(ii in 1:length(Q_vec)) {
 for(ii in 1:length(Q_vec)) {
   Q <- Q_vec[ii]
    # simulate exponential random variables
-  set.seed(1234)
+  set.seed(123)
   sim_exp <- rexp(nf, rate = 1) # nf = length(fseq)
   # get estimated parameters from fitSHOW
   param <- fitSHOW(fseq, sim_exp, f0, fs, Q, k, Temp, Aw, bin_size, "lp")
