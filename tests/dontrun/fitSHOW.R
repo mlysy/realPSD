@@ -31,6 +31,8 @@ fitSHOW <- function(fseq, sim_exp, f0, fs, Q, k, Temp, Aw,
   fbar <- binning(fseq, bin_size = bin_size)
   Ybar <- binning(Y, bin_size = bin_size)
   Zbar <- log(Ybar)
+  # bias_correction for LP method
+  bias <- digamma(bin_size) - log(bin_size)
   # ---------- fitting ----------
   if (method == "lp") {
     obj <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
@@ -49,7 +51,8 @@ fitSHOW <- function(fseq, sim_exp, f0, fs, Q, k, Temp, Aw,
                           parameters = list(phi = matrix(0, 3, 1)),
                           silent = TRUE, DLL = "realPSD_TMBExports")
       zeta <- gz$fn(phi)
-      exp(zeta)
+      # correct the bias
+      exp(zeta - bias)
     }
   } else if (method == "nls") {
     obj <- TMB::MakeADFun(data = list(model_name = "SHOWFit",

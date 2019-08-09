@@ -314,16 +314,24 @@ for(ii in 1:length(Q_vec)) {
                                       fs = fs),
                           parameters = list(phi = matrix(0, 3, 1)),
                           silent = TRUE, DLL = "realPSD_TMBExports")
-  # --------- optim BGFS -----------
-  opt <- minqa::bobyqa(par = phi_list[[ii]], fn = obj$fn,
-    lower = rep(0,3),
-    control = list(maxfun = 10000))
+  # --------- optimization -----------
+  if(ii == 1) {
+    opt <- optim(par = phi_list[[ii]], fn = obj$fn, gr = obj$gr,
+      method = "L-BFGS-B", 
+      lower = rep(0,3),
+      upper = c(Inf, Inf, 1),
+      control = list(maxit = 2000))
+  } else {
+    opt <- minqa::bobyqa(par = phi_list[[ii]], fn = obj$fn,
+      lower = rep(0,3),
+      control = list(maxfun = 10000))
+  }
   # ---------- check optim ----------
   optim_proj(fun = obj$fn, xsol = opt$par, maximize = FALSE,
     xnames = c("f0", "gamma", "Rw"))
   # ---------- check tau_hat ----------
   phi_hat <- opt$par
-  tau_hat <- get_tau(phi_hat, "mle")
+  tau_hat <- get_tau(phi_hat, "nls")
   sig2 <- Kb*Temp/(k*pi*f0*Q)
   err <- abs(sig2 - tau_hat)/sig2
   # the difference between sig2 and tau_hat
@@ -335,7 +343,7 @@ for(ii in 1:length(Q_vec)) {
 
 ## Is the estimation of $\sigma^2$ accurate enough?
 
-The estimatation of $\sigma^2$ when $Q = 100, 500$ may have significantly larger errors (larger than 1% but less than 5%). But the estimated parameters are still quite close to the true ones.
+The estimatation of $\sigma^2$...
 
 ## Compare the fitted parametric PSD with the true analytic PSD.
 
@@ -404,6 +412,8 @@ for(ii in 1:length(Q_vec)) {
 ```
 
 ```{r check_lp_optim, fig.cap = caption_lp}
+# bias for LP method
+bias <- digamma(bin_size) - log(bin_size)
 # check the optimization process for each Q
 for(ii in 1:length(Q_vec)) {
   Q <- Q_vec[ii]
@@ -437,7 +447,9 @@ for(ii in 1:length(Q_vec)) {
     xnames = c("f0", "gamma", "Rw"))
   # ---------- check tau_hat ----------
   phi_hat <- opt$par
-  tau_hat <- get_tau(phi_hat, "mle")
+  tau_hat <- get_tau(phi_hat, "lp")
+  # correct the bias
+  tau_hat <- exp(log(tau_hat) - bias)
   sig2 <- Kb*Temp/(k*pi*f0*Q)
   err <- abs(sig2 - tau_hat)/sig2
   # the difference between sig2 and tau_hat
