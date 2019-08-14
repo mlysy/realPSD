@@ -14,3 +14,9 @@ vignettes/.build.timestamp
 
 # osx
 *.DS_Store
+
+# tex
+*.tex
+
+# MATLAB
+*.mat
