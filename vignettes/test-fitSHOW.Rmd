@@ -19,7 +19,7 @@ suppressMessages(require(realPSD))
 # suppressMessages(require(tidyverse))
 suppressMessages(require(optimCheck))
 # suppressMessages(require(minpack.lm)) # for nonlinear LS optim
-suppressMessages(require(minqa)) # for NLS optimization
+suppressMessages(require(nlsr)) # for NLS optimization
 source("../tests/dontrun/fitSHOW.R")
 ```
 
@@ -102,14 +102,14 @@ As we can see from Figure \ref{fig:psd1} ~ \ref{fig:psd4}, the simulated periodo
 
 # Check the MLE estimation/optimization is correct.
 
-## Does `optim` converge?
+## Does `optim` find the minima?
 
 ```{r, check_mle_cap, echo = FALSE}
 caption_mle <- rep(NA, length(Q_vec))
 for(ii in 1:length(Q_vec)) {
   Q <- Q_vec[ii]
   gamma <- f0*Q
-  sig2 <- Kb*Temp/(k*pi*f0*Q)
+  sig2 <- Kb*Temp/(k*pi*f0*Q) 
   Rw <- Aw/sig2
   caption_mle[ii] <- paste0("MLE optim check when Q = ", Q, ". The true parameters are ", 
     "f0 = ", f0, 
@@ -128,9 +128,10 @@ phi_list <- lapply(1:length(Q_vec), function(ii) {
   Q <- Q_vec[ii]
   sig2 <- Kb*Temp/(k*pi*f0*Q) # variance, unit: m2/Hz
   Rw <- Aw/sig2 # re-parameterization, note we input Aw with unit fm2/Hz
-  phi <- c(f0 + rnorm(1, 0, sqrt(f0)), 
-    f0*Q + rnorm(1, 0, (f0*Q)^(1/3)), 
-    Rw + rnorm(1, 0, Rw/10)) 
+  phi <- c(f0 + rnorm(1, 0, sqrt(f0)/10), 
+    f0*Q + rnorm(1, 0, sqrt(f0*Q)/10), 
+    Rw + rnorm(1,0,Rw/10)) 
+  # phi <- c(f0, f0*Q, Rw)
   # optimCheck would fail if we adopt a purely random initial phi
   # phi <- runif(3, min = 0, max = 1e5)
 })
@@ -270,11 +271,13 @@ When we fit the model by using MLE, we should set `method = BFGS` in `optim` and
 
 # Check the NLS estimation/optimization is correct.
 
-## Does `optim` converge?
+## Does `optim` find the minima?
 
 Similarly, we can do the `optimCheck` to see if the estimated parameters are found near the minima in the NLS method. In our tests, the `BFGS` optimization method usually fails.
 
-Many other nonlinear optimization routines have been tried, the derivative-free optimization by quadratic approximation supplied by `minqa::bobyqa` gives the best estimation result, as shown by Figure \ref{fig:check_nls_optim1} ~ \ref{fig:check_nls_optim4}.
+Many other nonlinear optimization routines have been tried, finally we chose `nlsr::nlfb` which gives Nash variant of Marquardt nonlinear least squares solution via qr linear solver. In general, the NLS method performs worse than the MLE (even though it converges) as shown by Figure \ref{fig:check_nls_optim1} ~ \ref{fig:check_nls_optim4}. 
+
+We also found out that when the initial parameters are set to be the true values, the results would look much better than those obtained from random initial parameters. (More specifically, the estimated $\hat\sigma^2$ would be more accurate when $Q = 100, 500$.)
 
 ```{r, check_nle_cap, echo = FALSE}
 caption_nls <- rep(NA, length(Q_vec))
@@ -315,22 +318,34 @@ for(ii in 1:length(Q_vec)) {
                           parameters = list(phi = matrix(0, 3, 1)),
                           silent = TRUE, DLL = "realPSD_TMBExports")
   # --------- optimization -----------
-  if(ii == 1) {
-    opt <- optim(par = phi_list[[ii]], fn = obj$fn, gr = obj$gr,
-      method = "L-BFGS-B", 
-      lower = rep(0,3),
-      upper = c(Inf, Inf, 1),
-      control = list(maxit = 2000))
-  } else {
-    opt <- minqa::bobyqa(par = phi_list[[ii]], fn = obj$fn,
-      lower = rep(0,3),
-      control = list(maxfun = 10000))
-  }
+  start <- phi_list[[ii]]
+  names(start) <- c("f0", "gamma", "Rw")
+  # try to set the initial gamma to be true value (as MATLAB code)
+  start[2] <- f0*Q 
+  # first, fix f0 and Rw, optimize gamma (i.e. to optimize Q since f0 is fixed)
+  opt1 <- nlsr::nlfb(start = start, resfn = obj$fn,
+    lower = 0,
+    maskdix = c(1,0,1), # indices of parameters to be fixed
+    weights = rep(1,3)
+  )
+  # second, optimize f0 and Q
+  opt2 <- nlsr::nlfb(start = opt1$coefficients,
+                     resfn = obj$fn,
+                     lower = 0,
+                     maskdix = c(0,0,1),
+                     weights = rep(1,3))
+  # third, optimize all three parameters
+  opt3 <- nlsr::nlfb(start = opt2$coefficients,
+                     resfn = obj$fn,
+                     lower = 0,
+                     weights = rep(1,3))
+
   # ---------- check optim ----------
-  optim_proj(fun = obj$fn, xsol = opt$par, maximize = FALSE,
+  optim_proj(fun = obj$fn, xsol = opt3$coefficients, maximize = FALSE,
     xnames = c("f0", "gamma", "Rw"))
   # ---------- check tau_hat ----------
-  phi_hat <- opt$par
+  # phi_hat <- opt$par
+  phi_hat <- opt3$coefficients
   tau_hat <- get_tau(phi_hat, "nls")
   sig2 <- Kb*Temp/(k*pi*f0*Q)
   err <- abs(sig2 - tau_hat)/sig2
@@ -343,7 +358,7 @@ for(ii in 1:length(Q_vec)) {
 
 ## Is the estimation of $\sigma^2$ accurate enough?
 
-The estimatation of $\sigma^2$...
+The estimatation of $\sigma^2$ are more accurate when we choose the initial parameters to be the true ones.
 
 ## Compare the fitted parametric PSD with the true analytic PSD.
 
@@ -391,11 +406,11 @@ for(ii in 1:length(Q_vec)) {
 
 ## NLS check: the conclusion
 
-The NLS method cannot always give the best estimation as MLE did. But by using `minqa::bobyqa`, we can still get good enough results.
+The NLS method is usually biased. But by using `nlsr::nlfb`, we can still get good enough results. The fitted PSD is also acceptable under each $Q$ level.
 
 # Check the LP estimation/optimization is correct.
 
-## Does `optim` converge?
+## Does `optim` find the minima?
 
 ```{r, check_lp_cap, echo = FALSE}
 caption_lp <- rep(NA, length(Q_vec))

@@ -4,7 +4,7 @@ require(realPSD)
 require(parallel)
 require(tidyverse)
 require(tikzDevice)
-require(minqa)
+require(nlsr)
 # TODO: factor out an exportable function show_fit
 # and perhaps a non-exported function show_fsim (f is for freq)
 source("fitSHOW.R")
@@ -28,7 +28,7 @@ k  <- 0.172               # Cantilever stiffness, N/m
 # Kb <- 1.381e-23           # Boltzmann's constant
 Temp <- 298                  # Temperature, Kelvin
 Const <- 1e30
-Aw <- 19000 / Const            # white noise, fm2/Hz to m2/Hz
+Aw <- 19000            # white noise, fm2/Hz to m2/Hz
 # sig2 <- Kb*T/(k*pi*f0*Q)  # variance sig2
 # Rw <- Aw/sig2
 # alpha <- 0.55           # 1/f decay exponent
@@ -46,7 +46,7 @@ bin_size <- 100
 # detect the number of cores
 ncores <- detectCores()
 # set seed for reproducibility
-set.seed(123, kind = "L'Ecuyer-CMRG")
+set.seed(2019, kind = "L'Ecuyer-CMRG")
 
 # first, pregenerate exponentials
 sim_expo <- TRUE
