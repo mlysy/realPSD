@@ -93,39 +93,43 @@ fitSHOW <- function(fseq, sim_exp, f0, fs, Q, k, Temp, Aw,
     stop("method should be chosen from lp, nls and mle.")
   }
   # ---------- optimization -----------
-  # opt <- optim(phi, fn = obj$fn, gr = obj$gr,
-  #           method = "BFGS",
-  #           control = list(maxit = 2000))
-  if(method == "mle" || method == "lp"){
-    opt <- optim(phi, fn = obj$fn, gr = obj$gr,
-              method = "BFGS",
-              control = list(maxit = 2000))
-    phi_hat <- opt$par
-  } else {
-    names(phi) <- c("f0", "gamma", "Rw")
-    # phi[2] <- f0 * Q # set the initial gamma (i.e. Q) to be the true value
-    # optimize gamma (i.e., Q with f0 fixed)
-    opt1 <- nlsr::nlfb(start = phi,
-                      resfn = obj$fn,
-                      lower = 0,
-                      maskdix = c(1,0,1), # indices of parameters to be fixed
-                      weights = rep(1,3),
-                      control = list(jemax = 2000))
-    # optimize f0 and Q
-    opt2 <- nlsr::nlfb(start = opt1$coefficients,
-                       resfn = obj$fn,
-                       lower = 0,
-                       maskdix = c(0,0,1),
-                       weights = rep(1,3),
-                       control = list(jemax = 2000))
-    # optimize all three parameters
-    opt3 <- nlsr::nlfb(start = opt2$coefficients,
-                       resfn = obj$fn,
-                       lower = 0,
-                       weights = rep(1,3),
-                       control = list(jemax = 2000))
-    phi_hat <- opt3$coefficients
-  }
+  opt <- optim(phi, fn = obj$fn, gr = obj$gr,
+            method = "BFGS",
+            control = list(maxit = 2000))
+  phi_hat <- opt$par
+  # check convergence 
+  if(opt$convergence != 0) 
+    warning(paste0(method, " didn't converge!"))
+  # if(method == "mle" || method == "lp"){
+  #   opt <- optim(phi, fn = obj$fn, gr = obj$gr,
+  #             method = "BFGS",
+  #             control = list(maxit = 2000))
+  #   phi_hat <- opt$par
+  # } else {
+  #   names(phi) <- c("f0", "gamma", "Rw")
+  #   # phi[2] <- f0 * Q # set the initial gamma (i.e. Q) to be the true value
+  #   # optimize gamma (i.e., Q with f0 fixed)
+  #   opt1 <- nlsr::nlfb(start = phi,
+  #                     resfn = obj$fn,
+  #                     lower = 0,
+  #                     maskdix = c(1,0,1), # indices of parameters to be fixed
+  #                     weights = rep(1,3),
+  #                     control = list(jemax = 2000))
+  #   # optimize f0 and Q
+  #   opt2 <- nlsr::nlfb(start = opt1$coefficients,
+  #                      resfn = obj$fn,
+  #                      lower = 0,
+  #                      maskdix = c(0,0,1),
+  #                      weights = rep(1,3),
+  #                      control = list(jemax = 2000))
+  #   # optimize all three parameters
+  #   opt3 <- nlsr::nlfb(start = opt2$coefficients,
+  #                      resfn = obj$fn,
+  #                      lower = 0,
+  #                      weights = rep(1,3),
+  #                      control = list(jemax = 2000))
+  #   phi_hat <- opt3$coefficients
+  # }
   tau_hat <- get_tau(phi_hat) # fitted tau = sigma^2, unit should be the same as Aw
   param <- rep(NA, 4) # allocate space for storage
   param[1] <- phi_hat[1] # f0_hat

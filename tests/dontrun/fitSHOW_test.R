@@ -138,7 +138,7 @@ fitSHOW <- function(fseq, sim_exp, f0, fs, Q, k, Temp, Aw,
   }
   # check convergence 
   if(opt$convergence != 0) 
-    error(paste0(method, " didn't converge!"))
+    warning(paste0(method, " didn't converge!"))
   # output
   tau_hat <- get_tau(phi_hat) # fitted tau = sigma^2, unit should be the same as Aw
   param <- rep(NA, 4) # allocate space for storage

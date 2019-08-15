@@ -40,7 +40,7 @@ fseq <- seq(from = f_lb, to = f_ub, by = 1/Time) # frequency domain, Hz
 nf <- length(fseq) # number of frequencies
 
 # ---------- simulation ----------
-nsim <- 1000
+nsim <- 20
 bin_size <- 100
 
 # detect the number of cores
@@ -110,7 +110,8 @@ fit_success <- mclapply(1:nfit, function(ii) {
             f0 = f0, fs = fs, Q = Q,
             k = k, Temp = Temp, Aw = Aw,
             bin_size = bin_size, method = method)
-  }, error = function(err) message("fitting error on job ", ii))
+  }, error = function(err) message("fitting error on job ", ii),
+  warning = function(w) print(w))
   if(!is.null(theta_hat)) {
     saveRDS(theta_hat,
             file = file.path(data_path_fit,
