@@ -187,6 +187,9 @@ print(mse_ratio)
 tikzDevice::tikz(file = "boxplot_Q.tex", width = 8, height = 2)
 fig_Q <- ggplot(ratio_data, aes(x = Q_level, y = Q_hat, fill = method)) + 
   geom_boxplot(outlier.size = 0.8) +
+  geom_text(data = mse_ratio, 
+    aes(y = 1.002, label = round(Q_hat,2)),
+    position = position_dodge(width = 1)) + 
   xlab(label = NULL)  +
   ylab(label = "$\\hat{Q}/Q$")
 # ggsave("boxplot_Q.pdf")
@@ -197,6 +200,9 @@ dev.off()
 tikzDevice::tikz(file = "./boxplot_k.tex", width = 8, height = 2)
 fig_k <- ggplot(ratio_data, aes(x = Q_level, y = k_hat, fill = method)) + 
   geom_boxplot(outlier.size = 0.8) +
+  geom_text(data = mse_ratio, 
+    aes(y = 1.2, label = round(k_hat,2)),
+    position = position_dodge(width = 0.8)) + 
   xlab(label = NULL)  +
   ylab(label = "$\\hat{k}/k$")
 print(fig_k)
@@ -207,6 +213,9 @@ dev.off()
 tikzDevice::tikz(file = "./boxplot_f0.tex", width = 8, height = 2)
 fig_f0 <- ggplot(ratio_data, aes(x = Q_level, y = f0_hat, fill = method)) + 
   geom_boxplot(outlier.size = 0.8) + 
+  geom_text(data = mse_ratio, 
+    aes(y = 1.05, label = round(f0_hat,2)),
+    position = position_dodge(width = 0.8)) + 
   xlab(label = NULL)  +
   ylab(label = "$\\hat{f_0}/f_0$")
 print(fig_f0)
