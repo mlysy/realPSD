@@ -10,21 +10,29 @@
 #' @param Aw White noise psd.
 #' @param bin_size Integer number, bin size.
 #' @param method Fitting method, i.e. lp, mle, nls.
+#' @param unit_conversion Logical, if TRUE, use fm2/Hz instead of m2/Hz
 fitSHOW <- function(fseq, sim_exp, f0, fs, Q, k, Temp, Aw,
-                    bin_size = 100, method = c("lp", "mle", "nls")) {
+                    bin_size = 100, method = c("lp", "mle", "nls"),
+                    unit_conversion = FALSE) {
   # ---------- setup -----------
   method <- match.arg(method)
   Kb <- 1.381e-23           # Boltzmann's constant
-  sig2 <- Kb*Temp/(k*pi*f0*Q) # variance, unit: m2/Hz
+  if(unit_conversion) {
+    sig2 <- Kb*Temp/(k*pi*f0*Q) * 1e30 # variance, unit: fm2/Hz 
+  } else {
+    sig2 <- Kb*Temp/(k*pi*f0*Q) # variance, unit: m2/Hz
+  }
   Rw <- Aw/sig2 # re-parameterization, note we input Aw with unit fm2/Hz
   phi <- c(f0, f0*Q, Rw) # parameter vector for SHOW model
   # phi <- c(f0 + rnorm(1, 0, sqrt(f0)/10), 
   #   f0*Q + rnorm(1, 0, sqrt(f0*Q)/10), 
   #   Rw + rnorm(1,0,Rw/10)) 
   # psd values at each frequency point of f with given Q
-  psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion = FALSE) + Aw
+  psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion) + Aw
   # generate the periodogram values
   Y <- sim_exp * psd * fs
+  # convert Y to standard unit (otherwise the NLS optim would fail)
+  if(unit_conversion) Y <- Y/1e30
   # ---------- binning ----------
   # bin_size <- 100
   fbar <- binning(fseq, bin_size = bin_size)
@@ -135,7 +143,11 @@ fitSHOW <- function(fseq, sim_exp, f0, fs, Q, k, Temp, Aw,
   param[1] <- phi_hat[1] # f0_hat
   param[2] <- phi_hat[2]/phi_hat[1] # Q_hat
   param[3] <- Kb * Temp / (tau_hat * pi * phi_hat[2]) # k_hat
-  param[4] <- phi_hat[3] * tau_hat # Aw_hat
+  if(unit_conversion) {
+    param[4] <- phi_hat[3] * tau_hat * 1e30 # Aw_hat, same unit
+  } else {
+    param[4] <- phi_hat[3] * tau_hat
+  }
   names(param) <- c("f0_hat", "Q_hat", "k_hat", "Aw_hat")
   return(param)
 }

@@ -4,34 +4,28 @@ require(realPSD)
 require(parallel)
 require(tidyverse)
 require(tikzDevice)
-require(nlsr)
-# TODO: factor out an exportable function show_fit
-# and perhaps a non-exported function show_fsim (f is for freq)
 source("fitSHOW.R")
-# data folder
-# data_path_sim <- "~/Documents/data/R/realPSD/show_sim"
+# set data folder path
 data_path_sim <- "~/realPSD/show_sim"
-# data_path_fit <- "~/Documents/data/R/realPSD/show_fit"
 data_path_fit <- "~/realPSD/show_fit"
 data_path_result <- "~/realPSD/show_result"
 # clear any existing files
-unlink(file.path(data_path_sim, "*"), recursive = TRUE) # we should keep the simulated expo rv's to save time
+unlink(file.path(data_path_sim, "*"), recursive = TRUE) 
 unlink(file.path(data_path_fit, "*"), recursive = TRUE)
 unlink(file.path(data_path_result, "*"), recursive = TRUE)
 
 # ---------- SHO model parameters ----------
-Time  <- 5                   # Total time, second
-fs <- 1e7                 # Sampling frequency, Hz
-f0 <- 33553               # Resonance frequency, Hz
-Q_vec  <- c(1, 10, 100, 500)  # Quality factors
-k  <- 0.172               # Cantilever stiffness, N/m
+Time  <- 5                  # Total time, second
+fs <- 1e7                   # Sampling frequency, Hz
+f0 <- 33553                 # Resonance frequency, Hz
+Q_vec  <- c(1, 10, 100, 500)# Quality factors
+k  <- 0.172                 # Cantilever stiffness, N/m
 # Kb <- 1.381e-23           # Boltzmann's constant
-Temp <- 298                  # Temperature, Kelvin
+Temp <- 298                 # Temperature, Kelvin
+Aw <- 19000                 # white noise, fm2/Hz 
 Const <- 1e30
-Aw <- 19000            # white noise, fm2/Hz to m2/Hz
-# sig2 <- Kb*T/(k*pi*f0*Q)  # variance sig2
-# Rw <- Aw/sig2
-# alpha <- 0.55           # 1/f decay exponent
+unit_conversion <- TRUE     # if TRUE, convert m2/Hz to fm2/Hz
+if(!unit_conversion) Aw <- Aw / Const
 
 # ---------- simulate random datasets ----------
 f_lb <- f0 - f0/sqrt(2) # frequency lower bound
@@ -39,7 +33,7 @@ f_ub <- f0 + f0/sqrt(2) # frequency upper bound
 fseq <- seq(from = f_lb, to = f_ub, by = 1/Time) # frequency domain, Hz
 nf <- length(fseq) # number of frequencies
 
-# ---------- simulation ----------
+# ---------- data simulation ----------
 nsim <- 20
 bin_size <- 100
 
@@ -50,15 +44,6 @@ set.seed(2019, kind = "L'Ecuyer-CMRG")
 
 # first, pregenerate exponentials
 sim_expo <- TRUE
-# system.time(
-# if(sim_expo) {
-#   for(ii in 1:nsim) {
-#     saveRDS(rexp(nf, rate = 1),
-#             file = file.path(data_path_sim,
-#                             paste0("exp_sim_", ii, ".rds")))
-#   }
-# }
-# )
 # parallel version of generating random expo variables
 message("\nTime spent on generating exponential random variables:\n")
 system.time(
@@ -75,15 +60,7 @@ system.time(
     }, mc.cores = ncores)
   }
 )
-# # check if all simulations were successful
-# if(all(sim_success == TRUE)) {
-#   message("Great! All simulations were successful!")
-# } else {
-#   err_index <- which(sim_success == FALSE)
-#   message(paste0("The ", unname(err_index), "-th simulation(s) went wrong..."))
-# }
-
-# now fitting
+# --------- fitting ---------
 # this is for illustrative purposes mainly.
 # i would probably do all the Q's and methods in the same loop,
 # i.e., loop over only the datasets
@@ -93,7 +70,6 @@ fit_descr <- expand.grid(Q_level = Q_vec,
                         stringsAsFactors = FALSE)
 nfit <- nrow(fit_descr)
 
-# run the simulation
 message("\nTime spent on fitting the parameters:\n")
 system.time(
 fit_success <- mclapply(1:nfit, function(ii) {
@@ -109,7 +85,7 @@ fit_success <- mclapply(1:nfit, function(ii) {
     fitSHOW(fseq, sim_exp = r_exp,
             f0 = f0, fs = fs, Q = Q,
             k = k, Temp = Temp, Aw = Aw,
-            bin_size = bin_size, method = method)
+            bin_size = bin_size, method = method, unit_conversion)
   }, error = function(err) message("fitting error on job ", ii),
   warning = function(w) print(w))
   if(!is.null(theta_hat)) {
@@ -121,16 +97,8 @@ fit_success <- mclapply(1:nfit, function(ii) {
   out
 }, mc.cores = ncores)
 )
-# # check if all iterations were successful
-# if(all(fit_success == TRUE)) {
-#   message("Great! All fitting jobs were successful!")
-# } else {
-#   err_index <- which(fit_success == FALSE)
-#   message(paste0("The fitting job(s): ", unname(err_index), " had some errors..."))
-# }
-# all(fit_success == TRUE)
 
-# ---------- Code below can be commented out for server computing ---------------
+# ---------- Output ---------------
 # read simulated data into workspace
 for(ii in 1:nfit) {
   assign(paste0("fit_", ii), 
@@ -188,7 +156,7 @@ tikzDevice::tikz(file = "boxplot_Q.tex", width = 8, height = 2)
 fig_Q <- ggplot(ratio_data, aes(x = Q_level, y = Q_hat, fill = method)) + 
   geom_boxplot(outlier.size = 0.8) +
   geom_text(data = mse_ratio, 
-    aes(y = 1.002, label = round(Q_hat,2)),
+    aes(y = 1, label = round(Q_hat,2)),
     position = position_dodge(width = 1)) + 
   xlab(label = NULL)  +
   ylab(label = "$\\hat{Q}/Q$")
@@ -201,7 +169,7 @@ tikzDevice::tikz(file = "./boxplot_k.tex", width = 8, height = 2)
 fig_k <- ggplot(ratio_data, aes(x = Q_level, y = k_hat, fill = method)) + 
   geom_boxplot(outlier.size = 0.8) +
   geom_text(data = mse_ratio, 
-    aes(y = 1.2, label = round(k_hat,2)),
+    aes(y = 1, label = round(k_hat,2)),
     position = position_dodge(width = 0.8)) + 
   xlab(label = NULL)  +
   ylab(label = "$\\hat{k}/k$")
@@ -214,19 +182,10 @@ tikzDevice::tikz(file = "./boxplot_f0.tex", width = 8, height = 2)
 fig_f0 <- ggplot(ratio_data, aes(x = Q_level, y = f0_hat, fill = method)) + 
   geom_boxplot(outlier.size = 0.8) + 
   geom_text(data = mse_ratio, 
-    aes(y = 1.05, label = round(f0_hat,2)),
+    aes(y = 1, label = round(f0_hat,2)),
     position = position_dodge(width = 0.8)) + 
   xlab(label = NULL)  +
   ylab(label = "$\\hat{f_0}/f_0$")
 print(fig_f0)
 # ggsave("boxplot_f0.pdf")
 dev.off()
-
-# # arrange all the plots in one layout
-# fig_all <- gridExtra::arrangeGrob(fig_Q, fig_k, fig_f0, ncol = 1)
-# # ggsave(file = "boxplot_all.pdf", fig_all)
-
-# ratio_Q500 <- ratio_data %>% filter(Q_level == "Q = 500")
-# ggplot(ratio_Q500, aes(x = method, y = Q_hat)) + geom_boxplot(outlier.size = .8)
-
-
