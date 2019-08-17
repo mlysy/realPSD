@@ -100,35 +100,33 @@ fitSHOW <- function(fseq, sim_exp, f0, fs, Q, k, Temp, Aw,
     stop("method should be chosen from lp, nls and mle.")
   }
   # ---------- optimization -----------
-  opt <- optim(phi, fn = obj$fn, gr = obj$gr,
-            method = "BFGS",
-            control = list(maxit = 2000))
-  # if(method == "mle" || method == "lp"){
-  #   opt <- optim(phi, fn = obj$fn, gr = obj$gr,
-  #             method = "BFGS",
-  #             control = list(maxit = 2000))
-  #   phi_hat <- opt$par
-  # } else {
-  #   # optimize Q (gamma), fix f0 and Rw
-  #   opt1 <- optim(phi,
-  #     fn = fn_fixed, 
-  #     control = list(maxit = 2000),
-  #     obj = obj, fixed_id = c(1,0,1), fixed_phi = phi_init[c(1,3)]) 
-  #   # optimize Q and f0, fix Rw
-  #   opt2 <- optim(opt1$par,
-  #     fn = fn_fixed, 
-  #     obj = obj, fixed_id = c(0,0,1), fixed_phi = opt1$par[3])
-  #   # optimize all three parameters
-  #   opt3 <- pracma::lsqnonlin(
-  #     fun = obj$fn, 
-  #     x0 = opt2$x,
-  #     obj = obj, options = list(maxeval = 2000))
-  #   # return phi_hat
-  #   phi_hat <- opt3$x
-  # }
+  # opt <- optim(phi, fn = obj$fn, gr = obj$gr,
+  #           method = "BFGS",
+  #           control = list(maxit = 2000))
+  if(method == "mle" || method == "lp"){
+    opt <- optim(phi, fn = obj$fn, gr = obj$gr,
+              method = "BFGS",
+              control = list(maxit = 2000))
+    phi_hat <- opt$par
+  } else {
+    # optimize Q (gamma), fix f0 and Rw
+    opt1 <- pracma::lsqnonlin(fun = fn_fixed,
+      x0 = phi, 
+      obj = obj, fixed_flag = c(1,0,1), fixed_phi = phi[c(1,3)]) 
+    # optimize Q and f0, fix Rw
+    opt2 <- pracma::lsqnonlin(fun = fn_fixed, 
+      x0 = opt1$x,
+      obj = obj, fixed_flag = c(0,0,1), fixed_phi = opt1$x[3])
+    # optimize all three parameters
+    opt3 <- pracma::lsqnonlin(fun = obj$fn, 
+      x0 = opt2$x)
+    # return phi_hat
+    phi_hat <- opt3$x
+  }
   # check convergence 
   if(opt$convergence != 0) 
     warning(paste0(method, " didn't converge!"))
+
   # output
   tau_hat <- get_tau(phi_hat) # fitted tau = sigma^2, unit should be the same as Aw
   param <- rep(NA, 4) # allocate space for storage
@@ -157,27 +155,103 @@ fitSHOW <- function(fseq, sim_exp, f0, fs, Q, k, Temp, Aw,
   return(fit_data)
 }
 
-# wrapper functions
+# wrapper function of TMB ----- method 1 -----
+MakePSDFun <- function(method = c("lp", "mle", "nls"), map, DLL) {
+  if (method == "lp") {
+    obj <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+                                      method = "LP_nlp",
+                                      fbar = matrix(fbar),
+                                      Zbar = matrix(Zbar),
+                                      fs = fs),
+                          parameters = list(phi = matrix(0, 3, 1)),
+                          map = map,
+                          silent = TRUE, DLL = DLL)
+  } else if (method == "nls") {
+    obj <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+                                      method = "NLS_nlp",
+                                      fbar = matrix(fbar),
+                                      Ybar = matrix(Ybar),
+                                      fs = fs),
+                          parameters = list(phi = matrix(0, 3, 1)),
+                          map = map,
+                          silent = TRUE, DLL = DLL)
+  } else if (method == "mle") {
+    obj <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+                                      method = "MLE_nlp",
+                                      f = matrix(fseq),
+                                      Y = matrix(Y),
+                                      fs = fs),
+                          parameters = list(phi = matrix(0, 3, 1)),
+                          map = map,
+                          silent = TRUE, DLL = DLL)
+  } else {
+    stop("method should be chosen from lp, nls and mle.")
+  }
+  return(obj)
+}
+# wrapper of get_tau only be used after the last stage of optim
+get_tau <- function(method = c("lp", "mle", "nls"), phi, DLL) {
+  if(method == "lp"){
+    get_tau <- function(phi) {
+      gz <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+                                      method = "LP_zeta",
+                                      fbar = matrix(fbar),
+                                      Zbar = matrix(Zbar),
+                                      fs = fs),
+                          parameters = list(phi = matrix(0, 3, 1)),
+                          silent = TRUE, DLL = DLL)
+      zeta <- gz$fn(phi)
+      # correct the bias
+      exp(zeta - bias)
+    }
+  } else if(method == "nls") {
+    get_tau <- function(phi) {
+      gt <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+                                      method = "NLS_tau",
+                                      fbar = matrix(fbar),
+                                      Ybar = matrix(Ybar),
+                                      fs = fs),
+                          parameters = list(phi = matrix(0, 3, 1)),
+                          silent = TRUE, DLL = DLL)
+      gt$fn(phi)
+    }
+  } else if (method == "mle") {
+     get_tau <- function(phi) {
+      gt <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+                                      method = "MLE_tau",
+                                      f = matrix(fseq),
+                                      Y = matrix(Y),
+                                      fs = fs),
+                          parameters = list(phi = matrix(0, 3, 1)),
+                          silent = TRUE, DLL = DLL)
+      gt$fn(phi)
+    }
+  } else {
+    stop("method should be chosen from lp, nls and mle.")
+  }
+}
+
+# wrapper functions ----- method 2 ------
 #' @param obj TMB obj
 #' @param theta Parameter vector
-#' @param fixed_id Indices of TRUE/FALSE indicating which dimension of theta should be fixed
+#' @param fixed_flag Vector of TRUE/FALSE indicating which dimension of theta should be fixed
 #' @param fixed_phi Vector of fixed values, length(fixed_phi) == length(which(fixed_id == TRUE))
-fn_fixed <- function(theta, obj, fixed_id, fixed_phi) {
+fn_fixed <- function(theta, obj, fixed_flag, fixed_phi) {
   # set space without chaning the original theta
   theta_full <- rep(NA, length(theta))
   # fix part of theta
-  # theta_full[which(fixed_id == TRUE)] <- fixed_phi
-  theta_full[fixed_id == TRUE] <- fixed_phi
+  # theta_full[which(fixed_flag == TRUE)] <- fixed_phi
+  theta_full[fixed_flag == TRUE] <- fixed_phi
   # fill the remaining part with theta
-  # theta_full[which(fixed_id != TRUE)] <- theta
-  theta_full[!fixed_id] <- theta[!fixed_id]
+  # theta_full[which(fixed_flag != TRUE)] <- theta
+  theta_full[!fixed_flag] <- theta[!fixed_flag]
   # return
   obj$fn(theta_full)
 }
-gr_fixed <- function(theta, obj, fixed_id, fixed_phi) {
+gr_fixed <- function(theta, obj, fixed_flag, fixed_phi) {
   theta_full <- rep(NA, length(theta))
-  theta_full[fixed_id == TRUE] <- fixed_phi
-  theta_full[!fixed_id] <- theta[!fixed_id]
-  obj$gr(theta_full)[!fixed_id]
+  theta_full[fixed_flag == TRUE] <- fixed_phi
+  theta_full[!fixed_flag] <- theta[!fixed_flag]
+  obj$gr(theta_full)
 }
 

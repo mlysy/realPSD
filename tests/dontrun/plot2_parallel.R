@@ -24,8 +24,8 @@ k  <- 0.172                 # Cantilever stiffness, N/m
 Temp <- 298                 # Temperature, Kelvin
 Aw <- 19000                 # white noise, fm2/Hz 
 Const <- 1e30
-unit_conversion <- TRUE     # if TRUE, convert m2/Hz to fm2/Hz
-if(!unit_conversion) Aw <- Aw / Const
+unit_conversion <- FALSE     # if TRUE, convert the standard unit m2/Hz to fm2/Hz
+if(!unit_conversion) Aw <- Aw / Const # if FALSE, then we use the standard unit m2/Hz
 
 # ---------- simulate random datasets ----------
 f_lb <- f0 - f0/sqrt(2) # frequency lower bound
@@ -33,7 +33,6 @@ f_ub <- f0 + f0/sqrt(2) # frequency upper bound
 fseq <- seq(from = f_lb, to = f_ub, by = 1/Time) # frequency domain, Hz
 nf <- length(fseq) # number of frequencies
 
-# ---------- data simulation ----------
 nsim <- 20
 bin_size <- 100
 
@@ -85,7 +84,8 @@ fit_success <- mclapply(1:nfit, function(ii) {
     fitSHOW(fseq, sim_exp = r_exp,
             f0 = f0, fs = fs, Q = Q,
             k = k, Temp = Temp, Aw = Aw,
-            bin_size = bin_size, method = method, unit_conversion)
+            bin_size = bin_size, method = method, 
+            unit_conversion = unit_conversion)
   }, error = function(err) message("fitting error on job ", ii),
   warning = function(w) print(w))
   if(!is.null(theta_hat)) {
