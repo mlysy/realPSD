@@ -37,6 +37,8 @@ namespace realPSD {
     Type nll(cRefMatrix_t& U, const Type tau);
     /// Profiled objective function for the NLS method.
     Type nlp(cRefMatrix_t& U);
+    /// Vector of residuals (objective function from another point of view)
+    matrix<Type> res(cRefMatrix_t& U, const Type tau);
 
   };
 
@@ -94,6 +96,13 @@ namespace realPSD {
   inline Type NLS<Type>::nll(cRefMatrix_t& Ubar, Type tau) {
     YU_ = Ybar_ - tau * Ubar;
     return YU_.squaredNorm();
+  }
+
+  /// The NLS residual vector 
+  template <class Type>
+  inline matrix<Type> NLS<Type>::res(cRefMatrix_t& Ubar, Type tau) {
+    YU_ = Ybar - tau * Ubar;
+    return YU_;
   }
 
   /// Calculates the objective function given `U` at the optimal value of `tau(U)`.
