@@ -101,7 +101,7 @@ namespace realPSD {
   /// The NLS residual vector 
   template <class Type>
   inline matrix<Type> NLS<Type>::res(cRefMatrix_t& Ubar, Type tau) {
-    YU_ = Ybar - tau * Ubar;
+    YU_ = Ybar_ - tau * Ubar;
     return YU_;
   }
 
