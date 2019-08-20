@@ -102,7 +102,7 @@ namespace realPSD {
   template <class Type>
   inline matrix<Type> NLS<Type>::res(cRefMatrix_t& Ubar, Type tau) {
     YU_ = Ybar_ - tau * Ubar;
-    return YU_;
+    return YU_ * 1;
   }
 
   /// Calculates the objective function given `U` at the optimal value of `tau(U)`.
