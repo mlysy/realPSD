@@ -107,26 +107,30 @@ fitSHOW <- function(fseq, sim_exp, f0, fs, Q, k, Temp, Aw,
     opt <- optim(phi, fn = obj$fn, gr = obj$gr,
               method = "BFGS",
               control = list(maxit = 2000))
+    # check convergence for MLE and LP
+    if(opt$convergence != 0) 
+      warning(paste0(method, " didn't converge!"))
     phi_hat <- opt$par
   } else {
     # optimize Q (gamma), fix f0 and Rw
-    opt1 <- pracma::lsqnonlin(fun = fn_fixed,
+    opt1 <- pracma::lsqnonlin(fun = nls_res_fixed,
       x0 = phi, 
       obj = obj, fixed_flag = c(1,0,1), fixed_phi = phi[c(1,3)]) 
+    if(opt1$errno != 1) warning("NLS didn't converge at step 1.")
     # optimize Q and f0, fix Rw
-    opt2 <- pracma::lsqnonlin(fun = fn_fixed, 
+    opt2 <- pracma::lsqnonlin(fun = nls_res_fixed, 
       x0 = opt1$x,
-      obj = obj, fixed_flag = c(0,0,1), fixed_phi = opt1$x[3])
+      obj = obj, fixed_flag = c(0,0,1), fixed_phi = phi[3])
+    if(opt1$errno != 1) warning("NLS didn't converge at step 2.")
     # optimize all three parameters
-    opt3 <- pracma::lsqnonlin(fun = obj$fn, 
-      x0 = opt2$x)
+    opt3 <- pracma::lsqnonlin(fun = nls_res_fixed, 
+      x0 = opt2$x,
+      obj = obj, fixed_flag = c(0,0,0), fixed_phi = NULL)
+    if(opt1$errno != 1) warning("NLS didn't converge at step 3.")
     # return phi_hat
     phi_hat <- opt3$x
   }
-  # check convergence 
-  if(opt$convergence != 0) 
-    warning(paste0(method, " didn't converge!"))
-
+  
   # output
   tau_hat <- get_tau(phi_hat) # fitted tau = sigma^2, unit should be the same as Aw
   param <- rep(NA, 4) # allocate space for storage
@@ -155,7 +159,42 @@ fitSHOW <- function(fseq, sim_exp, f0, fs, Q, k, Temp, Aw,
   return(fit_data)
 }
 
-# wrapper function of TMB ----- method 1 -----
+# wrapper functions ----- method 1 ------
+#' @param obj TMB obj
+#' @param theta Parameter vector
+#' @param fixed_flag Vector of TRUE/FALSE indicating which dimension of theta should be fixed
+#' @param fixed_phi Vector of fixed values, length(fixed_phi) == length(which(fixed_id == TRUE))
+fn_fixed <- function(theta, obj, fixed_flag, fixed_phi) {
+  # set space without chaning the original theta
+  theta_full <- rep(NA, length(theta))
+  # fix part of theta
+  # theta_full[which(fixed_flag == TRUE)] <- fixed_phi
+  theta_full[fixed_flag == TRUE] <- fixed_phi
+  # fill the remaining part with theta
+  # theta_full[which(fixed_flag != TRUE)] <- theta
+  theta_full[!fixed_flag] <- theta[!fixed_flag]
+  # return
+  obj$fn(theta_full)
+}
+gr_fixed <- function(theta, obj, fixed_flag, fixed_phi) {
+  theta_full <- rep(NA, length(theta))
+  theta_full[fixed_flag == TRUE] <- fixed_phi
+  theta_full[!fixed_flag] <- theta[!fixed_flag]
+  obj$gr(theta_full)
+}
+# wrapper function of the vector of residuals for NLS
+nls_res <- function(phi, obj) {
+  c(obj$simulate(phi)$RES)
+} 
+# wrapper of nls_res with fixed parameters
+nls_res_fixed <- function(phi, obj, fixed_flag, fixed_phi) {
+  phi_full <- rep(NA, length(phi))
+  phi_full[fixed_flag == TRUE] <- fixed_phi
+  phi_full[!fixed_flag] <- phi[!fixed_flag]
+  nls_res(phi_full, obj)
+}
+
+# wrapper function of TMB ----- method 2 -----
 MakePSDFun <- function(method = c("lp", "mle", "nls"), map, DLL) {
   if (method == "lp") {
     obj <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
@@ -229,29 +268,5 @@ get_tau <- function(method = c("lp", "mle", "nls"), phi, DLL) {
   } else {
     stop("method should be chosen from lp, nls and mle.")
   }
-}
-
-# wrapper functions ----- method 2 ------
-#' @param obj TMB obj
-#' @param theta Parameter vector
-#' @param fixed_flag Vector of TRUE/FALSE indicating which dimension of theta should be fixed
-#' @param fixed_phi Vector of fixed values, length(fixed_phi) == length(which(fixed_id == TRUE))
-fn_fixed <- function(theta, obj, fixed_flag, fixed_phi) {
-  # set space without chaning the original theta
-  theta_full <- rep(NA, length(theta))
-  # fix part of theta
-  # theta_full[which(fixed_flag == TRUE)] <- fixed_phi
-  theta_full[fixed_flag == TRUE] <- fixed_phi
-  # fill the remaining part with theta
-  # theta_full[which(fixed_flag != TRUE)] <- theta
-  theta_full[!fixed_flag] <- theta[!fixed_flag]
-  # return
-  obj$fn(theta_full)
-}
-gr_fixed <- function(theta, obj, fixed_flag, fixed_phi) {
-  theta_full <- rep(NA, length(theta))
-  theta_full[fixed_flag == TRUE] <- fixed_phi
-  theta_full[!fixed_flag] <- theta[!fixed_flag]
-  obj$gr(theta_full)
 }
 

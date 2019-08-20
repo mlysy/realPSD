@@ -197,34 +197,43 @@ Type SHOWFit(objective_function<Type>* obj) {
     // calculate Ubar
     Ufun.eval(Ubar, phi);
     Ubar = Ubar * fs;
-    // calculate nlp
-    return nls.nlp(Ubar);
-  } else if(method == "NLS_res") {
-    // data
-    DATA_MATRIX(fbar);
-    DATA_MATRIX(Ybar);
-    DATA_VECTOR(fs);
-    // parameters
-    PARAMETER_MATRIX(phi);
-    PARAMETER(tau);
-    // intermediate variables
-    int N = fbar.size();
-    UFun<Type> Ufun(N);
-    NLS<Type> nls(N);
-    matrix<Type> Ubar(N,1);
-    Ufun.set_f(fbar);
-    nls.set_Ybar(Ybar);
-    // calculate Ubar
-    Ufun.eval(Ubar, phi);
-    Ubar = Ubar * fs;
+    // addtionally report the vector of residuals
     // calculate the residuals
     SIMULATE{
       matrix<Type> RES(N,1);
-      RES = nls.res(Ubar, tau);
+      RES = nls.res(Ubar);
       REPORT(RES); 
-    }
-    return Type(0); 
-  } else {
+    } 
+    // calculate nlp
+    return nls.nlp(Ubar);
+  } 
+  // else if(method == "NLS_res") {
+  //   // data
+  //   DATA_MATRIX(fbar);
+  //   DATA_MATRIX(Ybar);
+  //   DATA_VECTOR(fs);
+  //   // parameters
+  //   PARAMETER_MATRIX(phi);
+  //   // PARAMETER(tau);
+  //   // intermediate variables
+  //   int N = fbar.size();
+  //   UFun<Type> Ufun(N);
+  //   NLS<Type> nls(N);
+  //   matrix<Type> Ubar(N,1);
+  //   Ufun.set_f(fbar);
+  //   nls.set_Ybar(Ybar);
+  //   // calculate Ubar
+  //   Ufun.eval(Ubar, phi);
+  //   Ubar = Ubar * fs;
+  //   // calculate the residuals
+  //   SIMULATE{
+  //     matrix<Type> RES(N,1);
+  //     RES = nls.res(Ubar);
+  //     REPORT(RES); 
+  //   }
+  //   return Type(0); 
+  // } 
+  else {
     error("Unknown method.");
   }
   return Type(0.0);

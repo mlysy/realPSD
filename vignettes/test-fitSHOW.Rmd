@@ -19,7 +19,7 @@ suppressMessages(require(realPSD))
 # suppressMessages(require(tidyverse))
 suppressMessages(require(optimCheck))
 # suppressMessages(require(minpack.lm)) # for nonlinear LS optim
-suppressMessages(require(nlsr)) # for NLS optimization
+suppressMessages(require(pracma)) # for NLS optimization
 source("../tests/dontrun/fitSHOW.R")
 ```
 
@@ -279,6 +279,21 @@ Many other nonlinear optimization routines have been tried, finally we chose `nl
 
 We also found out that when the initial parameters are set to be the true values, the results would look much better than those obtained from random initial parameters. (More specifically, the estimated $\hat\sigma^2$ would be more accurate when $Q = 100, 500$.)
 
+```{r, warpper functions, echo = FALSE}
+# wrapper function of the vector of residuals for NLS
+nls_res <- function(phi, obj) {
+  c(obj$simulate(phi)$RES)
+} 
+# wrapper of nls_res with fixed parameters
+nls_res_fixed <- function(phi, obj, fixed_flag, fixed_phi) {
+  phi_full <- rep(NA, length(phi))
+  phi_full[fixed_flag == TRUE] <- fixed_phi
+  phi_full[!fixed_flag] <- phi[!fixed_flag]
+  nls_res(phi_full, obj)
+}
+
+```
+
 ```{r, check_nle_cap, echo = FALSE}
 caption_nls <- rep(NA, length(Q_vec))
 for(ii in 1:length(Q_vec)) {
@@ -318,34 +333,27 @@ for(ii in 1:length(Q_vec)) {
                           parameters = list(phi = matrix(0, 3, 1)),
                           silent = TRUE, DLL = "realPSD_TMBExports")
   # --------- optimization -----------
-  start <- phi_list[[ii]]
-  names(start) <- c("f0", "gamma", "Rw")
+  phi <- phi_list[[ii]]
+  names(phi) <- c("f0", "gamma", "Rw")
   # try to set the initial gamma to be true value (as MATLAB code)
-  start[2] <- f0*Q 
-  # first, fix f0 and Rw, optimize gamma (i.e. to optimize Q since f0 is fixed)
-  opt1 <- nlsr::nlfb(start = start, resfn = obj$fn,
-    lower = 0,
-    maskdix = c(1,0,1), # indices of parameters to be fixed
-    weights = rep(1,3)
-  )
-  # second, optimize f0 and Q
-  opt2 <- nlsr::nlfb(start = opt1$coefficients,
-                     resfn = obj$fn,
-                     lower = 0,
-                     maskdix = c(0,0,1),
-                     weights = rep(1,3))
-  # third, optimize all three parameters
-  opt3 <- nlsr::nlfb(start = opt2$coefficients,
-                     resfn = obj$fn,
-                     lower = 0,
-                     weights = rep(1,3))
-
+  # optimize Q (gamma), fix f0 and Rw
+  opt1 <- pracma::lsqnonlin(fun = nls_res_fixed,
+    x0 = phi, 
+    obj = obj, fixed_flag = c(1,0,1), fixed_phi = phi[c(1,3)]) 
+  # optimize Q and f0, fix Rw
+  opt2 <- pracma::lsqnonlin(fun = nls_res_fixed, 
+    x0 = opt1$x,
+    obj = obj, fixed_flag = c(0,0,1), fixed_phi = phi[3])
+  # optimize all three parameters
+  opt3 <- pracma::lsqnonlin(fun = nls_res_fixed, 
+    x0 = opt2$x,
+    obj = obj, fixed_flag = c(0,0,0), fixed_phi = NULL)
+  # return phi_hat
+  phi_hat <- opt3$x
   # ---------- check optim ----------
-  optim_proj(fun = obj$fn, xsol = opt3$coefficients, maximize = FALSE,
+  optim_proj(fun = obj$fn, xsol = phi_hat, maximize = FALSE,
     xnames = c("f0", "gamma", "Rw"))
   # ---------- check tau_hat ----------
-  # phi_hat <- opt$par
-  phi_hat <- opt3$coefficients
   tau_hat <- get_tau(phi_hat, "nls")
   sig2 <- Kb*Temp/(k*pi*f0*Q)
   err <- abs(sig2 - tau_hat)/sig2

@@ -23,10 +23,10 @@ fitSHOW <- function(fseq, sim_exp, f0, fs, Q, k, Temp, Aw,
     sig2 <- Kb*Temp/(k*pi*f0*Q) # variance, unit: m2/Hz
   }
   Rw <- Aw/sig2 # re-parameterization, note we input Aw with unit fm2/Hz
-  phi <- c(f0, f0*Q, Rw) # parameter vector for SHOW model
-  # phi <- c(f0 + rnorm(1, 0, sqrt(f0)/10), 
-  #   f0*Q + rnorm(1, 0, sqrt(f0*Q)/10), 
-  #   Rw + rnorm(1,0,Rw/10)) 
+  # phi <- c(f0, f0*Q, Rw) # parameter vector for SHOW model
+  phi <- c(f0 + rnorm(1, 0, sqrt(f0)/10), 
+    f0*Q + rnorm(1, 0, sqrt(f0*Q)/10), 
+    Rw + rnorm(1,0,Rw/10)) 
   # psd values at each frequency point of f with given Q
   psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion) + Aw
   # generate the periodogram values
@@ -101,43 +101,38 @@ fitSHOW <- function(fseq, sim_exp, f0, fs, Q, k, Temp, Aw,
     stop("method should be chosen from lp, nls and mle.")
   }
   # ---------- optimization -----------
-  opt <- optim(phi, fn = obj$fn, gr = obj$gr,
-            method = "BFGS",
-            control = list(maxit = 2000))
-  phi_hat <- opt$par
-  # check convergence 
-  if(opt$convergence != 0) 
-    warning(paste0(method, " didn't converge!"))
-  # if(method == "mle" || method == "lp"){
-  #   opt <- optim(phi, fn = obj$fn, gr = obj$gr,
-  #             method = "BFGS",
-  #             control = list(maxit = 2000))
-  #   phi_hat <- opt$par
-  # } else {
-  #   names(phi) <- c("f0", "gamma", "Rw")
-  #   # phi[2] <- f0 * Q # set the initial gamma (i.e. Q) to be the true value
-  #   # optimize gamma (i.e., Q with f0 fixed)
-  #   opt1 <- nlsr::nlfb(start = phi,
-  #                     resfn = obj$fn,
-  #                     lower = 0,
-  #                     maskdix = c(1,0,1), # indices of parameters to be fixed
-  #                     weights = rep(1,3),
-  #                     control = list(jemax = 2000))
-  #   # optimize f0 and Q
-  #   opt2 <- nlsr::nlfb(start = opt1$coefficients,
-  #                      resfn = obj$fn,
-  #                      lower = 0,
-  #                      maskdix = c(0,0,1),
-  #                      weights = rep(1,3),
-  #                      control = list(jemax = 2000))
-  #   # optimize all three parameters
-  #   opt3 <- nlsr::nlfb(start = opt2$coefficients,
-  #                      resfn = obj$fn,
-  #                      lower = 0,
-  #                      weights = rep(1,3),
-  #                      control = list(jemax = 2000))
-  #   phi_hat <- opt3$coefficients
-  # }
+  # opt <- optim(phi, fn = obj$fn, gr = obj$gr,
+  #           method = "BFGS",
+  #           control = list(maxit = 2000))
+  # phi_hat <- opt$par
+  if(method == "mle" || method == "lp"){
+    opt <- optim(phi, fn = obj$fn, gr = obj$gr,
+              method = "BFGS",
+              control = list(maxit = 2000))
+    # check convergence for MLE and LP
+    if(opt$convergence != 0) 
+      warning(paste0(method, " didn't converge!"))
+    phi_hat <- opt$par
+  } else {
+    # optimize Q (gamma), fix f0 and Rw
+    opt1 <- pracma::lsqnonlin(fun = nls_res_fixed,
+      x0 = phi, 
+      obj = obj, fixed_flag = c(1,0,1), fixed_phi = phi[c(1,3)]) 
+    # if(opt1$errno != 1) warning("NLS didn't converge at step 1.")
+    # optimize Q and f0, fix Rw
+    opt2 <- pracma::lsqnonlin(fun = nls_res_fixed, 
+      x0 = opt1$x,
+      obj = obj, fixed_flag = c(0,0,1), fixed_phi = phi[3])
+    # if(opt1$errno != 1) warning("NLS didn't converge at step 2.")
+    # optimize all three parameters
+    opt3 <- pracma::lsqnonlin(fun = nls_res_fixed, 
+      x0 = opt2$x,
+      obj = obj, fixed_flag = c(0,0,0), fixed_phi = NULL)
+    # if(opt1$errno != 1) warning("NLS didn't converge at step 3.")
+    # return phi_hat
+    phi_hat <- opt3$x
+  }
+  # output
   tau_hat <- get_tau(phi_hat) # fitted tau = sigma^2, unit should be the same as Aw
   param <- rep(NA, 4) # allocate space for storage
   param[1] <- phi_hat[1] # f0_hat
@@ -150,4 +145,39 @@ fitSHOW <- function(fseq, sim_exp, f0, fs, Q, k, Temp, Aw,
   }
   names(param) <- c("f0_hat", "Q_hat", "k_hat", "Aw_hat")
   return(param)
+}
+
+# wrapper functions ----- method 1 ------
+#' @param obj TMB obj
+#' @param theta Parameter vector
+#' @param fixed_flag Vector of TRUE/FALSE indicating which dimension of theta should be fixed
+#' @param fixed_phi Vector of fixed values, length(fixed_phi) == length(which(fixed_id == TRUE))
+fn_fixed <- function(theta, obj, fixed_flag, fixed_phi) {
+  # set space without chaning the original theta
+  theta_full <- rep(NA, length(theta))
+  # fix part of theta
+  # theta_full[which(fixed_flag == TRUE)] <- fixed_phi
+  theta_full[fixed_flag == TRUE] <- fixed_phi
+  # fill the remaining part with theta
+  # theta_full[which(fixed_flag != TRUE)] <- theta
+  theta_full[!fixed_flag] <- theta[!fixed_flag]
+  # return
+  obj$fn(theta_full)
+}
+gr_fixed <- function(theta, obj, fixed_flag, fixed_phi) {
+  theta_full <- rep(NA, length(theta))
+  theta_full[fixed_flag == TRUE] <- fixed_phi
+  theta_full[!fixed_flag] <- theta[!fixed_flag]
+  obj$gr(theta_full)
+}
+# wrapper function of the vector of residuals for NLS
+nls_res <- function(phi, obj) {
+  c(obj$simulate(phi)$RES)
+} 
+# wrapper of nls_res with fixed parameters
+nls_res_fixed <- function(phi, obj, fixed_flag, fixed_phi) {
+  phi_full <- rep(NA, length(phi))
+  phi_full[fixed_flag == TRUE] <- fixed_phi
+  phi_full[!fixed_flag] <- phi[!fixed_flag]
+  nls_res(phi_full, obj)
 }

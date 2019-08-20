@@ -42,8 +42,9 @@ nls_nll_r <- function(phi, tau, Ybar, fbar, ufun, fs) {
   Ubar <- fs * ufun(fbar, phi)
   sum((Ybar - tau * Ubar)^2)
 }
-nls_res_r <- function(phi, tau, Ybar, fbar, ufun, fs) {
+nls_res_r <- function(phi, Ybar, fbar, ufun, fs) {
   Ubar <- fs * ufun(fbar, phi)
+  tau <- nls_tau_r(fbar, Ybar, phi, ufun, fs)
   Ybar - tau * Ubar
 }
 nls_tau_r <- function(fbar, Ybar, phi, ufun, fs) {
