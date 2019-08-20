@@ -1,7 +1,6 @@
 # test optimization in MATLAB
 require(realPSD)
 require(tidyverse)
-require(nlsr)
 require(R.matlab)
 source("fitSHOW_test.R")
 # some initial constants

@@ -1,6 +1,7 @@
 # to reproduce Figure 2 in the paper
 require(realPSD)
 # require(TMB)
+# require(pracma)
 require(parallel)
 require(tidyverse)
 require(tikzDevice)
@@ -33,7 +34,7 @@ f_ub <- f0 + f0/sqrt(2) # frequency upper bound
 fseq <- seq(from = f_lb, to = f_ub, by = 1/Time) # frequency domain, Hz
 nf <- length(fseq) # number of frequencies
 
-nsim <- 20
+nsim <- 1000
 bin_size <- 100
 
 # detect the number of cores

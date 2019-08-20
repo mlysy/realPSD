@@ -116,17 +116,17 @@ fitSHOW <- function(fseq, sim_exp, f0, fs, Q, k, Temp, Aw,
     opt1 <- pracma::lsqnonlin(fun = nls_res_fixed,
       x0 = phi, 
       obj = obj, fixed_flag = c(1,0,1), fixed_phi = phi[c(1,3)]) 
-    if(opt1$errno != 1) warning("NLS didn't converge at step 1.")
+    # if(opt1$errno != 1) warning("NLS didn't converge at step 1.")
     # optimize Q and f0, fix Rw
     opt2 <- pracma::lsqnonlin(fun = nls_res_fixed, 
       x0 = opt1$x,
       obj = obj, fixed_flag = c(0,0,1), fixed_phi = phi[3])
-    if(opt1$errno != 1) warning("NLS didn't converge at step 2.")
+    # if(opt1$errno != 1) warning("NLS didn't converge at step 2.")
     # optimize all three parameters
     opt3 <- pracma::lsqnonlin(fun = nls_res_fixed, 
       x0 = opt2$x,
       obj = obj, fixed_flag = c(0,0,0), fixed_phi = NULL)
-    if(opt1$errno != 1) warning("NLS didn't converge at step 3.")
+    # if(opt1$errno != 1) warning("NLS didn't converge at step 3.")
     # return phi_hat
     phi_hat <- opt3$x
   }
