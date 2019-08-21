@@ -1,7 +1,6 @@
 # to reproduce Figure 2 in the paper
 require(realPSD)
 # require(TMB)
-# require(pracma)
 require(parallel)
 require(tidyverse)
 require(tikzDevice)
@@ -25,7 +24,7 @@ k  <- 0.172                 # Cantilever stiffness, N/m
 Temp <- 298                 # Temperature, Kelvin
 Aw <- 19000                 # white noise, fm2/Hz 
 Const <- 1e30
-unit_conversion <- FALSE     # if TRUE, convert the standard unit m2/Hz to fm2/Hz
+unit_conversion <- FALSE    # if TRUE, convert the standard unit m2/Hz to fm2/Hz
 if(!unit_conversion) Aw <- Aw / Const # if FALSE, then we use the standard unit m2/Hz
 
 # ---------- simulate random datasets ----------
@@ -87,7 +86,10 @@ fit_success <- mclapply(1:nfit, function(ii) {
             k = k, Temp = Temp, Aw = Aw,
             bin_size = bin_size, method = method, 
             unit_conversion = unit_conversion)
-  }, error = function(err) message("fitting error on job ", ii),
+  }, error = function(err) {
+    message("fitting error on job ", ii)
+    return(NA)
+  },
   warning = function(w) print(w))
   if(!is.null(theta_hat)) {
     saveRDS(theta_hat,
@@ -113,7 +115,7 @@ for(ii in 1:nfit) {
 fit_data <- do.call(rbind, fit_list)
 fit_data <- cbind(fit_data, fit_descr[,c("Q_level", "method")])
 # then manipulate the data frame using tidyverse toolbox
-fit_data <- fit_data %>% as_tibble() %>%
+fit_data <- fit_data %>% as_tibble() %>% drop_na() %>%
   mutate(Q_level = factor(Q_level,  # convert the column Q_level into a factor
     levels = c(1,10,100,500), labels = c("Q = 1", "Q = 10", "Q = 100", "Q = 500"))) %>% 
   mutate(method = factor(method, levels = c("nls", "lp", "mle"))) # factor column method 
@@ -151,13 +153,18 @@ saveRDS(mse_ratio, file = file.path(data_path_result,
 # print it out
 print(mse_ratio)
 
+# find out the max of each column of ratio_data to determine the position of geom_text labels
+ylim_Q <- max(ratio_data[,"Q_hat"])
+ylim_k <- max(ratio_data[,"k_hat"])
+ylim_f0 <- max(ratio_data[, "f0_hat"])
+
 # boxplot
 # Q_hat / Q
 tikzDevice::tikz(file = "boxplot_Q.tex", width = 8, height = 2)
 fig_Q <- ggplot(ratio_data, aes(x = Q_level, y = Q_hat, fill = method)) + 
   geom_boxplot(outlier.size = 0.8) +
   geom_text(data = mse_ratio, 
-    aes(y = 1, label = round(Q_hat,2)),
+    aes(y = ylim_Q + 0.05*(ylim_Q-1), label = round(Q_hat,2)),
     position = position_dodge(width = 1)) + 
   xlab(label = NULL)  +
   ylab(label = "$\\hat{Q}/Q$")
@@ -170,7 +177,7 @@ tikzDevice::tikz(file = "./boxplot_k.tex", width = 8, height = 2)
 fig_k <- ggplot(ratio_data, aes(x = Q_level, y = k_hat, fill = method)) + 
   geom_boxplot(outlier.size = 0.8) +
   geom_text(data = mse_ratio, 
-    aes(y = 1, label = round(k_hat,2)),
+    aes(y = ylim_k + 0.05*(ylim_k-1), label = round(k_hat,2)),
     position = position_dodge(width = 0.8)) + 
   xlab(label = NULL)  +
   ylab(label = "$\\hat{k}/k$")
@@ -183,7 +190,7 @@ tikzDevice::tikz(file = "./boxplot_f0.tex", width = 8, height = 2)
 fig_f0 <- ggplot(ratio_data, aes(x = Q_level, y = f0_hat, fill = method)) + 
   geom_boxplot(outlier.size = 0.8) + 
   geom_text(data = mse_ratio, 
-    aes(y = 1, label = round(f0_hat,2)),
+    aes(y = ylim_f0 + 0.05*(ylim_f0-1), label = round(f0_hat,2)),
     position = position_dodge(width = 0.8)) + 
   xlab(label = NULL)  +
   ylab(label = "$\\hat{f_0}/f_0$")

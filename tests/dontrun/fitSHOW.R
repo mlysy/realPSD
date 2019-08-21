@@ -23,10 +23,10 @@ fitSHOW <- function(fseq, sim_exp, f0, fs, Q, k, Temp, Aw,
     sig2 <- Kb*Temp/(k*pi*f0*Q) # variance, unit: m2/Hz
   }
   Rw <- Aw/sig2 # re-parameterization, note we input Aw with unit fm2/Hz
-  # phi <- c(f0, f0*Q, Rw) # parameter vector for SHOW model
-  phi <- c(f0 + rnorm(1, 0, sqrt(f0)/10), 
-    f0*Q + rnorm(1, 0, sqrt(f0*Q)/10), 
-    Rw + rnorm(1,0,Rw/10)) 
+  phi <- c(f0, f0*Q, Rw) # parameter vector for SHOW model
+  # phi <- c(f0 + rnorm(1, 0, sqrt(f0)/10), 
+  #   f0*Q + rnorm(1, 0, sqrt(f0*Q)/10), 
+  #   Rw + rnorm(1,0, Rw/10)) 
   # psd values at each frequency point of f with given Q
   psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion) + Aw
   # generate the periodogram values
@@ -106,31 +106,80 @@ fitSHOW <- function(fseq, sim_exp, f0, fs, Q, k, Temp, Aw,
   #           control = list(maxit = 2000))
   # phi_hat <- opt$par
   if(method == "mle" || method == "lp"){
-    opt <- optim(phi, fn = obj$fn, gr = obj$gr,
-              method = "BFGS",
-              control = list(maxit = 2000))
-    # check convergence for MLE and LP
-    if(opt$convergence != 0) 
-      warning(paste0(method, " didn't converge!"))
-    phi_hat <- opt$par
+    # ---------- optim all-at-once ---------
+    # opt <- optim(phi, fn = obj$fn, gr = obj$gr,
+    #           method = "BFGS",
+    #           control = list(maxit = 2000))
+    # # check convergence for MLE and LP
+    # if(opt$convergence != 0) 
+    #   warning(paste0(method, " didn't converge!"))
+    # phi_hat <- opt$par
+    # ----- optim step-by-step -----
+    start <- phi
+    opt1 <- optim(start, fn = fn_fixed, 
+      obj = obj, fixed_flag = c(1,0,1), fixed_phi = phi[c(1,3)],
+      method = "Nelder-Mead") 
+    start[2] <- opt1$par[2]
+    opt2 <- optim(start, fn = fn_fixed,
+      obj = obj, fixed_flag = c(0,0,1), fixed_phi = phi[3],
+      method = "Nelder-Mead")
+    start[c(1,2)] <- opt2$par[c(1,2)]
+    # opt3 <- optim(start, fn = obj$fn)
+    opt3 <- optim(start, fn = obj$fn, gr = obj$gr, method = "BFGS")
+    phi_hat <- opt3$par
+    # ----- fminsearch ------
+    # start <- phi
+    # opt1 <- pracma::fminsearch(fn = fn_fixed,
+    #   x0 = start,
+    #   obj = obj, fixed_flag = c(1,0,1), fixed_phi = phi[c(1,3)],
+    #   method = "Nelder-Mead") 
+    # start[2] <- opt1$xmin[2]
+    # opt2 <- pracma::fminsearch(fn = fn_fixed,
+    #   x0 = start,
+    #   obj = obj, fixed_flag = c(0,0,1), fixed_phi = phi[3],
+    #   method = "Nelder-Mead")
+    # start[c(1,2)] <- opt2$xmin[c(1,2)]
+    # opt3 <- pracma::fminsearch(fn = obj$fn, 
+    #   x0 = start, method = "Nelder-Mead")
+    # phi_hat <- opt3$xmin
   } else {
+    # ---------- lsqnonlin ---------
+    # set some option parameters to avoid errors
+    # tolx <- 1/(sum(phi^2)) # in order to compensate the squared norm of the parameter vector
+    # tolg <- max(10*abs(obj$gr(phi)))
+    tolx <- .Machine$double.eps
+    tolg <- .Machine$double.eps
     # optimize Q (gamma), fix f0 and Rw
     opt1 <- pracma::lsqnonlin(fun = nls_res_fixed,
       x0 = phi, 
+      options = list(tolx = tolx, tolg = tolg, maxeval = 1000),
       obj = obj, fixed_flag = c(1,0,1), fixed_phi = phi[c(1,3)]) 
     # if(opt1$errno != 1) warning("NLS didn't converge at step 1.")
     # optimize Q and f0, fix Rw
     opt2 <- pracma::lsqnonlin(fun = nls_res_fixed, 
       x0 = opt1$x,
+      options = list(tolx = tolx, tolg = tolg, maxeval = 1000),
       obj = obj, fixed_flag = c(0,0,1), fixed_phi = phi[3])
     # if(opt1$errno != 1) warning("NLS didn't converge at step 2.")
     # optimize all three parameters
     opt3 <- pracma::lsqnonlin(fun = nls_res_fixed, 
       x0 = opt2$x,
+      options = list(tolx = tolx, tolg = tolg, maxeval = 1000),
       obj = obj, fixed_flag = c(0,0,0), fixed_phi = NULL)
     # if(opt1$errno != 1) warning("NLS didn't converge at step 3.")
     # return phi_hat
     phi_hat <- opt3$x
+    # ---------- minpack.lm::nls.lm ---------
+    # opt1 <- minpack.lm::nls.lm(par = phi, lower = rep(0,3), 
+    #   fn = nls_res_fixed,
+    #   obj = obj, fixed_flag = c(1,0,1), fixed_phi = phi[c(1,3)]) 
+    # opt2 <- minpack.lm::nls.lm(par = opt1$par, lower = rep(0,3), 
+    #   fn = nls_res_fixed,
+    #   obj = obj, fixed_flag = c(0,0,1), fixed_phi = phi[3])  
+    # opt3 <- minpack.lm::nls.lm(par = opt2$par, lower = rep(0,3), 
+    #   fn = nls_res_fixed,
+    #   obj = obj, fixed_flag = c(0,0,0), fixed_phi = NULL)  
+    # phi_hat <- opt3$par
   }
   # output
   tau_hat <- get_tau(phi_hat) # fitted tau = sigma^2, unit should be the same as Aw

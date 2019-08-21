@@ -275,7 +275,7 @@ When we fit the model by using MLE, we should set `method = BFGS` in `optim` and
 
 Similarly, we can do the `optimCheck` to see if the estimated parameters are found near the minima in the NLS method. In our tests, the `BFGS` optimization method usually fails.
 
-Many other nonlinear optimization routines have been tried, finally we chose `nlsr::nlfb` which gives Nash variant of Marquardt nonlinear least squares solution via qr linear solver. In general, the NLS method performs worse than the MLE (even though it converges) as shown by Figure \ref{fig:check_nls_optim1} ~ \ref{fig:check_nls_optim4}. 
+Many other nonlinear optimization routines have been tried, finally we chose to use step-by-step optimization by using `pracma::lsqnonlin` which is an R version of the MATLAB function with the same name. In general, the NLS method performs worse than the MLE (even though it converges) as shown by Figure \ref{fig:check_nls_optim1} ~ \ref{fig:check_nls_optim4}. 
 
 We also found out that when the initial parameters are set to be the true values, the results would look much better than those obtained from random initial parameters. (More specifically, the estimated $\hat\sigma^2$ would be more accurate when $Q = 100, 500$.)
 
@@ -335,6 +335,9 @@ for(ii in 1:length(Q_vec)) {
   # --------- optimization -----------
   phi <- phi_list[[ii]]
   names(phi) <- c("f0", "gamma", "Rw")
+  # set some option parameters to avoid errors
+  tolx <- .Machine$double.eps
+  tolg <- .Machine$double.eps
   # try to set the initial gamma to be true value (as MATLAB code)
   # optimize Q (gamma), fix f0 and Rw
   opt1 <- pracma::lsqnonlin(fun = nls_res_fixed,
@@ -366,7 +369,7 @@ for(ii in 1:length(Q_vec)) {
 
 ## Is the estimation of $\sigma^2$ accurate enough?
 
-The estimatation of $\sigma^2$ are more accurate when we choose the initial parameters to be the true ones.
+The estimatation of $\sigma^2$ are more accurate when we choose the initial parameters to be the true ones. For larger $Q$, the relative error may be larger.
 
 ## Compare the fitted parametric PSD with the true analytic PSD.
 
