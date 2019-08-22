@@ -33,7 +33,7 @@ f_ub <- f0 + f0/sqrt(2) # frequency upper bound
 fseq <- seq(from = f_lb, to = f_ub, by = 1/Time) # frequency domain, Hz
 nf <- length(fseq) # number of frequencies
 
-nsim <- 1000
+nsim <- 20
 bin_size <- 100
 
 # detect the number of cores
@@ -162,10 +162,11 @@ ylim_f0 <- max(ratio_data[, "f0_hat"])
 # Q_hat / Q
 tikzDevice::tikz(file = "boxplot_Q.tex", width = 8, height = 2)
 fig_Q <- ggplot(ratio_data, aes(x = Q_level, y = Q_hat, fill = method)) + 
-  geom_boxplot(outlier.size = 0.8) +
+  geom_boxplot(outlier.size = 0.5) +
+  # stat_boxplot(geom = "errorbar", width = 0.5) + 
   geom_text(data = mse_ratio, 
-    aes(y = ylim_Q + 0.05*(ylim_Q-1), label = round(Q_hat,2)),
-    position = position_dodge(width = 1)) + 
+    aes(y = ylim_Q + 0.08*(ylim_Q-1), label = round(Q_hat,2)),
+    position = position_dodge(width = 0.8)) + 
   xlab(label = NULL)  +
   ylab(label = "$\\hat{Q}/Q$")
 # ggsave("boxplot_Q.pdf")
@@ -177,7 +178,7 @@ tikzDevice::tikz(file = "./boxplot_k.tex", width = 8, height = 2)
 fig_k <- ggplot(ratio_data, aes(x = Q_level, y = k_hat, fill = method)) + 
   geom_boxplot(outlier.size = 0.8) +
   geom_text(data = mse_ratio, 
-    aes(y = ylim_k + 0.05*(ylim_k-1), label = round(k_hat,2)),
+    aes(y = ylim_k + 0.08*(ylim_k-1), label = round(k_hat,2)),
     position = position_dodge(width = 0.8)) + 
   xlab(label = NULL)  +
   ylab(label = "$\\hat{k}/k$")
@@ -190,7 +191,7 @@ tikzDevice::tikz(file = "./boxplot_f0.tex", width = 8, height = 2)
 fig_f0 <- ggplot(ratio_data, aes(x = Q_level, y = f0_hat, fill = method)) + 
   geom_boxplot(outlier.size = 0.8) + 
   geom_text(data = mse_ratio, 
-    aes(y = ylim_f0 + 0.05*(ylim_f0-1), label = round(f0_hat,2)),
+    aes(y = ylim_f0 + 0.08*(ylim_f0-1), label = round(f0_hat,2)),
     position = position_dodge(width = 0.8)) + 
   xlab(label = NULL)  +
   ylab(label = "$\\hat{f_0}/f_0$")
