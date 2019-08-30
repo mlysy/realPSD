@@ -8,7 +8,7 @@ output:
     number_sections: true
     fig_caption: true
 vignette: >
-  %\VignetteIndexEntry{test}
+  %\VignetteIndexEntry{sim_sine_wave}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
