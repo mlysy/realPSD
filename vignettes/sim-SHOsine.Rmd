@@ -1,0 +1,124 @@
+---
+title: "Simulation of SHO model with sine wave noise"
+author: "Feiyu Zhu"
+date: 
+link-citations: true
+output: 
+  pdf_document:
+    number_sections: true
+    fig_caption: true
+vignette: >
+  %\VignetteIndexEntry{test}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, out.width = '80%', fig.align='center')
+suppressMessages(require(realPSD))
+```
+
+# Derivation of the discrete Fourier transform of sine wave
+
+Given the sine wave function as follows
+
+$$
+g(t) = D \sin(2\pi \xi t + \phi), \quad\quad t = 1,2,\ldots
+$$
+
+Its discrete/finite Fourier transform is
+
+$$
+\tilde{g}(j) = \frac{D}{\sqrt N} \sum_{n=0}^{N-1} e^{-2\pi i f_j n} \sin(2\pi \xi n + \phi)
+$$
+
+where $N$ is the total number of discrete observations and $f_j = \frac j N f_s$ ($f_s$ is the sampling frequency).
+
+Recall $\sin(x) = (e^{ix} - e^{-ix})/ 2i$, then we have
+
+$$
+\begin{aligned}
+\tilde{g}(j) &= \frac{D}{\sqrt N} \sum_{n=0}^{N-1} e^{-2\pi i f_j n} \frac{e^{2\pi i \xi n + \phi i} - e^{-2\pi i \xi n - \phi i}}{2i} \\
+&= \frac{D}{2i\sqrt N} \left( e^{\phi i} \sum_{n=0}^{N-1} e^{2\pi i (\xi - f_j) n} - e^{-\phi i}\sum_{n=0}^{N-1} e^{-2\pi i (\xi + f_j)}n  \right) \\ 
+&= \frac{D}{2i\sqrt N} \left( e^{\phi i} \frac{e^{2\pi i (\xi - f_j)N } - 1}{e^{2\pi i (\xi - f_j)} - 1} - e^{-\phi i}\frac{e^{-2\pi i (\xi + f_j)N } - 1}{e^{-2\pi i (\xi + f_j)} - 1} \right)
+\end{aligned}
+$$
+
+# Simulation of sine wave noise directly from frequency domain
+
+First we set up the model constants.
+
+```{r, constants}
+# ---------- SHO model parameters ----------
+Time  <- 5                   # Total time, second
+fs <- 1e7                    # Sampling frequency, Hz
+f0 <- 33553                  # Resonance frequency, Hz
+Q_vec <- c(1, 10, 100, 500)  # Quality factors, unitless
+k  <- 0.172                  # Cantilever stiffness, N/m
+Kb <- 1.381e-23              # Boltzmann's constant, (m2*kg)/(s2*K)
+Temp <- 298                  # Temperature, K
+Const <- 1e30                # unit conversion, 1 m2 = 1e30 fm2
+unit_conversion <- TRUE
+```
+
+Then we generate the frequency domain.
+
+```{r, freq_domain}
+f_lb <- f0 - f0/sqrt(2) # frequency lower bound
+f_ub <- f0 + f0/sqrt(2) # frequency upper bound
+fseq <- seq(from = f_lb, to = f_ub, by = 1/Time) # frequency domain, Hz
+N <- length(fseq)
+```
+
+By using the previous formula, we can get the discretet Fourier transform  of the sine wave noise from frequency domain.
+
+```{r, sim_sine}
+# we can generate FFT(sine wave) directly from the frequency domain
+Q <- Q_vec[1]
+if(!unit_conversion) {
+  D <- (Q^0.5) * 3.5e3 / Const
+} else {
+  D <- (Q^0.5) * 3.5e3
+}
+xi <- rnorm(1, f0, 10)
+phi <- runif(1, 0, 2*pi)
+sin_fft <- D/(2*1i*sqrt(N)) * (
+  exp(phi*1i) * (exp(2*pi*1i*(xi-fseq)*N)-1)/(exp(2*pi*1i*(xi-fseq))-1) -
+  exp(-phi*1i) * (exp(-2*pi*1i*(xi+fseq)*N)-1)/(exp(-2*pi*1i*(xi+fseq))-1)
+) 
+```
+
+# Simulation of the SHO periodogram with sine wave noise
+
+We can generate the SHO periodogram from a two dimensional complex multivariate normal distribution. (Since the sum of two squared independent normal with mean 0 and variance $1/2$ is an exponential random variable.) 
+
+```{r, sim_show}
+# psd
+psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion)
+# complex normals
+x1 <- rnorm(N, 0, sqrt(1/2)) * sqrt(psd * fs)
+x2 <- rnorm(N, 0, sqrt(1/2)) * sqrt(psd * fs)
+Y <- complex(real = x1, imaginary = x2)
+# add FFT(sine) directly onto the complex normals
+Y <- (Y + sin_fft) * Conj(Y + sin_fft)
+# Y <- Y * Conj(Y) # for testing purposes
+Y <- Re(Y)
+```
+
+We can then plot the smoothed periodogram after binning. (We have converted the unit of PSD from $m^2/Hz$ to $fm^2/Hz$.)
+
+```{r, plot}
+bin_size <- 100
+# smoothed empirical psd (by binning)
+Ybar <- binning(Y, bin_size = bin_size)
+# frequency domain sequence after binning
+fbar <- binning(fseq, bin_size = bin_size)
+# plot
+plot(x = fbar, y = Ybar/fs, 
+    xlab = "frequency (Hz)", ylab = expression(paste("PSD (", fm^2/Hz, ")")),
+    type = "l", lwd = 0.3, log = "xy")
+lines(x = fbar, y = psdSHO(fbar, f0, Q, k, Kb, Temp, unit_conversion), 
+    col = "red")
+```
+
+
