@@ -32,7 +32,7 @@ f_ub <- f0 + f0/sqrt(2) # frequency upper bound
 fseq <- seq(from = f_lb, to = f_ub, by = 1/Time) # frequency domain, Hz
 nf <- length(fseq) # number of frequencies
 
-nsim <- 10
+nsim <- 100
 bin_size <- 100
 
 # detect the number of cores
@@ -136,28 +136,28 @@ ratio_data <- fit_data %>%
   )
 saveRDS(ratio_data, file = file.path(data_path_result,
   paste0("ratio_data.rds")))
-# calculate the MSE ratio for each method at each Q level
-# the baseline MLE method should always be 1
-mse_ratio <- ratio_data %>% 
-  mutate(f0_hat = (f0_hat - 1)^2,
-          Q_hat = (Q_hat - 1)^2,
-          k_hat = (k_hat - 1)^2,
-         Aw_hat = (Aw_hat - 1)^2) %>%
-  group_by(Q_level, method) %>%
-  summarize_all(sum) %>%
-  mutate(f0_hat = f0_hat / f0_hat[method == "mle"],
-             Q_hat = Q_hat / Q_hat[method == "mle"],
-             k_hat = k_hat / k_hat[method == "mle"],
-             Aw_hat = Aw_hat / Aw_hat[method == "mle"]) %>% ungroup()
-saveRDS(mse_ratio, file = file.path(data_path_result,
-  paste0("mse_ratio.rds")))
-# print it out
-print(mse_ratio)
+# # calculate the MSE ratio for each method at each Q level
+# # the baseline MLE method should always be 1
+# mse_ratio <- ratio_data %>% 
+#   mutate(f0_hat = (f0_hat - 1)^2,
+#           Q_hat = (Q_hat - 1)^2,
+#           k_hat = (k_hat - 1)^2,
+#          Aw_hat = (Aw_hat - 1)^2) %>%
+#   group_by(Q_level, method) %>%
+#   summarize_all(sum) %>%
+#   mutate(f0_hat = f0_hat / f0_hat[method == "mle"],
+#              Q_hat = Q_hat / Q_hat[method == "mle"],
+#              k_hat = k_hat / k_hat[method == "mle"],
+#              Aw_hat = Aw_hat / Aw_hat[method == "mle"]) %>% ungroup()
+# saveRDS(mse_ratio, file = file.path(data_path_result,
+#   paste0("mse_ratio.rds")))
+# # print it out
+# print(mse_ratio)
 
-# find out the max of each column of ratio_data to determine the position of geom_text labels
-ylim_Q <- max(ratio_data[,"Q_hat"])
-ylim_k <- max(ratio_data[,"k_hat"])
-ylim_f0 <- max(ratio_data[, "f0_hat"])
+# # find out the max of each column of ratio_data to determine the position of geom_text labels
+# ylim_Q <- max(ratio_data[,"Q_hat"])
+# ylim_k <- max(ratio_data[,"k_hat"])
+# ylim_f0 <- max(ratio_data[, "f0_hat"])
 
 # boxplot
 # Q_hat / Q
@@ -165,9 +165,9 @@ tikzDevice::tikz(file = "boxplot_Q.tex", width = 8, height = 2)
 fig_Q <- ggplot(ratio_data, aes(x = Q_level, y = Q_hat, fill = method)) + 
   geom_boxplot(outlier.size = 0.5) +
   # stat_boxplot(geom = "errorbar", width = 0.5) + 
-  geom_text(data = mse_ratio, 
-    aes(y = ylim_Q + 0.1*(ylim_Q-1), label = round(Q_hat,2)),
-    position = position_dodge(width = 0.8)) + 
+  # geom_text(data = mse_ratio, 
+  #   aes(y = ylim_Q + 0.1*(ylim_Q-1), label = round(Q_hat,2)),
+  #   position = position_dodge(width = 0.8)) + 
   xlab(label = NULL)  +
   ylab(label = "$\\hat{Q}/Q$")
 # ggsave("boxplot_Q.pdf")
@@ -178,9 +178,9 @@ dev.off()
 tikzDevice::tikz(file = "./boxplot_k.tex", width = 8, height = 2)
 fig_k <- ggplot(ratio_data, aes(x = Q_level, y = k_hat, fill = method)) + 
   geom_boxplot(outlier.size = 0.8) +
-  geom_text(data = mse_ratio, 
-    aes(y = ylim_k + 0.1*(ylim_k-1), label = round(k_hat,2)),
-    position = position_dodge(width = 0.8)) + 
+  # geom_text(data = mse_ratio, 
+  #   aes(y = ylim_k + 0.1*(ylim_k-1), label = round(k_hat,2)),
+  #   position = position_dodge(width = 0.8)) + 
   xlab(label = NULL)  +
   ylab(label = "$\\hat{k}/k$")
 print(fig_k)
@@ -191,9 +191,9 @@ dev.off()
 tikzDevice::tikz(file = "./boxplot_f0.tex", width = 8, height = 2)
 fig_f0 <- ggplot(ratio_data, aes(x = Q_level, y = f0_hat, fill = method)) + 
   geom_boxplot(outlier.size = 0.8) + 
-  geom_text(data = mse_ratio, 
-    aes(y = ylim_f0 + 0.1*(ylim_f0-1), label = round(f0_hat,2)),
-    position = position_dodge(width = 0.8)) + 
+  # geom_text(data = mse_ratio, 
+  #   aes(y = ylim_f0 + 0.1*(ylim_f0-1), label = round(f0_hat,2)),
+  #   position = position_dodge(width = 0.8)) + 
   xlab(label = NULL)  +
   ylab(label = "$\\hat{f_0}/f_0$")
 print(fig_f0)

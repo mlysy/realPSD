@@ -16,6 +16,7 @@ vignette: >
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, out.width = '80%', fig.align='center')
 suppressMessages(require(realPSD))
+suppressMessages(require(optimCheck))
 ```
 
 # Derivation of the discrete Fourier transform of sine wave
@@ -44,6 +45,7 @@ $$
 \end{aligned}
 $$
 
+
 # Simulation of sine wave noise directly from frequency domain
 
 First we set up the model constants.
@@ -59,6 +61,8 @@ Kb <- 1.381e-23              # Boltzmann's constant, (m2*kg)/(s2*K)
 Temp <- 298                  # Temperature, K
 Const <- 1e30                # unit conversion, 1 m2 = 1e30 fm2
 unit_conversion <- TRUE
+Aw <- 19000                 # white noise, fm2/Hz 
+if(!unit_conversion) Aw <- Aw / Const # if FALSE, we use the standard unit m2/Hz
 ```
 
 Then we generate the frequency domain.
@@ -73,52 +77,242 @@ N <- length(fseq)
 By using the previous formula, we can get the discretet Fourier transform  of the sine wave noise from frequency domain.
 
 ```{r, sim_sine}
-# we can generate FFT(sine wave) directly from the frequency domain
-Q <- Q_vec[1]
-if(!unit_conversion) {
-  D <- (Q^0.5) * 3.5e3 / Const
-} else {
-  D <- (Q^0.5) * 3.5e3
+# FFT (discrete Fourier transform) of sine wave noise
+fft_sin <- function(fseq, f0, Q, unit_conversion) {
+  N <- length(fseq)
+  if(!unit_conversion) {
+    D <- (Q^0.5) * 3.5e3 / Const
+  } else {
+    D <- (Q^0.5) * 3.5e3
+  }
+  xi <- rnorm(1, f0, 10)
+  phi <- runif(1, 0, 2*pi)
+  sin_fft <- D/(2*1i*sqrt(N)) * (
+    exp(phi*1i) * (exp(2*pi*1i*(xi-fseq)*N)-1)/(exp(2*pi*1i*(xi-fseq))-1) -
+    exp(-phi*1i) * (exp(-2*pi*1i*(xi+fseq)*N)-1)/(exp(-2*pi*1i*(xi+fseq))-1)
+  )
+  return(sin_fft)
 }
-xi <- rnorm(1, f0, 10)
-phi <- runif(1, 0, 2*pi)
-sin_fft <- D/(2*1i*sqrt(N)) * (
-  exp(phi*1i) * (exp(2*pi*1i*(xi-fseq)*N)-1)/(exp(2*pi*1i*(xi-fseq))-1) -
-  exp(-phi*1i) * (exp(-2*pi*1i*(xi+fseq)*N)-1)/(exp(-2*pi*1i*(xi+fseq))-1)
-) 
 ```
 
 # Simulation of the SHO periodogram with sine wave noise
 
 We can generate the SHO periodogram from a two dimensional complex multivariate normal distribution. (Since the sum of two squared independent normal with mean 0 and variance $1/2$ is an exponential random variable.) 
 
-```{r, sim_show}
-# psd
-psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion)
-# complex normals
-x1 <- rnorm(N, 0, sqrt(1/2)) * sqrt(psd * fs)
-x2 <- rnorm(N, 0, sqrt(1/2)) * sqrt(psd * fs)
-Y <- complex(real = x1, imaginary = x2)
-# add FFT(sine) directly onto the complex normals
-Y <- (Y + sin_fft) * Conj(Y + sin_fft)
-# Y <- Y * Conj(Y) # for testing purposes
-Y <- Re(Y)
+```{r, psd_fig_cap, echo = FALSE}
+caption <- rep(NA, length(Q_vec))
+for(ii in 1:length(Q_vec)) {
+  caption[ii] <- paste0("Empirical smoothed periodogram v.s. analytic PSD of SHOW (Q = ", Q_vec[ii], ").")
+}
 ```
 
 We can then plot the smoothed periodogram after binning. (We have converted the unit of PSD from $m^2/Hz$ to $fm^2/Hz$.)
 
-```{r, plot}
+```{r, plot, fig.cap = caption}
 bin_size <- 100
-# smoothed empirical psd (by binning)
-Ybar <- binning(Y, bin_size = bin_size)
-# frequency domain sequence after binning
-fbar <- binning(fseq, bin_size = bin_size)
-# plot
-plot(x = fbar, y = Ybar/fs, 
-    xlab = "frequency (Hz)", ylab = expression(paste("PSD (", fm^2/Hz, ")")),
-    type = "l", lwd = 0.3, log = "xy")
-lines(x = fbar, y = psdSHO(fbar, f0, Q, k, Kb, Temp, unit_conversion), 
-    col = "red")
+for(ii in 1:length(Q_vec)) {
+  Q <- Q_vec[ii]
+  # psd
+  psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion)
+  # sine wave noise
+  sin_fft <- fft_sin(fseq, f0, Q, unit_conversion)
+  # complex normals
+  x1 <- rnorm(N, 0, sqrt(1/2)) * sqrt(psd * fs)
+  x2 <- rnorm(N, 0, sqrt(1/2)) * sqrt(psd * fs)
+  Y <- complex(real = x1, imaginary = x2)
+  # add FFT(sine) directly onto the complex normals
+  Y <- (Y + sin_fft) * Conj(Y + sin_fft)
+  # Y <- Y * Conj(Y) # for testing purposes
+  Y <- Re(Y)
+  # smoothed empirical psd (by binning)
+  Ybar <- binning(Y, bin_size = bin_size)
+  # frequency domain sequence after binning
+  fbar <- binning(fseq, bin_size = bin_size)
+  # plot
+  plot(x = fbar, y = Ybar/fs, 
+      xlab = "frequency (Hz)", ylab = expression(paste("PSD (", fm^2/Hz, ")")),
+      type = "l", lwd = 0.3, log = "xy")
+  lines(x = fbar, y = psdSHO(fbar, f0, Q, k, Kb, Temp, unit_conversion), 
+      col = "red")
+  legend("topright",
+    legend = c("Empirical", "Analytic"), 
+    col = c("black", "red"),
+    bty = "n", # no box around the legend
+    cex = 0.8, # size of the text,
+    lwd = 1
+  )
+}
 ```
 
+## Test of the MLE method
+
+We can check if the optimal values can be found by the MLE method.
+
+```{r, init_param}
+phi_list <- lapply(1:length(Q_vec), function(ii) {
+  Q <- Q_vec[ii]
+  if(unit_conversion) {
+    sig2 <- Kb*Temp/(k*pi*f0*Q) * 1e30 # variance, unit: fm2/Hz 
+  } else {
+    sig2 <- Kb*Temp/(k*pi*f0*Q) # variance, unit: m2/Hz
+  }
+  Rw <- Aw/sig2
+  phi <- c(f0, f0*Q, Rw)
+})
+```
+
+```{r, get_tau, echo = FALSE}
+# define get_tau()
+get_tau <- function(phi, method) {
+  if (method == "lp") {
+    gz <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+                                    method = "LP_zeta",
+                                    fbar = matrix(fbar),
+                                    Zbar = matrix(Zbar),
+                                    fs = fs),
+                        parameters = list(phi = matrix(0, 3, 1)),
+                        silent = TRUE, DLL = "realPSD_TMBExports")
+    zeta <- gz$fn(phi)
+    exp(zeta)
+  } else if (method == "nls") {
+    gt <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+                                    method = "NLS_tau",
+                                    fbar = matrix(fbar),
+                                    Ybar = matrix(Ybar),
+                                    fs = fs),
+                        parameters = list(phi = matrix(0, 3, 1)),
+                        silent = TRUE, DLL = "realPSD_TMBExports")
+    gt$fn(phi)
+  } else if (method == "mle") {
+    gt <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+                                    method = "MLE_tau",
+                                    f = matrix(fseq),
+                                    Y = matrix(Y),
+                                    fs = fs),
+                        parameters = list(phi = matrix(0, 3, 1)),
+                        silent = TRUE, DLL = "realPSD_TMBExports")
+    gt$fn(phi)
+  } else {
+    stop("method should be chosen from lp, nls and mle.")
+  }
+}
+```
+
+```{r, helper_funs, echo = FALSE}
+# wrapper functions ----- method 1 ------
+#' @param obj TMB obj
+#' @param theta Parameter vector
+#' @param fixed_flag Vector of TRUE/FALSE indicating which dimension of theta should be fixed
+#' @param fixed_phi Vector of fixed values, length(fixed_phi) == length(which(fixed_id == TRUE))
+fn_fixed <- function(theta, obj, fixed_flag, fixed_phi) {
+  # set space without chaning the original theta
+  theta_full <- rep(NA, length(theta))
+  # fix part of theta
+  # theta_full[which(fixed_flag == TRUE)] <- fixed_phi
+  theta_full[fixed_flag == TRUE] <- fixed_phi
+  # fill the remaining part with theta
+  # theta_full[which(fixed_flag != TRUE)] <- theta
+  theta_full[!fixed_flag] <- theta[!fixed_flag]
+  # return
+  obj$fn(theta_full)
+}
+gr_fixed <- function(theta, obj, fixed_flag, fixed_phi) {
+  theta_full <- rep(NA, length(theta))
+  theta_full[fixed_flag == TRUE] <- fixed_phi
+  theta_full[!fixed_flag] <- theta[!fixed_flag]
+  obj$gr(theta_full)
+}
+# wrapper function of the vector of residuals for NLS
+nls_res <- function(phi, obj) {
+  c(obj$simulate(phi)$RES)
+} 
+# wrapper of nls_res with fixed parameters
+nls_res_fixed <- function(phi, obj, fixed_flag, fixed_phi) {
+  phi_full <- rep(NA, length(phi))
+  phi_full[fixed_flag == TRUE] <- fixed_phi
+  phi_full[!fixed_flag] <- phi[!fixed_flag]
+  nls_res(phi_full, obj)
+}
+```
+
+```{r, check_mle_cap, echo = FALSE}
+caption_mle <- rep(NA, length(Q_vec))
+for(ii in 1:length(Q_vec)) {
+  Q <- Q_vec[ii]
+  gamma <- f0*Q
+  if(unit_conversion) {
+    sig2 <- Kb*Temp/(k*pi*f0*Q) * 1e30 # variance, unit: fm2/Hz 
+  } else {
+    sig2 <- Kb*Temp/(k*pi*f0*Q) # variance, unit: m2/Hz
+  }
+  Rw <- Aw/sig2
+  caption_mle[ii] <- paste0("MLE optim check when Q = ", Q, ". The true parameters are ", 
+    "f0 = ", f0, 
+    ", gamma = ", gamma,
+    ", Rw = ", format(round(Rw, 2), nsmall = 2))
+}
+```
+
+```{r check_mle_optim, fig.cap = caption_mle}
+# check the optimization process for each Q
+for(ii in 1:length(Q_vec)) {
+  Q <- Q_vec[ii]
+  phi <- phi_list[[ii]]
+  # ---------- setup ----------
+  # number of frequencies
+  nf <- length(fseq) 
+  # analytic psd values, unit fm2/Hz
+  psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion)
+  # simulate exponential random variables
+  set.seed(123)
+  # complex normals
+  x1 <- rnorm(N, 0, sqrt(1/2))
+  x2 <- rnorm(N, 0, sqrt(1/2))
+  sim_cnorm <- complex(real = x1, imaginary = x2)
+  # generate the periodogram values
+  sin_fft <- fft_sin(fseq, f0, Q, unit_conversion)
+  Y <- sim_cnorm * sqrt(psd * fs)
+  Y <- (Y + sin_fft) * Conj(Y + sin_fft)
+  Y <- Re(Y)
+  # TMB model
+  obj <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+                                        method = "MLE_nlp",
+                                        f = matrix(fseq),
+                                        Y = matrix(Y),
+                                        fs = fs),
+                            parameters = list(phi = matrix(0, 3, 1)),
+                            silent = TRUE, DLL = "realPSD_TMBExports")
+  # optimization
+  # opt <- optim(par = phi_list[[ii]], fn = obj$fn, gr = obj$gr,
+  #   method = "BFGS", 
+  #   control = list(maxit = 2000))
+  start <- phi
+  opt1 <- optim(start, fn = fn_fixed, 
+    obj = obj, fixed_flag = c(1,0,1), fixed_phi = phi[c(1,3)],
+    method = "Nelder-Mead") 
+  start[2] <- opt1$par[2]
+  opt2 <- optim(start, fn = fn_fixed,
+    obj = obj, fixed_flag = c(0,0,1), fixed_phi = phi[3],
+    method = "Nelder-Mead")
+  start[c(1,2)] <- opt2$par[c(1,2)]
+  # opt3 <- optim(start, fn = obj$fn)
+  opt3 <- optim(start, fn = obj$fn, gr = obj$gr, method = "BFGS")
+  phi_hat <- opt3$par
+  # ---------- check optim ----------
+  optim_proj(fun = obj$fn, xsol = phi_hat, maximize = FALSE,
+    xnames = c("f0", "gamma", "Rw"))
+  # ---------- check tau_hat ----------
+  tau_hat <- get_tau(phi_hat, "mle")
+  if(unit_conversion) {
+    sig2 <- Kb*Temp/(k*pi*f0*Q) * 1e30 # variance, unit: fm2/Hz 
+  } else {
+    sig2 <- Kb*Temp/(k*pi*f0*Q) # variance, unit: m2/Hz
+  }
+  err <- abs(sig2 - tau_hat)/sig2
+  # the difference between sig2 and tau_hat
+  print(paste0("MLE: When Q = ", Q, 
+    ". The relative error between sig2 and tau_hat is ", 
+    paste(round(100*err, 2), "%", sep=""), "."))
+}
+```
 

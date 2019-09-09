@@ -41,7 +41,7 @@ fitSHOWsine <- function(fseq, sim_cnorm, f0, fs, Q, k, Temp, Aw,
   Y <- (Y + sin_fft) * Conj(Y + sin_fft)
   Y <- Re(Y)
   # convert Y to standard unit (otherwise the NLS optim would fail)
-  # if(unit_conversion) Y <- Y/1e30
+  if(unit_conversion) Y <- Y/1e30
   # ---------- binning ----------
   # bin_size <- 100
   fbar <- binning(fseq, bin_size = bin_size)
@@ -122,7 +122,8 @@ fitSHOWsine <- function(fseq, sim_cnorm, f0, fs, Q, k, Temp, Aw,
       method = "Nelder-Mead")
     start[c(1,2)] <- opt2$par[c(1,2)]
     # opt3 <- optim(start, fn = obj$fn)
-    opt3 <- optim(start, fn = obj$fn, gr = obj$gr, method = "BFGS")
+    opt3 <- optim(start, fn = obj$fn, gr = obj$gr, 
+      method = "L-BFGS-B", lower = rep(0,3))
     phi_hat <- opt3$par
   } else {
     # ---------- lsqnonlin ---------
@@ -144,13 +145,15 @@ fitSHOWsine <- function(fseq, sim_cnorm, f0, fs, Q, k, Temp, Aw,
       obj = obj, fixed_flag = c(0,0,1), fixed_phi = phi[3])
     # if(opt1$errno != 1) warning("NLS didn't converge at step 2.")
     # optimize all three parameters
-    opt3 <- pracma::lsqnonlin(fun = nls_res_fixed, 
-      x0 = opt2$x,
-      options = list(tolx = tolx, tolg = tolg, maxeval = 1000),
-      obj = obj, fixed_flag = c(0,0,0), fixed_phi = NULL)
+    # opt3 <- pracma::lsqnonlin(fun = nls_res_fixed, 
+    #   x0 = opt2$x,
+    #   options = list(tolx = tolx, tolg = tolg, maxeval = 1000),
+    #   obj = obj, fixed_flag = c(0,0,0), fixed_phi = NULL)
+    opt3 <- optim(par = opt2$x, fn = obj$fn, gr = obj$gr, 
+      method = "L-BFGS-B", lower = rep(0,3))
     # if(opt1$errno != 1) warning("NLS didn't converge at step 3.")
     # return phi_hat
-    phi_hat <- opt3$x
+    phi_hat <- opt3$par
   }
   # output
   tau_hat <- get_tau(phi_hat) # fitted tau = sigma^2, unit should be the same as Aw
