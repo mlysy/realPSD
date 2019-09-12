@@ -13,7 +13,7 @@
 #' @param method Fitting method, i.e. lp, mle, nls.
 #' @param unit_conversion Logical, if TRUE, use fm2/Hz instead of m2/Hz
 fitSHOWsine <- function(fseq, sim_cnorm, f0, fs, Q, k, Temp, Aw,
-                    add_white_noise = FALSE,
+                    add_white_noise = TRUE,
                     bin_size = 100, method = c("lp", "mle", "nls"),
                     unit_conversion = FALSE) {
   # ---------- setup -----------

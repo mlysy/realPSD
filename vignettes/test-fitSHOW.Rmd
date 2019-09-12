@@ -62,7 +62,7 @@ sim_period <- function(fseq, f0, fs, Q, k, Kb, Temp,
   # simulate exponential random variables
   sim_exp <- rexp(nf, rate = 1)
   # empirical psd (periodogram values)
-  Y <- sim_exp * psd * fs
+  Y <- sim_exp * psd
   # smoothed empirical psd (by binning)
   Ybar <- binning(Y, bin_size = bin_size)
   return(Ybar)
@@ -83,7 +83,7 @@ for(ii in 1:length(Q_vec)) {
 ```{r, psd, fig.cap = caption}
 for(ii in 1:length(Q_vec)) {
   plot(x = fbar, y = sim_period(fseq, f0, fs, Q_vec[ii], k, Kb, Temp, 
-    Aw, FALSE, bin_size)/fs, 
+    Aw, FALSE, bin_size), 
     xlab = "frequency (Hz)", ylab = expression(paste("PSD (", m^2/Hz, ")")),
     type = "l", lwd = 0.3, log = "xy")
   lines(x = fbar, y = psdSHO(fbar, f0, Q_vec[ii], k, Kb, Temp, FALSE) + Aw, 

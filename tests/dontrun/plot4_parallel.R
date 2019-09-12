@@ -84,7 +84,7 @@ fit_success <- mclapply(1:nfit, function(ii) {
   theta_hat <- tryCatch({
     fitSHOWsine(fseq, sim_cnorm = r_cnorm,
             f0 = f0, fs = fs, Q = Q,
-            k = k, Temp = Temp, Aw = Aw, add_white_noise = FALSE,
+            k = k, Temp = Temp, Aw = Aw, add_white_noise = TRUE,
             bin_size = bin_size, method = method, 
             unit_conversion = unit_conversion)
   }, error = function(err) {

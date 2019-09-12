@@ -113,7 +113,7 @@ bin_size <- 100
 for(ii in 1:length(Q_vec)) {
   Q <- Q_vec[ii]
   # psd
-  psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion)
+  psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion) + Aw
   # sine wave noise
   sin_fft <- fft_sin(fseq, f0, Q, unit_conversion)
   # complex normals
@@ -132,16 +132,42 @@ for(ii in 1:length(Q_vec)) {
   plot(x = fbar, y = Ybar/fs, 
       xlab = "frequency (Hz)", ylab = expression(paste("PSD (", fm^2/Hz, ")")),
       type = "l", lwd = 0.3, log = "xy")
-  lines(x = fbar, y = psdSHO(fbar, f0, Q, k, Kb, Temp, unit_conversion), 
+  lines(x = fbar, y = psdSHO(fbar, f0, Q, k, Kb, Temp, unit_conversion) + Aw, 
       col = "red")
   legend("topright",
-    legend = c("Empirical", "Analytic"), 
+    legend = c("Simulated", "Analytic + Aw"), 
     col = c("black", "red"),
     bty = "n", # no box around the legend
     cex = 0.8, # size of the text,
     lwd = 1
   )
 }
+```
+
+We can also take a closer look at the simulated periodogram for $32kHz < f < 35kHz$. For example, when $Q = 100$, see Figure \ref{fig:small_freq_range}.
+
+```{r, small_freq_range, fig.cap = "Simulated periodogram with $Q = 100$ and added noise."}
+Q <- 100
+fseq <- seq(from = 32e3, to = 35e3, by = 1/Time)
+N <- length(fseq)
+fseq <- fseq / 10^3
+psd <- psdSHO(fseq * 10^3, f0, Q, k, Kb, Temp, unit_conversion) + Aw
+sin_fft <- fft_sin(fseq, f0, Q, unit_conversion)
+x1 <- rnorm(N, 0, sqrt(1/2)) * sqrt(psd * fs)
+x2 <- rnorm(N, 0, sqrt(1/2)) * sqrt(psd * fs)
+Y <- complex(real = x1, imaginary = x2)
+Y <- Re(Y)
+plot(x = fseq, y = Y, xlab = "frequency (kHz)", ylab = expression(paste("PSD (", fm^2/Hz, ")")),
+      type = "l", lwd = 0.3, log = "xy")
+lines(x = fseq, y = psdSHO(fseq * 10^3, f0, Q, k, Kb, Temp, unit_conversion), 
+      col = "red")
+legend("topright",
+  legend = c("Simulated", "Analytic"), 
+  col = c("black", "red"),
+  bty = "n", # no box around the legend
+  cex = 0.8, # size of the text,
+  lwd = 1
+)
 ```
 
 ## Test of the MLE method
@@ -262,12 +288,12 @@ for(ii in 1:length(Q_vec)) {
   # number of frequencies
   nf <- length(fseq) 
   # analytic psd values, unit fm2/Hz
-  psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion)
+  psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion) + Aw
   # simulate exponential random variables
   set.seed(123)
   # complex normals
-  x1 <- rnorm(N, 0, sqrt(1/2))
-  x2 <- rnorm(N, 0, sqrt(1/2))
+  x1 <- rnorm(nf, 0, sqrt(1/2))
+  x2 <- rnorm(nf, 0, sqrt(1/2))
   sim_cnorm <- complex(real = x1, imaginary = x2)
   # generate the periodogram values
   sin_fft <- fft_sin(fseq, f0, Q, unit_conversion)
@@ -315,4 +341,3 @@ for(ii in 1:length(Q_vec)) {
     paste(round(100*err, 2), "%", sep=""), "."))
 }
 ```
-
