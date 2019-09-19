@@ -16,7 +16,6 @@ vignette: >
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, out.width = '80%', fig.align='center')
 suppressMessages(require(realPSD))
-suppressMessages(require(optimCheck))
 suppressMessages(require(testthat))
 ```
 
@@ -52,6 +51,7 @@ $$
 # FFT (discrete Fourier transform) of sine wave noise
 fft_sin <- function(fseq, f0, Q, fs, unit_conversion) {
   N <- length(fseq)
+  Const <- 1e30                # unit conversion, 1 m2 = 1e30 fm2
   if(!unit_conversion) {
     D <- (Q^0.5) * 3.5e3 / Const
   } else {
@@ -60,7 +60,7 @@ fft_sin <- function(fseq, f0, Q, fs, unit_conversion) {
   # k  <- 0.172                  # Cantilever stiffness, N/m
   # Kb <- 1.381e-23              # Boltzmann's constant, (m2*kg)/(s2*K)
   # Temp <- 298                  # Temperature, K
-  # D <- 10*psdSHO(f0, f0, Q, k, Kb, Temp, unit_conversion)
+  # D <- max(psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion))
   dT <- 1/fs
   xi <- rnorm(1, f0, 10)
   phi <- runif(1, 0, 2*pi)
@@ -113,7 +113,7 @@ First we set up the model constants.
 ```{r, constants}
 # ---------- SHO model parameters ----------
 Time  <- 5                   # Total time, second
-fs <- 1e6                    # Sampling frequency, Hz
+fs <- 1e6                   # Sampling frequency, Hz
 f0 <- 33553                  # Resonance frequency, Hz
 Q_vec <- c(1, 10, 100, 500)  # Quality factors, unitless
 k  <- 0.172                  # Cantilever stiffness, N/m
@@ -128,9 +128,11 @@ if(!unit_conversion) Aw <- Aw / Const # if FALSE, we use the standard unit m2/Hz
 Then we generate the frequency domain.
 
 ```{r, freq_domain}
-f_lb <- f0 - f0/sqrt(2) # frequency lower bound
-f_ub <- f0 + f0/sqrt(2) # frequency upper bound
-fseq <- seq(from = f_lb, to = f_ub, by = 1/(10*Time)) # frequency domain, Hz
+# f_lb <- f0 - f0/sqrt(2) # frequency lower bound
+# f_ub <- f0 + f0/sqrt(2) # frequency upper bound
+f_lb <- 1/Time
+f_ub <- fs - 1/Time
+fseq <- seq(from = f_lb, to = f_ub, length.out = fs*Time) # frequency domain, Hz
 N <- length(fseq)
 ```
 
@@ -167,8 +169,9 @@ for(ii in 1:length(Q_vec)) {
   Ybar <- binning(Y, bin_size = bin_size)
   # frequency domain sequence after binning
   fbar <- binning(fseq, bin_size = bin_size)
+  # only plot psd between f0-f0/sqrt(2) and f0+f0/sqrt(2) Hz
   # plot
-  plot(x = fbar, y = Ybar/fs, 
+  plot(x = fbar, y = Ybar/fs, xlim = c(f0-f0/sqrt(2), f0+f0/sqrt(2)),
       xlab = "frequency (Hz)", ylab = expression(paste("PSD (", fm^2/Hz, ")")),
       type = "l", lwd = 0.1, log = "xy")
   lines(x = fbar, y = psdSHO(fbar, f0, Q, k, Kb, Temp, unit_conversion) + Aw, 
@@ -187,19 +190,33 @@ We can also take a closer look at the simulated periodogram for $32kHz < f < 35k
 
 ```{r, small_freq_range, fig.cap = "Simulated periodogram with $Q = 100$ and added noise."}
 Q <- 100
-idx <- which(fseq >= f0-1500 & fseq <= f0+1500)
+# idx <- which(fseq >= f0-1500 & fseq <= f0+1500)
+fseq <- seq(from = f0-f0/sqrt(2), to = f0+f0/sqrt(2), by = 0.01)
 N <- length(fseq)
-psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion)
+psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion) + Aw
 sin_fft <- fft_sin(fseq, f0, Q, fs, unit_conversion)
 x1 <- rnorm(N, 0, sqrt(1/2))
 x2 <- rnorm(N, 0, sqrt(1/2))
 sim_cnorm <- complex(real = x1, imaginary = x2)
-Y <- sim_cnorm * sqrt(psd*fs)
+Y <- sim_cnorm * sqrt(fs*psd)
 Y <- (Y + sin_fft) * Conj(Y + sin_fft)
 Y <- Re(Y)
-plot(x = fseq[idx]/10^3, y = Y[idx]/fs, xlab = "frequency (kHz)", ylab = expression(paste("PSD (", fm^2/Hz, ")")),
+log10(max(Y/fs))
+pval <- 0.01
+gstat <- Y / (fs * psd)
+M <- max(gstat/sum(gstat))
+fisherEq <- function(a, q, logSort, pval) {
+  1 - fisherGstat(a, q, logSort) - pval
+}
+sol <- uniroot(fisherEq, c(0,M), 
+  extendInt = "yes", 
+  q = N, logSort = TRUE, pval = pval)
+psd_line <- sol$root * psd * sum(gstat)
+log10(max(psd_line))
+plot(x = fseq/10^3, y = Y/fs, xlim = c((f0-1500)/10^3, (f0+1500)/10^3), 
+  xlab = "frequency (kHz)", ylab = expression(paste("PSD (", fm^2/Hz, ")")),
       type = "l", lwd = 0.1, log = "xy")
-lines(x = fseq[idx]/10^3, y = psd[idx], 
+lines(x = fseq/10^3, y = psd_line, 
       col = "red")
 legend("topright",
   legend = c("Simulated", "Analytic"), 
@@ -207,4 +224,12 @@ legend("topright",
   bty = "n", # no box around the legend
   cex = 0.8, # size of the text,
   lwd = 1)
+
+# psd_sin <- sin_fft * Conj(sin_fft)
+# psd_sin <- Re(psd_sin)
+# plot(x = fseq[idx]/10^3, y = psd_sin[idx]/fs, type = "l", lwd = 0.3, log = "xy")
+# psd_y <- sim_cnorm * sqrt(2*pi*fs*psd)
+# psd_y <- psd_y * Conj(psd_y)
+# psd_y <- Re(psd_y)
+# plot(x = fseq[idx]/10^3, y = psd_y[idx]/fs, type = "l", lwd = 0.3, log = "xy")
 ```

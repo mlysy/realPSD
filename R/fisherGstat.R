@@ -11,7 +11,7 @@ fisherGstat <- function(a, q, logSort) {
     logSort <- TRUE
   # Maximum number of values to calculate
   maxq <- min(q, floor(1/a))
-  maxq2 <- ceil(maxq/2)
+  maxq2 <- ceiling(maxq/2)
 
   # Calculate the terms on the log scale
   logt <- rep(0, maxq2*2)
@@ -21,13 +21,15 @@ fisherGstat <- function(a, q, logSort) {
     logt[length(logt)] <- -Inf
 
   # Group the +ve and -ve terms by two to calculate the sum
-  logt <- matrix(logt, 2, ceil(maxq/2))
+  logt <- matrix(logt, 2, ceiling(maxq/2))
 
   # If this is true try to group terms in the sum to minimize numerical instability
-  if(logSort) 
+  if(logSort && ncol(logt) > 1) {
     logt <- t(apply(logt, 1, sort)) # sort each row of A in ascending order
-  maxlt <- max(logt)
-  logt <- exp(logt - matrix(rep(maxlt,2),2,1))
+  }
+  maxlt <- apply(logt, 2, max)
+  tmp <- matrix(maxlt, nrow = 2, ncol = length(maxlt), byrow = TRUE)
+  logt <- exp(logt - tmp)
   logt <- logt[1,] - logt[2,]
 
   # If both terms are minuscule might get Inf-Inf
