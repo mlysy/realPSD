@@ -32,7 +32,7 @@ f_ub <- f0 + f0/sqrt(2) # frequency upper bound
 fseq <- seq(from = f_lb, to = f_ub, by = 1/Time) # frequency domain, Hz
 nf <- length(fseq) # number of frequencies
 
-nsim <- 100
+nsim <- 1000
 bin_size <- 100
 
 # detect the number of cores

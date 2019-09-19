@@ -17,6 +17,7 @@ vignette: >
 knitr::opts_chunk$set(echo = TRUE, out.width = '80%', fig.align='center')
 suppressMessages(require(realPSD))
 suppressMessages(require(optimCheck))
+suppressMessages(require(testthat))
 ```
 
 # Derivation of the discrete Fourier transform of sine wave
@@ -24,13 +25,15 @@ suppressMessages(require(optimCheck))
 Given the sine wave function as follows
 
 $$
-g(t) = D \sin(2\pi \xi t + \phi), \quad\quad t = 1,2,\ldots
+g(t) = D \sin(2\pi \xi t + \phi), \quad\quad t = 0,\Delta t,\ldots N\Delta t
 $$
+
+where $\Delta t = 1/f_s$ ($f_s$ is the sampling frequency).
 
 Its discrete/finite Fourier transform is
 
 $$
-\tilde{g}(j) = \frac{D}{\sqrt N} \sum_{n=0}^{N-1} e^{-2\pi i f_j n} \sin(2\pi \xi n + \phi)
+\tilde{g}(j) = \frac{D}{\sqrt N} \sum_{n=0}^{N-1} e^{-2\pi i f_j n} \sin(2\pi \xi n\Delta t + \phi)
 $$
 
 where $N$ is the total number of discrete observations and $f_j = \frac j N f_s$ ($f_s$ is the sampling frequency).
@@ -39,12 +42,69 @@ Recall $\sin(x) = (e^{ix} - e^{-ix})/ 2i$, then we have
 
 $$
 \begin{aligned}
-\tilde{g}(j) &= \frac{D}{\sqrt N} \sum_{n=0}^{N-1} e^{-2\pi i f_j n} \frac{e^{2\pi i \xi n + \phi i} - e^{-2\pi i \xi n - \phi i}}{2i} \\
-&= \frac{D}{2i\sqrt N} \left( e^{\phi i} \sum_{n=0}^{N-1} e^{2\pi i (\xi - f_j) n} - e^{-\phi i}\sum_{n=0}^{N-1} e^{-2\pi i (\xi + f_j)}n  \right) \\ 
-&= \frac{D}{2i\sqrt N} \left( e^{\phi i} \frac{e^{2\pi i (\xi - f_j)N } - 1}{e^{2\pi i (\xi - f_j)} - 1} - e^{-\phi i}\frac{e^{-2\pi i (\xi + f_j)N } - 1}{e^{-2\pi i (\xi + f_j)} - 1} \right)
+\tilde{g}(j) &= \frac{D}{\sqrt N} \sum_{n=0}^{N-1} e^{-2\pi i f_j n\Delta t} \frac{e^{2\pi i \xi n + \phi i} - e^{-2\pi i \xi n - \phi i}}{2i} \\
+&= \frac{D}{2i\sqrt N} \left( e^{\phi i} \sum_{n=0}^{N-1} e^{2\pi i (\xi - f_j) n\Delta t} - e^{-\phi i}\sum_{n=0}^{N-1} e^{-2\pi i (\xi + f_j)n\Delta t}  \right) \\ 
+&= \frac{D}{2i\sqrt N} \left( e^{\phi i} \frac{e^{2\pi i (\xi - f_j)\Delta t N } - 1}{e^{2\pi i (\xi - f_j)\Delta t} - 1} - e^{-\phi i}\frac{e^{-2\pi i (\xi + f_j)N \Delta t} - 1}{e^{-2\pi i (\xi + f_j)\Delta t} - 1} \right)
 \end{aligned}
 $$
 
+```{r, sim_sine}
+# FFT (discrete Fourier transform) of sine wave noise
+fft_sin <- function(fseq, f0, Q, fs, unit_conversion) {
+  N <- length(fseq)
+  if(!unit_conversion) {
+    D <- (Q^0.5) * 3.5e3 / Const
+  } else {
+    D <- (Q^0.5) * 3.5e3 # 3.5e3 is copied from the MATLAB code
+  }
+  # k  <- 0.172                  # Cantilever stiffness, N/m
+  # Kb <- 1.381e-23              # Boltzmann's constant, (m2*kg)/(s2*K)
+  # Temp <- 298                  # Temperature, K
+  # D <- 10*psdSHO(f0, f0, Q, k, Kb, Temp, unit_conversion)
+  dT <- 1/fs
+  xi <- rnorm(1, f0, 10)
+  phi <- runif(1, 0, 2*pi)
+  sin_fft <- D/(2*1i * sqrt(N)) * (
+    exp(phi*1i) * (exp(2*pi*1i*(xi-fseq)*dT*N)-1)/(exp(2*pi*1i*(xi-fseq)*dT)-1) -
+    exp(-phi*1i) * (exp(-2*pi*1i*(xi+fseq)*dT*N)-1)/(exp(-2*pi*1i*(xi+fseq)*dT)-1)
+  )
+  return(sin_fft)
+}
+```
+
+We can test our derived formula against `R` built-in function `fft` which calcualtes the Discrete Fourier Transform (DFT) of an array by using fast Fourier transform. In R, the DFT is defined as
+
+$$
+\tilde{g}(j) = \sum_{n=0}^{N-1} e^{-2\pi i f_j n} D \cdot\sin(2\pi \xi n\Delta t + \phi)
+$$
+
+```{r, test_formula}
+# testthat tests of the DFT formula
+context("Test DFT of Sine Wave")
+test_that("Test the formula of DFT of Sine Wave is Correct", {
+  ntest <- 20
+  for(ii in 1:ntest) {
+    N <- sample(10:10000, size = 1)
+    N <- 10
+    f0 <- 33553
+    fs <- 1e7
+    dT <- 1/fs
+    xi <- rnorm(1, f0, 10)
+    phi <- runif(1, 0, 2*pi)
+    D <- 3.5e3
+    fseq <- (1:N-1)/N * fs
+    # method 1: FFT of sin(t)
+    sin_time <- D*sin(2*pi * xi * (1:N-1) * dT + phi)
+    ans <- fft(sin_time)
+    # method 2: formula
+    sin_fft <- D/(2*1i*sqrt(N)) * (
+      exp(phi*1i) * (exp(2*pi*1i*(xi-fseq)*dT*N)-1)/(exp(2*pi*1i*(xi-fseq)*dT)-1) -
+      exp(-phi*1i) * (exp(-2*pi*1i*(xi+fseq)*dT*N)-1)/(exp(-2*pi*1i*(xi+fseq)*dT)-1)
+    )
+    expect_equal(ans/N, sin_fft/sqrt(N), tolerance = 1e-5)
+  }
+})
+```
 
 # Simulation of sine wave noise directly from frequency domain
 
@@ -53,7 +113,7 @@ First we set up the model constants.
 ```{r, constants}
 # ---------- SHO model parameters ----------
 Time  <- 5                   # Total time, second
-fs <- 1e7                    # Sampling frequency, Hz
+fs <- 1e6                    # Sampling frequency, Hz
 f0 <- 33553                  # Resonance frequency, Hz
 Q_vec <- c(1, 10, 100, 500)  # Quality factors, unitless
 k  <- 0.172                  # Cantilever stiffness, N/m
@@ -70,29 +130,8 @@ Then we generate the frequency domain.
 ```{r, freq_domain}
 f_lb <- f0 - f0/sqrt(2) # frequency lower bound
 f_ub <- f0 + f0/sqrt(2) # frequency upper bound
-fseq <- seq(from = f_lb, to = f_ub, by = 1/Time) # frequency domain, Hz
+fseq <- seq(from = f_lb, to = f_ub, by = 1/(10*Time)) # frequency domain, Hz
 N <- length(fseq)
-```
-
-By using the previous formula, we can get the discretet Fourier transform  of the sine wave noise from frequency domain.
-
-```{r, sim_sine}
-# FFT (discrete Fourier transform) of sine wave noise
-fft_sin <- function(fseq, f0, Q, unit_conversion) {
-  N <- length(fseq)
-  if(!unit_conversion) {
-    D <- (Q^0.5) * 3.5e3 / Const
-  } else {
-    D <- (Q^0.5) * 3.5e3
-  }
-  xi <- rnorm(1, f0, 10)
-  phi <- runif(1, 0, 2*pi)
-  sin_fft <- D/(2*1i*sqrt(N)) * (
-    exp(phi*1i) * (exp(2*pi*1i*(xi-fseq)*N)-1)/(exp(2*pi*1i*(xi-fseq))-1) -
-    exp(-phi*1i) * (exp(-2*pi*1i*(xi+fseq)*N)-1)/(exp(-2*pi*1i*(xi+fseq))-1)
-  )
-  return(sin_fft)
-}
 ```
 
 # Simulation of the SHO periodogram with sine wave noise
@@ -115,7 +154,7 @@ for(ii in 1:length(Q_vec)) {
   # psd
   psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion) + Aw
   # sine wave noise
-  sin_fft <- fft_sin(fseq, f0, Q, unit_conversion)
+  sin_fft <- fft_sin(fseq, f0, Q, fs, unit_conversion)
   # complex normals
   x1 <- rnorm(N, 0, sqrt(1/2)) * sqrt(psd * fs)
   x2 <- rnorm(N, 0, sqrt(1/2)) * sqrt(psd * fs)
@@ -131,7 +170,7 @@ for(ii in 1:length(Q_vec)) {
   # plot
   plot(x = fbar, y = Ybar/fs, 
       xlab = "frequency (Hz)", ylab = expression(paste("PSD (", fm^2/Hz, ")")),
-      type = "l", lwd = 0.3, log = "xy")
+      type = "l", lwd = 0.1, log = "xy")
   lines(x = fbar, y = psdSHO(fbar, f0, Q, k, Kb, Temp, unit_conversion) + Aw, 
       col = "red")
   legend("topright",
@@ -148,196 +187,24 @@ We can also take a closer look at the simulated periodogram for $32kHz < f < 35k
 
 ```{r, small_freq_range, fig.cap = "Simulated periodogram with $Q = 100$ and added noise."}
 Q <- 100
-fseq <- seq(from = 32e3, to = 35e3, by = 1/Time)
+idx <- which(fseq >= f0-1500 & fseq <= f0+1500)
 N <- length(fseq)
-fseq <- fseq / 10^3
-psd <- psdSHO(fseq * 10^3, f0, Q, k, Kb, Temp, unit_conversion) + Aw
-sin_fft <- fft_sin(fseq, f0, Q, unit_conversion)
-x1 <- rnorm(N, 0, sqrt(1/2)) * sqrt(psd * fs)
-x2 <- rnorm(N, 0, sqrt(1/2)) * sqrt(psd * fs)
-Y <- complex(real = x1, imaginary = x2)
+psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion)
+sin_fft <- fft_sin(fseq, f0, Q, fs, unit_conversion)
+x1 <- rnorm(N, 0, sqrt(1/2))
+x2 <- rnorm(N, 0, sqrt(1/2))
+sim_cnorm <- complex(real = x1, imaginary = x2)
+Y <- sim_cnorm * sqrt(psd*fs)
+Y <- (Y + sin_fft) * Conj(Y + sin_fft)
 Y <- Re(Y)
-plot(x = fseq, y = Y, xlab = "frequency (kHz)", ylab = expression(paste("PSD (", fm^2/Hz, ")")),
-      type = "l", lwd = 0.3, log = "xy")
-lines(x = fseq, y = psdSHO(fseq * 10^3, f0, Q, k, Kb, Temp, unit_conversion), 
+plot(x = fseq[idx]/10^3, y = Y[idx]/fs, xlab = "frequency (kHz)", ylab = expression(paste("PSD (", fm^2/Hz, ")")),
+      type = "l", lwd = 0.1, log = "xy")
+lines(x = fseq[idx]/10^3, y = psd[idx], 
       col = "red")
 legend("topright",
   legend = c("Simulated", "Analytic"), 
   col = c("black", "red"),
   bty = "n", # no box around the legend
   cex = 0.8, # size of the text,
-  lwd = 1
-)
-```
-
-## Test of the MLE method
-
-We can check if the optimal values can be found by the MLE method.
-
-```{r, init_param}
-phi_list <- lapply(1:length(Q_vec), function(ii) {
-  Q <- Q_vec[ii]
-  if(unit_conversion) {
-    sig2 <- Kb*Temp/(k*pi*f0*Q) * 1e30 # variance, unit: fm2/Hz 
-  } else {
-    sig2 <- Kb*Temp/(k*pi*f0*Q) # variance, unit: m2/Hz
-  }
-  Rw <- Aw/sig2
-  phi <- c(f0, f0*Q, Rw)
-})
-```
-
-```{r, get_tau, echo = FALSE}
-# define get_tau()
-get_tau <- function(phi, method) {
-  if (method == "lp") {
-    gz <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
-                                    method = "LP_zeta",
-                                    fbar = matrix(fbar),
-                                    Zbar = matrix(Zbar),
-                                    fs = fs),
-                        parameters = list(phi = matrix(0, 3, 1)),
-                        silent = TRUE, DLL = "realPSD_TMBExports")
-    zeta <- gz$fn(phi)
-    exp(zeta)
-  } else if (method == "nls") {
-    gt <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
-                                    method = "NLS_tau",
-                                    fbar = matrix(fbar),
-                                    Ybar = matrix(Ybar),
-                                    fs = fs),
-                        parameters = list(phi = matrix(0, 3, 1)),
-                        silent = TRUE, DLL = "realPSD_TMBExports")
-    gt$fn(phi)
-  } else if (method == "mle") {
-    gt <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
-                                    method = "MLE_tau",
-                                    f = matrix(fseq),
-                                    Y = matrix(Y),
-                                    fs = fs),
-                        parameters = list(phi = matrix(0, 3, 1)),
-                        silent = TRUE, DLL = "realPSD_TMBExports")
-    gt$fn(phi)
-  } else {
-    stop("method should be chosen from lp, nls and mle.")
-  }
-}
-```
-
-```{r, helper_funs, echo = FALSE}
-# wrapper functions ----- method 1 ------
-#' @param obj TMB obj
-#' @param theta Parameter vector
-#' @param fixed_flag Vector of TRUE/FALSE indicating which dimension of theta should be fixed
-#' @param fixed_phi Vector of fixed values, length(fixed_phi) == length(which(fixed_id == TRUE))
-fn_fixed <- function(theta, obj, fixed_flag, fixed_phi) {
-  # set space without chaning the original theta
-  theta_full <- rep(NA, length(theta))
-  # fix part of theta
-  # theta_full[which(fixed_flag == TRUE)] <- fixed_phi
-  theta_full[fixed_flag == TRUE] <- fixed_phi
-  # fill the remaining part with theta
-  # theta_full[which(fixed_flag != TRUE)] <- theta
-  theta_full[!fixed_flag] <- theta[!fixed_flag]
-  # return
-  obj$fn(theta_full)
-}
-gr_fixed <- function(theta, obj, fixed_flag, fixed_phi) {
-  theta_full <- rep(NA, length(theta))
-  theta_full[fixed_flag == TRUE] <- fixed_phi
-  theta_full[!fixed_flag] <- theta[!fixed_flag]
-  obj$gr(theta_full)
-}
-# wrapper function of the vector of residuals for NLS
-nls_res <- function(phi, obj) {
-  c(obj$simulate(phi)$RES)
-} 
-# wrapper of nls_res with fixed parameters
-nls_res_fixed <- function(phi, obj, fixed_flag, fixed_phi) {
-  phi_full <- rep(NA, length(phi))
-  phi_full[fixed_flag == TRUE] <- fixed_phi
-  phi_full[!fixed_flag] <- phi[!fixed_flag]
-  nls_res(phi_full, obj)
-}
-```
-
-```{r, check_mle_cap, echo = FALSE}
-caption_mle <- rep(NA, length(Q_vec))
-for(ii in 1:length(Q_vec)) {
-  Q <- Q_vec[ii]
-  gamma <- f0*Q
-  if(unit_conversion) {
-    sig2 <- Kb*Temp/(k*pi*f0*Q) * 1e30 # variance, unit: fm2/Hz 
-  } else {
-    sig2 <- Kb*Temp/(k*pi*f0*Q) # variance, unit: m2/Hz
-  }
-  Rw <- Aw/sig2
-  caption_mle[ii] <- paste0("MLE optim check when Q = ", Q, ". The true parameters are ", 
-    "f0 = ", f0, 
-    ", gamma = ", gamma,
-    ", Rw = ", format(round(Rw, 2), nsmall = 2))
-}
-```
-
-```{r check_mle_optim, fig.cap = caption_mle}
-# check the optimization process for each Q
-for(ii in 1:length(Q_vec)) {
-  Q <- Q_vec[ii]
-  phi <- phi_list[[ii]]
-  # ---------- setup ----------
-  # number of frequencies
-  nf <- length(fseq) 
-  # analytic psd values, unit fm2/Hz
-  psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion) + Aw
-  # simulate exponential random variables
-  set.seed(123)
-  # complex normals
-  x1 <- rnorm(nf, 0, sqrt(1/2))
-  x2 <- rnorm(nf, 0, sqrt(1/2))
-  sim_cnorm <- complex(real = x1, imaginary = x2)
-  # generate the periodogram values
-  sin_fft <- fft_sin(fseq, f0, Q, unit_conversion)
-  Y <- sim_cnorm * sqrt(psd * fs)
-  Y <- (Y + sin_fft) * Conj(Y + sin_fft)
-  Y <- Re(Y)
-  # TMB model
-  obj <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
-                                        method = "MLE_nlp",
-                                        f = matrix(fseq),
-                                        Y = matrix(Y),
-                                        fs = fs),
-                            parameters = list(phi = matrix(0, 3, 1)),
-                            silent = TRUE, DLL = "realPSD_TMBExports")
-  # optimization
-  # opt <- optim(par = phi_list[[ii]], fn = obj$fn, gr = obj$gr,
-  #   method = "BFGS", 
-  #   control = list(maxit = 2000))
-  start <- phi
-  opt1 <- optim(start, fn = fn_fixed, 
-    obj = obj, fixed_flag = c(1,0,1), fixed_phi = phi[c(1,3)],
-    method = "Nelder-Mead") 
-  start[2] <- opt1$par[2]
-  opt2 <- optim(start, fn = fn_fixed,
-    obj = obj, fixed_flag = c(0,0,1), fixed_phi = phi[3],
-    method = "Nelder-Mead")
-  start[c(1,2)] <- opt2$par[c(1,2)]
-  # opt3 <- optim(start, fn = obj$fn)
-  opt3 <- optim(start, fn = obj$fn, gr = obj$gr, method = "BFGS")
-  phi_hat <- opt3$par
-  # ---------- check optim ----------
-  optim_proj(fun = obj$fn, xsol = phi_hat, maximize = FALSE,
-    xnames = c("f0", "gamma", "Rw"))
-  # ---------- check tau_hat ----------
-  tau_hat <- get_tau(phi_hat, "mle")
-  if(unit_conversion) {
-    sig2 <- Kb*Temp/(k*pi*f0*Q) * 1e30 # variance, unit: fm2/Hz 
-  } else {
-    sig2 <- Kb*Temp/(k*pi*f0*Q) # variance, unit: m2/Hz
-  }
-  err <- abs(sig2 - tau_hat)/sig2
-  # the difference between sig2 and tau_hat
-  print(paste0("MLE: When Q = ", Q, 
-    ". The relative error between sig2 and tau_hat is ", 
-    paste(round(100*err, 2), "%", sep=""), "."))
-}
+  lwd = 1)
 ```
