@@ -36,7 +36,7 @@ fitSHOWsine <- function(fseq, sim_cnorm, f0, fs, Q, k, Temp, Aw,
     psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion)
   }
   # generate the periodogram values
-  sin_fft <- fft_sin(fseq, f0, Q, unit_conversion)
+  sin_fft <- fft_sin(fseq, f0, Q, fs, unit_conversion)
   Y <- sim_cnorm * sqrt(psd * fs)
   Y <- (Y + sin_fft) * Conj(Y + sin_fft)
   Y <- Re(Y)
@@ -206,19 +206,21 @@ nls_res_fixed <- function(phi, obj, fixed_flag, fixed_phi) {
   phi_full[!fixed_flag] <- phi[!fixed_flag]
   nls_res(phi_full, obj)
 }
-# FFT (discrete Fourier transform) of sine wave noise
-fft_sin <- function(fseq, f0, Q, unit_conversion) {
-  N <- length(fseq)
-  if(!unit_conversion) {
-    D <- (Q^0.5) * 3.5e3 / Const
-  } else {
-    D <- (Q^0.5) * 3.5e3
-  }
-  xi <- rnorm(1, f0, 10)
-  phi <- runif(1, 0, 2*pi)
-  sin_fft <- D/(2*1i*sqrt(N)) * (
-    exp(phi*1i) * (exp(2*pi*1i*(xi-fseq)*N)-1)/(exp(2*pi*1i*(xi-fseq))-1) -
-    exp(-phi*1i) * (exp(-2*pi*1i*(xi+fseq)*N)-1)/(exp(-2*pi*1i*(xi+fseq))-1)
-  )
-  return(sin_fft)
-}
+# # FFT (discrete Fourier transform) of sine wave noise
+# fft_sin <- function(fseq, f0, Q, fs, unit_conversion) {
+#   N <- length(fseq)
+#   Const <- 1e30                # unit conversion, 1 m2 = 1e30 fm2
+#   if(!unit_conversion) {
+#     D <- (Q^0.5) * 3.5e3 / Const
+#   } else {
+#     D <- (Q^0.5) * 3.5e3 # 3.5e3 is copied from the MATLAB code
+#   }
+#   dT <- 1/fs
+#   xi <- rnorm(1, f0, 10)
+#   phi <- runif(1, 0, 2*pi)
+#   sin_fft <- D/(2*1i * sqrt(N)) * (
+#     exp(phi*1i) * (exp(2*pi*1i*(xi-fseq)*dT*N)-1)/(exp(2*pi*1i*(xi-fseq)*dT)-1) -
+#     exp(-phi*1i) * (exp(-2*pi*1i*(xi+fseq)*dT*N)-1)/(exp(-2*pi*1i*(xi+fseq)*dT)-1)
+#   )
+#   return(sin_fft)
+# }
