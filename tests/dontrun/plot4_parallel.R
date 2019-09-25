@@ -4,6 +4,7 @@ require(parallel)
 require(tidyverse)
 require(tikzDevice)
 source("fitSHOWsine.R")
+source("psd_denoise.R")
 # set data folder path
 data_path_sim <- "~/realPSD/fig4_show_sim"
 data_path_fit <- "~/realPSD/fig4_show_fit"
@@ -25,6 +26,7 @@ Aw <- 19000                 # white noise, fm2/Hz
 Const <- 1e30
 unit_conversion <- TRUE    # if TRUE, convert the standard unit m2/Hz to fm2/Hz
 if(!unit_conversion) Aw <- Aw / Const # if FALSE, then we use the standard unit m2/Hz
+remove_noise <- TRUE       # if TRUE, remove sine wave noise
 
 # ---------- simulate random datasets ----------
 fseq <- seq(from = 1/Time, to = fs - 1/Time, length.out = fs*Time) # whole frequency domain
@@ -88,6 +90,7 @@ fit_success <- mclapply(1:nfit, function(ii) {
             f0 = f0, fs = fs, Q = Q,
             k = k, Temp = Temp, Aw = Aw, add_white_noise = TRUE,
             bin_size = bin_size, method = method, 
+            remove_noise = remove_noise,
             unit_conversion = unit_conversion)
   }, error = function(err) {
     message("fitting error on job ", ii)

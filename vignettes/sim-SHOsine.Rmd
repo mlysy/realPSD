@@ -155,7 +155,7 @@ bin_size <- 100
 for(ii in 1:length(Q_vec)) {
   Q <- Q_vec[ii]
   # psd
-  psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion) + Aw
+  psd <- psdSHO(fseq, f0, Q, k, Temp, unit_conversion) + Aw
   # sine wave noise
   sin_fft <- fft_sin(fseq, f0, Q, fs, unit_conversion)
   # complex normals
@@ -175,7 +175,7 @@ for(ii in 1:length(Q_vec)) {
   plot(x = fbar, y = Ybar/fs, xlim = c(f0-f0/sqrt(2), f0+f0/sqrt(2)),
       xlab = "frequency (Hz)", ylab = expression(paste("PSD (", fm^2/Hz, ")")),
       type = "l", lwd = 0.3, log = "xy")
-  lines(x = fbar, y = psdSHO(fbar, f0, Q, k, Kb, Temp, unit_conversion) + Aw, 
+  lines(x = fbar, y = psdSHO(fbar, f0, Q, k, Temp, unit_conversion) + Aw, 
       col = "red")
   legend("topright",
     legend = c("Simulated", "Analytic + Aw"), 
@@ -191,7 +191,7 @@ We can also take a closer look at the simulated periodogram for $32kHz < f < 35k
 
 ```{r, small_freq_range, fig.cap = "Simulated periodogram with $Q = 100$ and added noise."}
 Q <- 100
-psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion) + Aw
+psd <- psdSHO(fseq, f0, Q, k, Temp, unit_conversion) + Aw
 sin_fft <- fft_sin(fseq, f0, Q, fs, unit_conversion)
 set.seed(2019)
 x1 <- rnorm(N, 0, sqrt(1/2))

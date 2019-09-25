@@ -56,7 +56,7 @@ bin_size <- 100
 sim_period <- function(fseq, f0, fs, Q, k, Kb, Temp, 
   Aw, unit_conversion = FALSE, bin_size = 100) {
   # analytic psd values, unit m2/Hz
-  psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion) + Aw
+  psd <- psdSHO(fseq, f0, Q, k, Temp, unit_conversion) + Aw
   # number of frequencies
   nf <- length(fseq) 
   # simulate exponential random variables
@@ -86,7 +86,7 @@ for(ii in 1:length(Q_vec)) {
     Aw, FALSE, bin_size), 
     xlab = "frequency (Hz)", ylab = expression(paste("PSD (", m^2/Hz, ")")),
     type = "l", lwd = 0.3, log = "xy")
-  lines(x = fbar, y = psdSHO(fbar, f0, Q_vec[ii], k, Kb, Temp, FALSE) + Aw, 
+  lines(x = fbar, y = psdSHO(fbar, f0, Q_vec[ii], k, Temp, FALSE) + Aw, 
     col = "red")
   legend("topright",
     legend = c("Empirical", "Analytic"), 
@@ -182,7 +182,7 @@ for(ii in 1:length(Q_vec)) {
   # number of frequencies
   nf <- length(fseq) 
   # analytic psd values, unit fm2/Hz
-  psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion = FALSE) + Aw
+  psd <- psdSHO(fseq, f0, Q, k, Temp, unit_conversion = FALSE) + Aw
   # simulate exponential random variables
   set.seed(123)
   sim_exp <- rexp(nf, rate = 1)
@@ -247,9 +247,9 @@ for(ii in 1:length(Q_vec)) {
     f0 = param[1],
     Q = param[2],
     k = param[3],
-    Kb, Temp, FALSE) + param[4]
+    Temp, FALSE) + param[4]
   # compare the analytic true PSD with the fitted one
-  psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, FALSE) + Aw
+  psd <- psdSHO(fseq, f0, Q, k, Temp, FALSE) + Aw
   plot(x = fseq, y = psd_hat,
     xlab = "frequency (Hz)", 
     ylab = expression(paste("PSD (", m^2/Hz, ")")),
@@ -316,7 +316,7 @@ for(ii in 1:length(Q_vec)) {
   # number of frequencies
   nf <- length(fseq) 
   # analytic psd values, unit fm2/Hz
-  psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion = FALSE) + Aw
+  psd <- psdSHO(fseq, f0, Q, k, Temp, unit_conversion = FALSE) + Aw
   # simulate exponential random variables
   set.seed(123)
   sim_exp <- rexp(nf, rate = 1)
@@ -400,9 +400,9 @@ for(ii in 1:length(Q_vec)) {
     f0 = param[1],
     Q = param[2],
     k = param[3],
-    Kb, Temp, FALSE) + param[4]
+    Temp, FALSE) + param[4]
   # compare the analytic true PSD with the fitted one
-  psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, FALSE) + Aw
+  psd <- psdSHO(fseq, f0, Q, k, Temp, FALSE) + Aw
   plot(x = fseq, y = psd_hat,
     xlab = "frequency (Hz)", 
     ylab = expression(paste("PSD (", m^2/Hz, ")")),
@@ -450,7 +450,7 @@ for(ii in 1:length(Q_vec)) {
   # number of frequencies
   nf <- length(fseq) 
   # analytic psd values, unit fm2/Hz
-  psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion = FALSE) + Aw
+  psd <- psdSHO(fseq, f0, Q, k, Temp, unit_conversion = FALSE) + Aw
   # simulate exponential random variables
   set.seed(123)
   sim_exp <- rexp(nf, rate = 1)
@@ -518,9 +518,9 @@ for(ii in 1:length(Q_vec)) {
     f0 = param[1],
     Q = param[2],
     k = param[3],
-    Kb, Temp, FALSE) + param[4]
+    Temp, FALSE) + param[4]
   # compare the analytic true PSD with the fitted one
-  psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, FALSE) + Aw
+  psd <- psdSHO(fseq, f0, Q, k, Temp, FALSE) + Aw
   plot(x = fseq, y = psd_hat,
     xlab = "frequency (Hz)", 
     ylab = expression(paste("PSD (", m^2/Hz, ")")),

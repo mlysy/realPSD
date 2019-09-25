@@ -4,7 +4,7 @@
 \alias{psdSHO}
 \title{Power spectral density of continuous-time SHO model.}
 \usage{
-psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion = TRUE)
+psdSHO(fseq, f0, Q, k, Temp, unit_conversion = TRUE)
 }
 \arguments{
 \item{fseq}{Frequency or a vector of frequencies in Hz.}
@@ -12,8 +12,6 @@ psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion = TRUE)
 \item{Q}{Quality factor.}
 
 \item{k}{Cantilever stiffness.}
-
-\item{Kb}{Boltzmann constant.}
 
 \item{Temp}{Temperature in Kelvin.}
 

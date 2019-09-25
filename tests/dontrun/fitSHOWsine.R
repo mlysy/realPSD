@@ -15,6 +15,7 @@
 fitSHOWsine <- function(fseq, sim_cnorm, f0, fs, Q, k, Temp, Aw,
                     add_white_noise = TRUE,
                     bin_size = 100, method = c("lp", "mle", "nls"),
+                    remove_noise = TRUE,
                     unit_conversion = FALSE) {
   # ---------- setup -----------
   method <- match.arg(method)
@@ -31,15 +32,21 @@ fitSHOWsine <- function(fseq, sim_cnorm, f0, fs, Q, k, Temp, Aw,
   #   Rw + rnorm(1,0, Rw/10)) 
   # psd values at each frequency point of f with given Q
   if(add_white_noise) {
-    psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion) + Aw
+    psd <- psdSHO(fseq, f0, Q, k, Temp, unit_conversion) + Aw
   } else {
-    psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion)
+    psd <- psdSHO(fseq, f0, Q, k, Temp, unit_conversion)
   }
   # generate the periodogram values
   sin_fft <- fft_sin(fseq, f0, Q, fs, unit_conversion)
   Y <- sim_cnorm * sqrt(psd * fs)
   Y <- (Y + sin_fft) * Conj(Y + sin_fft)
   Y <- Re(Y)
+  # remove sine wave noise 
+  if(remove_noise) {
+    freq_range <- c(f0-f0/sqrt(2), f0+f0/sqrt(2))
+    Y <- psd_denoise(fseq, psd_noise = Y, 
+      Q, f0, k, Temp, unit_conversion, Aw, freq_range)
+  }
   # convert Y to standard unit (otherwise the NLS optim would fail)
   if(unit_conversion) Y <- Y/1e30
   # ---------- binning ----------
