@@ -5,6 +5,7 @@ require(parallel)
 require(tidyverse)
 require(tikzDevice)
 source("fitSHOW.R")
+source("fitSHOW_TMB.R")
 # set data folder path
 data_path_sim <- "~/realPSD/show_sim"
 data_path_fit <- "~/realPSD/show_fit"
