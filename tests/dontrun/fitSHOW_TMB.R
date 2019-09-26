@@ -101,16 +101,20 @@ fitSHOW_TMB <- function(fseq, Y, bin_size, method, phi, Temp, Kb) {
       obj = obj, fixed_flag = c(0,0,1), fixed_phi = phi[3])
     # if(opt1$errno != 1) warning("NLS didn't converge at step 2.")
     # optimize all three parameters
-    # opt3 <- pracma::lsqnonlin(fun = nls_res_fixed, 
-    #   x0 = opt2$x,
-    #   options = list(tolx = tolx, tolg = tolg, maxeval = 1000),
-    #   obj = obj, fixed_flag = c(0,0,0), fixed_phi = NULL)
-    opt3 <- optim(par = opt2$x, fn = obj$fn, gr = obj$gr, 
-      method = "L-BFGS-B", lower = rep(0,3))
+    opt3 <- pracma::lsqnonlin(fun = nls_res_fixed, 
+      x0 = opt2$x,
+      options = list(tolx = tolx, tolg = tolg, maxeval = 1000),
+      obj = obj, fixed_flag = c(0,0,0), fixed_phi = NULL)
+    # opt3 <- optim(par = opt2$x, fn = obj$fn, gr = obj$gr, 
+    #   method = "L-BFGS-B", lower = rep(0,3))
     # if(opt1$errno != 1) warning("NLS didn't converge at step 3.")
     # return phi_hat
-    phi_hat <- opt3$par
+    # phi_hat <- opt3$par
+    phi_hat <- opt3$x
   }
+  # remove bad estimates 
+  # if(any(phi_hat) <= 0) phi_hat <- rep(NA, 3)
+  phi_hat[which(phi_hat <= 0)] <- NA
   # output
   tau_hat <- get_tau(phi_hat) # fitted tau = sigma^2, unit should be the same as Aw
   param <- rep(NA, 4) # allocate space for storage
