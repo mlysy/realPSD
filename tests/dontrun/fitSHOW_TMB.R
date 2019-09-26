@@ -115,14 +115,14 @@ fitSHOW_TMB <- function(fseq, Y, bin_size, method, phi, Temp, Kb) {
   tau_hat <- get_tau(phi_hat) # fitted tau = sigma^2, unit should be the same as Aw
   param <- rep(NA, 4) # allocate space for storage
   param[1] <- phi_hat[1] # f0_hat
-  param[2] <- phi_hat[2]/phi_hat[1] # Q_hat
-  param[3] <- Kb * Temp / (tau_hat * pi * phi_hat[2]) # k_hat
+  param[2] <- phi_hat[2] # Q_hat
+  param[3] <- Kb * Temp / (tau_hat * pi * param[1] * param[2]) # k_hat
   if(unit_conversion) {
     # param[4] <- phi_hat[3] * tau_hat * 1e30 # Aw_hat, same unit
-    param[4] <- Kb * Temp / (pi * phi_hat[2]) * 1e30
+    param[4] <- Kb * Temp / (pi * param[1] * param[2]) * 1e30
   } else {
     # param[4] <- phi_hat[3] * tau_hat
-    param[4] <- Kb * Temp / (pi * phi_hat[2])
+    param[4] <- Kb * Temp / (pi * param[1] * param[2])
   }
   names(param) <- c("f0_hat", "Q_hat", "k_hat", "Aw_hat")
   return(param)

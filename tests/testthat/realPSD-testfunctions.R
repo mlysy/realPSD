@@ -2,7 +2,7 @@
 sim_f <- function(n) runif(n, 0, 2*n)
 sim_Zbar <- function(n) rnorm(n)
 sim_Y <- function(n) rchisq(n, df = 2)
-sim_phi <- function() c(f0 = runif(1, 100, 1000), gamma = rexp(1), Rw = rexp(1))
+sim_phi <- function() c(f0 = runif(1, 100, 1000), Q = sample(seq(1:1000), size = 1), Rw = rexp(1))
 sim_zeta <- function() rexp(1)
 sim_tau <- function() rexp(1)
 sim_fs <- function() sample(10:1000, size = 1)
@@ -57,8 +57,9 @@ nls_nlp_r <- function(phi, Ybar, fbar, ufun, fs) {
 }
 
 # show model normalized PSD
+# phi = c(f0, Q, Rw)
 show_ufun <- function(f, phi) {
-  phi[3] + 1/(((f/phi[1])^2 - 1)^2 + (f/phi[2])^2)
+  phi[3] + 1/(((f/phi[1])^2 - 1)^2 + (f/(phi[1]*phi[2]))^2)
 }
 
 # recompile TMB models, install package, and quit

@@ -26,7 +26,7 @@ fitSHOWsine <- function(fseq, sim_cnorm, f0, fs, Q, k, Temp, Aw,
     sig2 <- Kb*Temp/(k*pi*f0*Q) # variance, unit: m2/Hz
   }
   Rw <- Aw/sig2 # re-parameterization, note we input Aw with unit fm2/Hz
-  phi <- c(f0, f0*Q, Rw) # parameter vector for SHOW model
+  phi <- c(f0, Q, Rw) # parameter vector for SHOW model
   # phi <- c(f0 + rnorm(1, 0, sqrt(f0)/10), 
   #   f0*Q + rnorm(1, 0, sqrt(f0*Q)/10), 
   #   Rw + rnorm(1,0, Rw/10)) 
