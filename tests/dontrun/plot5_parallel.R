@@ -186,7 +186,6 @@ ylim_f0 <- max(ratio_data[, "f0_hat"])
 tikzDevice::tikz(file = "boxplot5_Q.tex", width = 8, height = 2)
 fig_Q <- ggplot(ratio_data, aes(x = Q_level, y = Q_hat, fill = method)) + 
   geom_boxplot(outlier.size = 0.5) +
-  stat_boxplot(geom = "errorbar", width = 0.5) + 
   geom_text(data = mse_ratio, 
     aes(y = ylim_Q + 0.1*(ylim_Q-1), label = round(Q_hat,2)),
     position = position_dodge(width = 0.8)) + 
