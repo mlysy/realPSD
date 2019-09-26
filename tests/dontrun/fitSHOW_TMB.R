@@ -77,9 +77,9 @@ fitSHOW_TMB <- function(fseq, Y, bin_size, method, phi, Temp, Kb) {
       obj = obj, fixed_flag = c(0,0,1), fixed_phi = phi[3],
       method = "Nelder-Mead")
     start[c(1,2)] <- opt2$par[c(1,2)]
-    # opt3 <- optim(start, fn = obj$fn)
-    opt3 <- optim(start, fn = obj$fn, gr = obj$gr, 
-      method = "L-BFGS-B", lower = rep(0,3))
+    opt3 <- optim(start, fn = obj$fn)
+    # opt3 <- optim(start, fn = obj$fn, gr = obj$gr, 
+    #   method = "L-BFGS-B", lower = rep(0,3)) # may encounter error: L-BFGS-B needs finite values of 'fn'
     phi_hat <- opt3$par
   } else {
     # ---------- lsqnonlin ---------
