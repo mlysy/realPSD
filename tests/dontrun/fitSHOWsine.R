@@ -41,6 +41,12 @@ fitSHOWsine <- function(fseq, sim_cnorm, f0, fs, Q, k, Temp, Aw,
   Y <- sim_cnorm * sqrt(psd * fs)
   Y <- (Y + sin_fft) * Conj(Y + sin_fft)
   Y <- Re(Y)
+  # # filter the frequency range
+  # f_lb <- f0 - f0/sqrt(2) # frequency lower bound
+  # f_ub <- f0 + f0/sqrt(2) # frequency upper bound
+  # cond <- which(fseq >= f_lb & fseq <= f_ub)
+  # fseq <- fseq[cond]
+  # Y <- Y[cond]
   # remove sine wave noise 
   if(remove_noise) {
     # convert Y to standard unit (otherwise the NLS optim would fail)

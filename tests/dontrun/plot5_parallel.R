@@ -7,9 +7,9 @@ source("fitSHOWsine.R")
 source("fitSHOW_TMB.R")
 source("psd_denoise.R")
 # set data folder path
-data_path_sim <- "~/realPSD/fig4_show_sim"
-data_path_fit <- "~/realPSD/fig4_show_fit"
-data_path_result <- "~/realPSD/fig4_show_result"
+data_path_sim <- "~/realPSD/fig5_show_sim"
+data_path_fit <- "~/realPSD/fig5_show_fit"
+data_path_result <- "~/realPSD/fig5_show_result"
 # clear any existing files
 unlink(file.path(data_path_sim, "*"), recursive = TRUE) 
 unlink(file.path(data_path_fit, "*"), recursive = TRUE)
@@ -27,7 +27,7 @@ Aw <- 19000                 # white noise, fm2/Hz
 Const <- 1e30
 unit_conversion <- TRUE    # if TRUE, convert the standard unit m2/Hz to fm2/Hz
 if(!unit_conversion) Aw <- Aw / Const # if FALSE, then we use the standard unit m2/Hz
-remove_noise <- FALSE       # if TRUE, remove sine wave noise
+remove_noise <- TRUE       # if TRUE, remove sine wave noise
 
 # ---------- simulate random datasets ----------
 fseq <- seq(from = 1/Time, to = fs - 1/Time, length.out = fs*Time) # whole frequency domain
@@ -163,13 +163,14 @@ ratio_sum_base <- ratio_data_base %>%
   summarize_all(sum)
 mse_ratio <- left_join(
   x = ratio_sum,
-  y = ratio_sum_base,
-  by = c("Q_level", "method")
-) %>% group_by(Q_level, method) %>% 
+  y = ratio_sum_base %>% filter(method == "mle"),
+  by = "Q_level"
+) %>% group_by(Q_level, method.x) %>% 
   transmute(f0_hat = f0_hat.x / f0_hat.y,
             Q_hat = Q_hat.x / Q_hat.y,
             k_hat = k_hat.x / k_hat.y,
-            Aw_hat = Aw_hat.x / Aw_hat.y) %>% ungroup()
+            Aw_hat = Aw_hat.x / Aw_hat.y) %>% 
+  ungroup() %>% rename(method = method.x)
 saveRDS(mse_ratio, file = file.path(data_path_result,
   paste0("mse_ratio.rds")))
 # print it out
@@ -182,7 +183,7 @@ ylim_f0 <- max(ratio_data[, "f0_hat"])
 
 # boxplot
 # Q_hat / Q
-tikzDevice::tikz(file = "boxplot4_Q.tex", width = 8, height = 2)
+tikzDevice::tikz(file = "boxplot5_Q.tex", width = 8, height = 2)
 fig_Q <- ggplot(ratio_data, aes(x = Q_level, y = Q_hat, fill = method)) + 
   geom_boxplot(outlier.size = 0.5) +
   stat_boxplot(geom = "errorbar", width = 0.5) + 
@@ -196,7 +197,7 @@ print(fig_Q)
 dev.off()
 
 # k_hat / k
-tikzDevice::tikz(file = "./boxplot4_k.tex", width = 8, height = 2)
+tikzDevice::tikz(file = "./boxplot5_k.tex", width = 8, height = 2)
 fig_k <- ggplot(ratio_data, aes(x = Q_level, y = k_hat, fill = method)) + 
   geom_boxplot(outlier.size = 0.8) +
   geom_text(data = mse_ratio, 
@@ -209,7 +210,7 @@ print(fig_k)
 dev.off()
 
 # f0_hat / f0
-tikzDevice::tikz(file = "./boxplot4_f0.tex", width = 8, height = 2)
+tikzDevice::tikz(file = "./boxplot5_f0.tex", width = 8, height = 2)
 fig_f0 <- ggplot(ratio_data, aes(x = Q_level, y = f0_hat, fill = method)) + 
   geom_boxplot(outlier.size = 0.8) + 
   geom_text(data = mse_ratio, 

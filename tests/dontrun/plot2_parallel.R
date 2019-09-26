@@ -163,7 +163,7 @@ ylim_f0 <- max(ratio_data[, "f0_hat"])
 
 # boxplot
 # Q_hat / Q
-tikzDevice::tikz(file = "boxplot_Q.tex", width = 8, height = 2)
+tikzDevice::tikz(file = "boxplot2_Q.tex", width = 8, height = 2)
 fig_Q <- ggplot(ratio_data, aes(x = Q_level, y = Q_hat, fill = method)) + 
   geom_boxplot(outlier.size = 0.5) +
   # stat_boxplot(geom = "errorbar", width = 0.5) + 
@@ -177,7 +177,7 @@ print(fig_Q)
 dev.off()
 
 # k_hat / k
-tikzDevice::tikz(file = "./boxplot_k.tex", width = 8, height = 2)
+tikzDevice::tikz(file = "./boxplot2_k.tex", width = 8, height = 2)
 fig_k <- ggplot(ratio_data, aes(x = Q_level, y = k_hat, fill = method)) + 
   geom_boxplot(outlier.size = 0.8) +
   geom_text(data = mse_ratio, 
@@ -190,7 +190,7 @@ print(fig_k)
 dev.off()
 
 # f0_hat / f0
-tikzDevice::tikz(file = "./boxplot_f0.tex", width = 8, height = 2)
+tikzDevice::tikz(file = "./boxplot2_f0.tex", width = 8, height = 2)
 fig_f0 <- ggplot(ratio_data, aes(x = Q_level, y = f0_hat, fill = method)) + 
   geom_boxplot(outlier.size = 0.8) + 
   geom_text(data = mse_ratio, 
