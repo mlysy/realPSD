@@ -4,10 +4,12 @@
 \alias{fft_sin}
 \title{FFT (discrete Fourier transform) of sine wave noise}
 \usage{
-fft_sin(fseq, f0, Q, fs, unit_conversion)
+fft_sin(fseq, N, f0, Q, fs, unit_conversion)
 }
 \arguments{
 \item{fseq}{A sequence of frequency points (must be points in the frequency basis)}
+
+\item{N}{total length of the frequency domain}
 
 \item{f0}{Resonance frequency}
 

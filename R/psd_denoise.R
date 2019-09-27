@@ -1,5 +1,14 @@
-#' @title PSD denoise 
-
+#' @title PSD denoise
+#' @param fseq Frequency vector
+#' @param psd_noise Noisy PSD
+#' @param Q Quality factor
+#' @param f0 Resonance frequency
+#' @param k k
+#' @param Temp Temperature
+#' @param unit_conversion indicator if unit conversion is required
+#' @param Aw White noise amplitutde
+#' @param freq_range frequency range, i.e. f0 +- f0/sqrt(2)
+#' @export
 psd_denoise <- function(fseq, psd_noise, Q, f0, k, Temp, unit_conversion, Aw, freq_range) {
   # determine range of data to fit
   f_lb <- freq_range[1]

@@ -1,12 +1,13 @@
 #' @title FFT (discrete Fourier transform) of sine wave noise
 #' @param fseq A sequence of frequency points (must be points in the frequency basis)
+#' @param N total length of the frequency domain
 #' @param f0 Resonance frequency
 #' @param Q Quality factor
 #' @param fs Sampling frequency
 #' @param unit_conversion TRUE/FALSE, if TRUE, use fm2/Hz
 #' @export
-fft_sin <- function(fseq, f0, Q, fs, unit_conversion) {
-  N <- length(fseq)
+fft_sin <- function(fseq, N, f0, Q, fs, unit_conversion) {
+  if(is.null(N)) N <- length(fseq)
   Const <- 1e30                # unit conversion, 1 m2 = 1e30 fm2
   if(!unit_conversion) {
     D <- (Q^0.5) * 3.5e3 / Const

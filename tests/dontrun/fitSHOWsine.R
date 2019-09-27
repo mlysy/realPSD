@@ -9,10 +9,11 @@
 #' @param Temp Temperature, Kelvin.
 #' @param add_white_noise TRUE/FALSE indicator
 #' @param Aw White noise psd.
+#' @param Nfreq Total number of frequency points in the whole range.
 #' @param bin_size Integer number, bin size.
 #' @param method Fitting method, i.e. lp, mle, nls.
 #' @param unit_conversion Logical, if TRUE, use fm2/Hz instead of m2/Hz
-fitSHOWsine <- function(fseq, sim_cnorm, f0, fs, Q, k, Temp, Aw,
+fitSHOWsine <- function(fseq, sim_cnorm, f0, fs, Q, k, Temp, Aw, Nfreq,
                     add_white_noise = TRUE,
                     bin_size = 100, method = c("lp", "mle", "nls"),
                     remove_noise = TRUE,
@@ -37,7 +38,7 @@ fitSHOWsine <- function(fseq, sim_cnorm, f0, fs, Q, k, Temp, Aw,
     psd <- psdSHO(fseq, f0, Q, k, Temp, unit_conversion)
   }
   # generate the periodogram values
-  sin_fft <- fft_sin(fseq, f0, Q, fs, unit_conversion)
+  sin_fft <- fft_sin(fseq, Nfreq, f0, Q, fs, unit_conversion)
   Y <- sim_cnorm * sqrt(psd * fs)
   Y <- (Y + sin_fft) * Conj(Y + sin_fft)
   Y <- Re(Y)

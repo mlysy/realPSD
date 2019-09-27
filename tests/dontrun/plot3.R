@@ -14,34 +14,27 @@ Aw <- 19000                 # white noise, fm2/Hz
 if(!unit_conversion) Aw <- Aw / Const # if FALSE, we use the standard unit m2/Hz
 # ---------- simulation ----------
 fseq <- seq(from = 1/Time, to = fs - 1/Time, length.out = fs*Time) # frequency domain, Hz
-# cond <- which(fseq > f0-f0/sqrt(2) & fseq < f0+f0/sqrt(2))
-# fseq_cond <- fseq[which(fseq > f0-f0/sqrt(2) & fseq < f0+f0/sqrt(2))]
-# identical(fseq[cond], fseq_cond)
 N <- length(fseq)
+cond <- which(fseq > f0-f0/sqrt(2) & fseq < f0+f0/sqrt(2))
+fseq <- fseq[cond]
 psd <- psdSHO(fseq, f0, Q, k, Temp, unit_conversion) + Aw
-# psd_cond <- psdSHO(fseq_cond, f0, Q, k, Temp, unit_conversion) + Aw
-# identical(psd[cond], psd_cond)
-sin_fft <- fft_sin(fseq, f0, Q, fs, unit_conversion)
-sin_fft_cond <- fft_sin(fseq_cond, f0, Q, fs, unit_conversion)
-identical(sin_fft[cond], sin_fft_cond)
+sin_fft <- fft_sin(fseq, N, f0, Q, fs, unit_conversion)
 set.seed(2019)
-x1 <- rnorm(N, 0, sqrt(1/2))
-x2 <- rnorm(N, 0, sqrt(1/2))
+n <- length(fseq)
+x1 <- rnorm(n, 0, sqrt(1/2))
+x2 <- rnorm(n, 0, sqrt(1/2))
 sim_cnorm <- complex(real = x1, imaginary = x2)
 Y <- sim_cnorm * sqrt(fs*psd)
 Y <- (Y + sin_fft) * Conj(Y + sin_fft)
 Y <- Re(Y)
-cond <- which(fseq > f0-f0/sqrt(2) & fseq < f0+f0/sqrt(2))
-xcond <- fseq[cond]
-ycond <- Y[cond]
 pval <- 0.01
-gstat <- ycond / (fs * psd[cond])
+gstat <- Y / (fs * psd)
 M <- max(gstat/sum(gstat))
 fisherEq <- function(a, q, logSort, pval) {
   1 - fisherGstat(a, q, logSort) - pval
 }
 sol <- uniroot(fisherEq, c(0,M), 
-  q = length(xcond), logSort = TRUE, pval = pval)
+  q = length(fseq), logSort = TRUE, pval = pval)
 psd_line <- sol$root * psd * sum(gstat)
 plot(x = fseq/10^3, y = Y/fs, 
   xlim = c((f0-1500)/10^3, (f0+1500)/10^3), 

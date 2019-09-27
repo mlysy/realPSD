@@ -31,6 +31,7 @@ remove_noise <- TRUE       # if TRUE, remove sine wave noise
 
 # ---------- simulate random datasets ----------
 fseq <- seq(from = 1/Time, to = fs - 1/Time, length.out = fs*Time) # whole frequency domain
+Nfreq <- length(fseq)
 f_lb <- f0 - f0/sqrt(2) # frequency lower bound
 f_ub <- f0 + f0/sqrt(2) # frequency upper bound
 cond <- which(fseq >= f_lb & fseq <= f_ub)
@@ -89,7 +90,8 @@ fit_success <- mclapply(1:nfit, function(ii) {
   theta_hat <- tryCatch({
     fitSHOWsine(fseq, sim_cnorm = r_cnorm,
             f0 = f0, fs = fs, Q = Q,
-            k = k, Temp = Temp, Aw = Aw, add_white_noise = TRUE,
+            k = k, Temp = Temp, Aw = Aw, Nfreq = Nfreq,
+            add_white_noise = TRUE,
             bin_size = bin_size, method = method, 
             remove_noise = remove_noise,
             unit_conversion = unit_conversion)
