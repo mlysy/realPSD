@@ -93,29 +93,37 @@ fitSHOW_TMB <- function(fseq, Y, bin_size, method, phi, Temp, Kb) {
     if(opt1$convergence != 0 || opt2$convergence != 0 || opt3$convergence != 0) phi_hat <- rep(NA, 3)
   } else {
     # minpack.lm nls
-    exitflag <- 1 # 1 means success, 0 means failure
-    start <- phi
+    exitflag <- 1 # set an exitflag: 1 means success, 0 means failure
+    start <- phi # initial param
+    # step 1: optimize Q
     opt1 <- minpack.lm::nls.lm(
       par = start, 
       lower = rep(0,3),
       fn = nls_res_fixed, 
       obj = obj, fixed_flag = c(1,0,1), fixed_phi = phi[c(1,3)]) 
-    if(opt1$info != 1 && opt1$info !=2) exitflag <- 0
+    # check if the optimization converged 
+    # according to the docs of minpack.lm, 
+    # info = 1,2,3,4 indicate a successful completion
+    if(!is.element(opt1$info, c(1,2,3,4))) exitflag <- 0
+    # update the initial param for the next step
     start[2] <- opt1$par[2]
+    # step 2: optimize f0
     opt2 <- minpack.lm::nls.lm(
       par = start, 
       lower = rep(0,3),
       fn = nls_res_fixed, 
       obj = obj, fixed_flag = c(0,0,1), fixed_phi = phi[3])  
-    if(opt2$info != 1 && opt2$info !=2) exitflag <- 0
+    if(!is.element(opt2$info, c(1,2,3,4))) exitflag <- 0
     start[c(1,2)] <- opt2$par[c(1,2)]
+    # step 3: optimize Rw
     opt3 <- minpack.lm::nls.lm(
       par = start,
       lower = rep(0,3),
       fn = nls_res,
       obj = obj)
-    if(opt3$info != 1 && opt3$info !=2) exitflag <- 0
+    if(!is.element(opt3$info, c(1,2,3,4))) exitflag <- 0
     phi_hat <- opt3$par
+    # if exitflag indicates failure, then return NA (which will be removed in tidyverse data collection)
     if(exitflag != 1) phi_hat <- rep(NA, 3)
     # optimCheck::optim_proj(fun = obj$fn, xsol = phi_hat, maximize = FALSE, xnames = c("f0", "Q", "Rw"))
     # ---------- lsqnonlin ---------
