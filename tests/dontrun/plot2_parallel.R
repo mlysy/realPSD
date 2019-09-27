@@ -105,11 +105,11 @@ fit_success <- mclapply(1:nfit, function(ii) {
 )
 
 # ---------- Output ---------------
-# read simulated data into workspace
-for(ii in 1:nfit) {
-  assign(paste0("fit_", ii), 
-        readRDS(file.path(data_path_fit, paste0("show_fit_", ii, ".rds"))))
-}
+# # read simulated data into workspace
+# for(ii in 1:nfit) {
+#   assign(paste0("fit_", ii), 
+#         readRDS(file.path(data_path_fit, paste0("show_fit_", ii, ".rds"))))
+# }
 # combine each iteration vector into a data frame
 fit_list <- list()
 for(ii in 1:nfit) {
