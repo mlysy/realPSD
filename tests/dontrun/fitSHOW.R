@@ -25,7 +25,7 @@ fitSHOW <- function(fseq, sim_exp, f0, fs, Q, k, Temp, Aw,
   Rw <- Aw/sig2 # re-parameterization, note we input Aw with unit fm2/Hz
   phi <- c(f0, Q, Rw) # parameter vector for SHOW model
   # phi <- c(f0 + rnorm(1, 0, sqrt(f0)/10), 
-  #   f0*Q + rnorm(1, 0, sqrt(f0*Q)/10), 
+  #   Q + rnorm(1, 0, sqrt(Q)), 
   #   Rw + rnorm(1,0, Rw/10)) 
   # psd values at each frequency point of f with given Q
   psd <- psdSHO(fseq, f0, Q, k, Temp, unit_conversion) + Aw
