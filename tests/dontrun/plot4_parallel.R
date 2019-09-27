@@ -5,7 +5,6 @@ require(tidyverse)
 require(tikzDevice)
 source("fitSHOWsine.R")
 source("fitSHOW_TMB.R")
-source("psd_denoise.R")
 # set data folder path
 data_path_sim <- "~/realPSD/fig4_show_sim"
 data_path_fit <- "~/realPSD/fig4_show_fit"
