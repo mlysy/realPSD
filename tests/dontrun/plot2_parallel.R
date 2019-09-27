@@ -25,7 +25,7 @@ k  <- 0.172                 # Cantilever stiffness, N/m
 Temp <- 298                 # Temperature, Kelvin
 Aw <- 19000                 # white noise, fm2/Hz 
 Const <- 1e30
-unit_conversion <- FALSE    # if TRUE, convert the standard unit m2/Hz to fm2/Hz
+unit_conversion <- TRUE    # if TRUE, convert the standard unit m2/Hz to fm2/Hz
 if(!unit_conversion) Aw <- Aw / Const # if FALSE, then we use the standard unit m2/Hz
 
 # ---------- simulate random datasets ----------
