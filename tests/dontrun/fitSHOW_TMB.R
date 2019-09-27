@@ -92,29 +92,55 @@ fitSHOW_TMB <- function(fseq, Y, bin_size, method, phi, Temp, Kb) {
     # phi_hat <- opt3$xmin
     if(opt1$convergence != 0 || opt2$convergence != 0 || opt3$convergence != 0) phi_hat <- rep(NA, 3)
   } else {
-    # ---------- lsqnonlin ---------
-    # set some option parameters to avoid errors
-    # tolx <- 1/(sum(phi^2)) # in order to compensate the squared norm of the parameter vector
-    # tolg <- max(10*abs(obj$gr(phi)))
-    tolx <- .Machine$double.eps^(2/3)
-    tolg <- .Machine$double.eps^(2/3)
-    # optimize Q (gamma), fix f0 and Rw
-    opt1 <- pracma::lsqnonlin(fun = nls_res_fixed,
-      x0 = phi, 
-      options = list(tolx = tolx, tolg = tolg, maxeval = 1000),
+    # minpack.lm nls
+    exitflag <- 1 # 1 means success, 0 means failure
+    start <- phi
+    opt1 <- minpack.lm::nls.lm(
+      par = start, 
+      lower = rep(0,3),
+      fn = nls_res_fixed, 
       obj = obj, fixed_flag = c(1,0,1), fixed_phi = phi[c(1,3)]) 
-    # if(opt1$errno != 1) warning("NLS didn't converge at step 1.")
-    # optimize Q and f0, fix Rw
-    opt2 <- pracma::lsqnonlin(fun = nls_res_fixed, 
-      x0 = opt1$x,
-      options = list(tolx = tolx, tolg = tolg, maxeval = 1000),
-      obj = obj, fixed_flag = c(0,0,1), fixed_phi = phi[3])
-    # if(opt1$errno != 1) warning("NLS didn't converge at step 2.")
-    # optimize all three parameters
-    opt3 <- pracma::lsqnonlin(fun = nls_res, 
-      x0 = opt2$x,
-      options = list(tolx = tolx, tolg = tolg, maxeval = 1000),
+    if(opt1$info != 1 && opt1$info !=2) exitflag <- 0
+    start[2] <- opt1$par[2]
+    opt2 <- minpack.lm::nls.lm(
+      par = start, 
+      lower = rep(0,3),
+      fn = nls_res_fixed, 
+      obj = obj, fixed_flag = c(0,0,1), fixed_phi = phi[3])  
+    if(opt2$info != 1 && opt2$info !=2) exitflag <- 0
+    start[c(1,2)] <- opt2$par[c(1,2)]
+    opt3 <- minpack.lm::nls.lm(
+      par = start,
+      lower = rep(0,3),
+      fn = nls_res,
       obj = obj)
+    if(opt3$info != 1 && opt3$info !=2) exitflag <- 0
+    phi_hat <- opt3$par
+    if(exitflag != 1) phi_hat <- rep(NA, 3)
+    # optimCheck::optim_proj(fun = obj$fn, xsol = phi_hat, maximize = FALSE, xnames = c("f0", "Q", "Rw"))
+    # ---------- lsqnonlin ---------
+    # # set some option parameters to avoid errors
+    # # tolx <- 1/(sum(phi^2)) # in order to compensate the squared norm of the parameter vector
+    # # tolg <- max(10*abs(obj$gr(phi)))
+    # tolx <- .Machine$double.eps^(2/3)
+    # tolg <- .Machine$double.eps^(2/3)
+    # # optimize Q (gamma), fix f0 and Rw
+    # opt1 <- pracma::lsqnonlin(fun = nls_res_fixed,
+    #   x0 = phi, 
+    #   options = list(tolx = tolx, tolg = tolg, maxeval = 1000),
+    #   obj = obj, fixed_flag = c(1,0,1), fixed_phi = phi[c(1,3)]) 
+    # # if(opt1$errno != 1) warning("NLS didn't converge at step 1.")
+    # # optimize Q and f0, fix Rw
+    # opt2 <- pracma::lsqnonlin(fun = nls_res_fixed, 
+    #   x0 = opt1$x,
+    #   options = list(tolx = tolx, tolg = tolg, maxeval = 1000),
+    #   obj = obj, fixed_flag = c(0,0,1), fixed_phi = phi[3])
+    # # if(opt1$errno != 1) warning("NLS didn't converge at step 2.")
+    # # optimize all three parameters
+    # opt3 <- pracma::lsqnonlin(fun = nls_res, 
+    #   x0 = opt2$x,
+    #   options = list(tolx = tolx, tolg = tolg, maxeval = 1000),
+    #   obj = obj)
     # opt3 <- optim(par = opt2$x, fn = obj$fn, gr = obj$gr, 
     #   method = "L-BFGS-B", lower = rep(0,3))
     # opt3 <- optim(par = opt2$x, fn = obj$fn, gr = obj$gr, 
@@ -122,7 +148,7 @@ fitSHOW_TMB <- function(fseq, Y, bin_size, method, phi, Temp, Kb) {
     # if(opt1$errno != 1) warning("NLS didn't converge at step 3.")
     # return phi_hat
     # phi_hat <- opt3$par
-    phi_hat <- opt3$x
+    # phi_hat <- opt3$x
   }
   # remove bad estimates 
   # if(any(phi_hat) <= 0) phi_hat <- rep(NA, 3)

@@ -29,7 +29,6 @@ unit_conversion <- TRUE    # if TRUE, convert the standard unit m2/Hz to fm2/Hz
 if(!unit_conversion) Aw <- Aw / Const # if FALSE, then we use the standard unit m2/Hz
 
 # ---------- simulate random datasets ----------
-# fseq <- seq(from = f_lb, to = f_ub, by = 1/Time) # frequency domain, Hz
 fseq <- seq(from = 1/Time, to = fs - 1/Time, length.out = fs*Time) # whole frequency domain
 f_lb <- f0 - f0/sqrt(2) # frequency lower bound
 f_ub <- f0 + f0/sqrt(2) # frequency upper bound
