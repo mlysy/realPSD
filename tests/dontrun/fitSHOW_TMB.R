@@ -68,29 +68,24 @@ fitSHOW_TMB <- function(fseq, Y, bin_size, method, phi, Temp, Kb) {
   # ---------- optimization -----------
   if(method == "mle" || method == "lp"){
     # ----- optim step-by-step -----
-    start <- phi
+    exitflag <- 1 # set an exitflag: 1 means success, 0 means failure
+    start <- phi # intial parameters
+    # step 1: optimize Q
     opt1 <- optim(start, fn = fn_fixed, 
       obj = obj, fixed_flag = c(1,0,1), fixed_phi = phi[c(1,3)],
       method = "Nelder-Mead") 
+    if(opt1$convergence != 0) exitflag <- 0
     start[2] <- opt1$par[2]
+    # step 2: optimize f0, Q
     opt2 <- optim(start, fn = fn_fixed,
       obj = obj, fixed_flag = c(0,0,1), fixed_phi = phi[3],
       method = "Nelder-Mead")
+    if(opt2$convergence != 0) exitflag <- 0
     start[c(1,2)] <- opt2$par[c(1,2)]
+    # step 3: optimize f0, Q, Rw all together
     opt3 <- optim(start, fn = obj$fn)
-    # opt3 <- optim(start, fn = obj$fn, gr = obj$gr, 
-    #   method = "L-BFGS-B", lower = rep(0,3)) # may encounter error: L-BFGS-B needs finite values of 'fn'
+    if(opt3$convergence != 0) exitflag <- 0 
     phi_hat <- opt3$par
-    # start <- phi
-    # opt1 <- pracma::fminsearch(f = fn_fixed, x0 = start, 
-    #   obj = obj, fixed_flag = c(1,0,1), fixed_phi = phi[c(1,3)])
-    # start[2] <- opt1$xmin[2]
-    # opt2 <- pracma::fminsearch(f = fn_fixed, x0 = start, 
-    #   obj = obj, fixed_flag = c(0,0,1), fixed_phi = phi[3])
-    # start[c(1,2)] <- opt2$xmin[c(1,2)]
-    # opt3 <- pracma::fminsearch(f = obj$fn, x0 = start)
-    # phi_hat <- opt3$xmin
-    if(opt1$convergence != 0 || opt2$convergence != 0 || opt3$convergence != 0) phi_hat <- rep(NA, 3)
   } else {
     # minpack.lm nls
     exitflag <- 1 # set an exitflag: 1 means success, 0 means failure
@@ -107,7 +102,7 @@ fitSHOW_TMB <- function(fseq, Y, bin_size, method, phi, Temp, Kb) {
     if(!is.element(opt1$info, c(1,2,3,4))) exitflag <- 0
     # update the initial param for the next step
     start[2] <- opt1$par[2]
-    # step 2: optimize f0
+    # step 2: optimize f0, Q
     opt2 <- minpack.lm::nls.lm(
       par = start, 
       lower = rep(0,3),
@@ -115,7 +110,7 @@ fitSHOW_TMB <- function(fseq, Y, bin_size, method, phi, Temp, Kb) {
       obj = obj, fixed_flag = c(0,0,1), fixed_phi = phi[3])  
     if(!is.element(opt2$info, c(1,2,3,4))) exitflag <- 0
     start[c(1,2)] <- opt2$par[c(1,2)]
-    # step 3: optimize Rw
+    # step 3: optimize f0, Q, Rw
     opt3 <- minpack.lm::nls.lm(
       par = start,
       lower = rep(0,3),
@@ -123,44 +118,11 @@ fitSHOW_TMB <- function(fseq, Y, bin_size, method, phi, Temp, Kb) {
       obj = obj)
     if(!is.element(opt3$info, c(1,2,3,4))) exitflag <- 0
     phi_hat <- opt3$par
-    # if exitflag indicates failure, then return NA (which will be removed in tidyverse data collection)
-    if(exitflag != 1) phi_hat <- rep(NA, 3)
-    # optimCheck::optim_proj(fun = obj$fn, xsol = phi_hat, maximize = FALSE, xnames = c("f0", "Q", "Rw"))
-    # ---------- lsqnonlin ---------
-    # # set some option parameters to avoid errors
-    # # tolx <- 1/(sum(phi^2)) # in order to compensate the squared norm of the parameter vector
-    # # tolg <- max(10*abs(obj$gr(phi)))
-    # tolx <- .Machine$double.eps^(2/3)
-    # tolg <- .Machine$double.eps^(2/3)
-    # # optimize Q (gamma), fix f0 and Rw
-    # opt1 <- pracma::lsqnonlin(fun = nls_res_fixed,
-    #   x0 = phi, 
-    #   options = list(tolx = tolx, tolg = tolg, maxeval = 1000),
-    #   obj = obj, fixed_flag = c(1,0,1), fixed_phi = phi[c(1,3)]) 
-    # # if(opt1$errno != 1) warning("NLS didn't converge at step 1.")
-    # # optimize Q and f0, fix Rw
-    # opt2 <- pracma::lsqnonlin(fun = nls_res_fixed, 
-    #   x0 = opt1$x,
-    #   options = list(tolx = tolx, tolg = tolg, maxeval = 1000),
-    #   obj = obj, fixed_flag = c(0,0,1), fixed_phi = phi[3])
-    # # if(opt1$errno != 1) warning("NLS didn't converge at step 2.")
-    # # optimize all three parameters
-    # opt3 <- pracma::lsqnonlin(fun = nls_res, 
-    #   x0 = opt2$x,
-    #   options = list(tolx = tolx, tolg = tolg, maxeval = 1000),
-    #   obj = obj)
-    # opt3 <- optim(par = opt2$x, fn = obj$fn, gr = obj$gr, 
-    #   method = "L-BFGS-B", lower = rep(0,3))
-    # opt3 <- optim(par = opt2$x, fn = obj$fn, gr = obj$gr, 
-    #   method = "BFGS")
-    # if(opt1$errno != 1) warning("NLS didn't converge at step 3.")
-    # return phi_hat
-    # phi_hat <- opt3$par
-    # phi_hat <- opt3$x
   }
-  # remove bad estimates 
   # if(any(phi_hat) <= 0) phi_hat <- rep(NA, 3)
   phi_hat[which(phi_hat <= 0)] <- NA
+  # remove bad estimates 
+  if(exitflag != 1) phi_hat <- rep(NA, 3)
   # output
   tau_hat <- get_tau(phi_hat) # fitted tau = sigma^2, unit should be the same as Aw
   param <- rep(NA, 4) # allocate space for storage
