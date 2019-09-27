@@ -14,9 +14,16 @@ Aw <- 19000                 # white noise, fm2/Hz
 if(!unit_conversion) Aw <- Aw / Const # if FALSE, we use the standard unit m2/Hz
 # ---------- simulation ----------
 fseq <- seq(from = 1/Time, to = fs - 1/Time, length.out = fs*Time) # frequency domain, Hz
+# cond <- which(fseq > f0-f0/sqrt(2) & fseq < f0+f0/sqrt(2))
+# fseq_cond <- fseq[which(fseq > f0-f0/sqrt(2) & fseq < f0+f0/sqrt(2))]
+# identical(fseq[cond], fseq_cond)
 N <- length(fseq)
-psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion) + Aw
+psd <- psdSHO(fseq, f0, Q, k, Temp, unit_conversion) + Aw
+# psd_cond <- psdSHO(fseq_cond, f0, Q, k, Temp, unit_conversion) + Aw
+# identical(psd[cond], psd_cond)
 sin_fft <- fft_sin(fseq, f0, Q, fs, unit_conversion)
+sin_fft_cond <- fft_sin(fseq_cond, f0, Q, fs, unit_conversion)
+identical(sin_fft[cond], sin_fft_cond)
 set.seed(2019)
 x1 <- rnorm(N, 0, sqrt(1/2))
 x2 <- rnorm(N, 0, sqrt(1/2))
