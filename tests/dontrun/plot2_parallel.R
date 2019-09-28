@@ -36,7 +36,7 @@ cond <- which(fseq >= f_lb & fseq <= f_ub)
 fseq <- fseq[cond]
 nf <- length(fseq) # number of frequencies
 
-nsim <- 1000
+nsim <- 100
 bin_size <- 100
 
 # detect the number of cores
