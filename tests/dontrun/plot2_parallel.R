@@ -116,7 +116,7 @@ for(ii in 1:nfit) {
   fit_list[[ii]] <- readRDS(file.path(data_path_fit, paste0("show_fit_", ii, ".rds"))) 
 }
 fit_data <- do.call(rbind, fit_list)
-fit_data <- cbind(fit_data, fit_descr[,c("Q_level", "method")])
+fit_data <- cbind(fit_data, fit_descr[,c("Q_level", "method")], fit_id = seq(1:nfit))
 # then manipulate the data frame using tidyverse toolbox
 fit_data <- fit_data %>% as_tibble() %>% drop_na() %>%
   mutate(Q_level = factor(Q_level,  # convert the column Q_level into a factor
