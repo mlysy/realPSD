@@ -42,27 +42,23 @@ fitSHOWsine <- function(fseq, sim_cnorm, f0, fs, Q, k, Temp, Aw, Nfreq,
   Y <- sim_cnorm * sqrt(psd * fs)
   Y <- (Y + sin_fft) * Conj(Y + sin_fft)
   Y <- Re(Y)
-  # # filter the frequency range
-  # f_lb <- f0 - f0/sqrt(2) # frequency lower bound
-  # f_ub <- f0 + f0/sqrt(2) # frequency upper bound
-  # cond <- which(fseq >= f_lb & fseq <= f_ub)
-  # fseq <- fseq[cond]
-  # Y <- Y[cond]
   # remove sine wave noise 
   if(remove_noise) {
     # convert Y to standard unit (otherwise the NLS optim would fail)
     if(unit_conversion) Y <- Y/1e30
     # preliminary estimation
     param_pre <- fitSHOW_TMB(fseq, Y, bin_size, method, phi, Temp, Kb)
-    # remove sine wave noise
-    freq_range <- c(f0-f0/sqrt(2), f0+f0/sqrt(2))
-    f0_hat <- param_pre["f0_hat"]
-    Q_hat <- param_pre["Q_hat"]
-    k_hat <- param_pre["k_hat"]
-    Aw_hat <- param_pre["Aw_hat"]
-    if(unit_conversion) Y <- Y * 1e30
-    Y <- psd_denoise(fseq, psd_noise = Y, 
-      Q_hat, f0_hat, k_hat, Temp, unit_conversion, Aw_hat, freq_range)
+    if(!any(is.na(param_pre))) { # if optim above returns NA, then skip denoise step
+      # remove sine wave noise
+      freq_range <- c(f0-f0/sqrt(2), f0+f0/sqrt(2))
+      f0_hat <- param_pre["f0_hat"]
+      Q_hat <- param_pre["Q_hat"]
+      k_hat <- param_pre["k_hat"]
+      Aw_hat <- param_pre["Aw_hat"]
+      if(unit_conversion) Y <- Y * 1e30
+      Y <- psd_denoise(fseq, psd_noise = Y, 
+        Q_hat, f0_hat, k_hat, Temp, unit_conversion, Aw_hat, freq_range)
+    }
   }
   # convert Y to standard unit (otherwise the NLS optim would fail)
   if(unit_conversion) Y <- Y/1e30
