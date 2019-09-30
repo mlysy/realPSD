@@ -75,42 +75,42 @@ fitSHOW_TMB <- function(fseq, Y, bin_size, method, phi, Temp, Kb) {
       obj = obj, fixed_flag = c(1,0,1), fixed_phi = phi[c(1,3)],
       method = "Nelder-Mead") 
     if(opt1$convergence != 0) exitflag <- 0
-    # if(opt1$par[2] <= 0) { # if Nelder-Mead fails to find positive optim values
-    #   opt11 <- optim(start, fn = fn_fixed, gr = gr_fixed,
-    #     method = "BFGS",
-    #     obj = obj, fixed_flag = c(1,0,1), fixed_phi = phi[c(1,3)])
-    #   if(opt11$convergence != 0) exitflag <- 0
-    #   start[2] <- opt11$par[2]
-    # } else {
-    #   start[2] <- opt1$par[2]
-    # }
+    if(opt1$par[2] <= 0) { # if Nelder-Mead fails to find positive optim values
+      opt11 <- optim(start, fn = fn_fixed, gr = gr_fixed,
+        method = "BFGS",
+        obj = obj, fixed_flag = c(1,0,1), fixed_phi = phi[c(1,3)])
+      if(opt11$convergence != 0) exitflag <- 0
+      start[2] <- opt11$par[2]
+    } else {
       start[2] <- opt1$par[2]
+    }
+      # start[2] <- opt1$par[2]
     # step 2: optimize f0, Q
     opt2 <- optim(start, fn = fn_fixed,
       obj = obj, fixed_flag = c(0,0,1), fixed_phi = phi[3],
       method = "Nelder-Mead")
     if(opt2$convergence != 0) exitflag <- 0
-    # if(any(opt2$par[c(1,2)] <= 0)) { # if Nelder-Mead fails to find positive optim values
-    #   opt22 <- optim(start, fn = fn_fixed, gr = gr_fixed,
-    #     method = "bfgs",
-    #     obj = obj, fixed_flag = c(0,0,1), fixed_phi = phi[3])
-    #   if(opt22$convergence != 0) exitflag <- 0
-    #   start[c(1,2)] <- opt22$par[c(1,2)]
-    # } else {
-    #   start[c(1,2)] <- opt2$par[c(1,2)]
-    # }
+    if(any(opt2$par[c(1,2)] <= 0)) { # if Nelder-Mead fails to find positive optim values
+      opt22 <- optim(start, fn = fn_fixed, gr = gr_fixed,
+        method = "bfgs",
+        obj = obj, fixed_flag = c(0,0,1), fixed_phi = phi[3])
+      if(opt22$convergence != 0) exitflag <- 0
+      start[c(1,2)] <- opt22$par[c(1,2)]
+    } else {
       start[c(1,2)] <- opt2$par[c(1,2)]
+    }
+      # start[c(1,2)] <- opt2$par[c(1,2)]
     # step 3: optimize f0, Q, Rw all together
     opt3 <- optim(start, fn = obj$fn)
     if(opt3$convergence != 0) exitflag <- 0 
-    # if(any(opt3$par <= 0)) {
-    #   opt33 <- optim(start, fn = obj$fn, gr = obj$gr, method = "BFGS")
-    #   if(opt33$convergence != 0) exitflag <- 0
-    #   phi_hat <- opt33$par
-    # } else{
-    #   phi_hat <- opt3$par
-    # }
+    if(any(opt3$par <= 0)) {
+      opt33 <- optim(start, fn = obj$fn, gr = obj$gr, method = "BFGS")
+      if(opt33$convergence != 0) exitflag <- 0
+      phi_hat <- opt33$par
+    } else{
       phi_hat <- opt3$par
+    }
+      # phi_hat <- opt3$par
   } else {
     # minpack.lm nls
     exitflag <- 1 # set an exitflag: 1 means success, 0 means failure
