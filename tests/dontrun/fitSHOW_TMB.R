@@ -124,7 +124,7 @@ fitSHOW_TMB <- function(fseq, Y, bin_size, method, phi, Temp, Kb) {
     # check if the optimization converged 
     # according to the docs of minpack.lm, 
     # info = 1,2,3,4 indicate a successful completion
-    if(!is.element(opt1$info, c(1,2,3,4))) exitflag <- 0
+    if(!is.element(opt1$info, c(1,2,3))) exitflag <- 0
     # update the initial param for the next step
     start[2] <- opt1$par[2]
     # step 2: optimize f0, Q
