@@ -133,7 +133,7 @@ fitSHOW_TMB <- function(fseq, Y, bin_size, method, phi, Temp, Kb) {
       lower = rep(0,3),
       fn = nls_res_fixed, 
       obj = obj, fixed_flag = c(0,0,1), fixed_phi = phi[3])  
-    if(!is.element(opt2$info, c(1,2,3,4))) exitflag <- 0
+    if(!is.element(opt2$info, c(1,2,3))) exitflag <- 0
     start[c(1,2)] <- opt2$par[c(1,2)]
     # step 3: optimize f0, Q, Rw
     opt3 <- minpack.lm::nls.lm(
@@ -141,7 +141,7 @@ fitSHOW_TMB <- function(fseq, Y, bin_size, method, phi, Temp, Kb) {
       lower = rep(0,3),
       fn = nls_res,
       obj = obj)
-    if(!is.element(opt3$info, c(1,2,3,4))) exitflag <- 0
+    if(!is.element(opt3$info, c(1,2,3))) exitflag <- 0
     phi_hat <- opt3$par
   }
   # remove bad estimates 
