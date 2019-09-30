@@ -44,19 +44,24 @@ fitSHOWsine <- function(fseq, sim_cnorm, f0, fs, Q, k, Temp, Aw, Nfreq,
   Y <- Re(Y)
   # remove sine wave noise 
   if(remove_noise) {
-    # convert Y to standard unit (otherwise the NLS optim would fail)
-    if(unit_conversion) Y <- Y/1e30
-    # preliminary estimation
-    param_pre <- fitSHOW_TMB(fseq, Y, bin_size, method, phi, Temp, Kb)
-    # if optim above returns NA, then skip this whole estimation
-    if(any(is.na(param_pre))) return(rep(NA,4))
-    # remove sine wave noise
+    # # convert Y to standard unit (otherwise the NLS optim would fail)
+    # if(unit_conversion) Y <- Y/1e30
+    # # preliminary estimation
+    # param_pre <- fitSHOW_TMB(fseq, Y, bin_size, method, phi, Temp, Kb)
+    # # if optim above returns NA, then skip this whole estimation
+    # if(any(is.na(param_pre))) return(rep(NA,4))
+    # # remove sine wave noise
+    # freq_range <- c(f0-f0/sqrt(2), f0+f0/sqrt(2))
+    # f0_hat <- param_pre["f0_hat"]
+    # Q_hat <- param_pre["Q_hat"]
+    # k_hat <- param_pre["k_hat"]
+    # Aw_hat <- param_pre["Aw_hat"]
+    # if(unit_conversion) Y <- Y * 1e30
+    Q_hat <- Q
+    f0_hat <- f0
+    k_hat <- k
+    Aw_hat <- Aw
     freq_range <- c(f0-f0/sqrt(2), f0+f0/sqrt(2))
-    f0_hat <- param_pre["f0_hat"]
-    Q_hat <- param_pre["Q_hat"]
-    k_hat <- param_pre["k_hat"]
-    Aw_hat <- param_pre["Aw_hat"]
-    if(unit_conversion) Y <- Y * 1e30
     Y <- psd_denoise(fseq, psd_noise = Y, 
       Q_hat, f0_hat, k_hat, Temp, unit_conversion, Aw_hat, freq_range)
   }
