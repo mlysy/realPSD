@@ -9,6 +9,8 @@ psdSHO(fseq, f0, Q, k, Temp, unit_conversion = TRUE)
 \arguments{
 \item{fseq}{Frequency or a vector of frequencies in Hz.}
 
+\item{f0}{Resonance frequency f0.}
+
 \item{Q}{Quality factor.}
 
 \item{k}{Cantilever stiffness.}
@@ -16,8 +18,6 @@ psdSHO(fseq, f0, Q, k, Temp, unit_conversion = TRUE)
 \item{Temp}{Temperature in Kelvin.}
 
 \item{unit_conversion}{Indicator of whether or not to convert the unit of PSD to fm2/Hz. The femtometer (fm) is an SI unit of length equal to 1e-15 meters.}
-
-\item{f_0}{Resonance frequency f_0.}
 }
 \description{
 Power spectral density of continuous-time SHO model.

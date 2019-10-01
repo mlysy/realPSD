@@ -1,6 +1,6 @@
 #' @title Power spectral density of continuous-time SHO model.
 #' @param fseq Frequency or a vector of frequencies in Hz.
-#' @param f_0 Resonance frequency f_0.
+#' @param f0 Resonance frequency f0.
 #' @param Q Quality factor.
 #' @param k Cantilever stiffness.
 #' @param Temp Temperature in Kelvin.

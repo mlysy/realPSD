@@ -3,6 +3,7 @@
 export(binning)
 export(fft_sin)
 export(fisherGstat)
+export(logSHOW)
 export(periodogram)
 export(psdSHO)
 export(psd_denoise)

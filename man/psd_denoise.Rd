@@ -4,8 +4,7 @@
 \alias{psd_denoise}
 \title{PSD denoise}
 \usage{
-psd_denoise(fseq, psd_noise, Q, f0, k, Temp, unit_conversion, Aw,
-  freq_range)
+psd_denoise(fseq, psd_noise, Q, f0, tau, Rw, freq_range)
 }
 \arguments{
 \item{fseq}{Frequency vector}
@@ -16,13 +15,9 @@ psd_denoise(fseq, psd_noise, Q, f0, k, Temp, unit_conversion, Aw,
 
 \item{f0}{Resonance frequency}
 
-\item{k}{k}
+\item{tau}{sig2}
 
-\item{Temp}{Temperature}
-
-\item{unit_conversion}{indicator if unit conversion is required}
-
-\item{Aw}{White noise amplitutde}
+\item{Rw}{Aw/sig2}
 
 \item{freq_range}{frequency range, i.e. f0 +- f0/sqrt(2)}
 }
