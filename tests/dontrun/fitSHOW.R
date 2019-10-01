@@ -28,7 +28,8 @@ fitSHOW <- function(fseq, sim_exp, f0, fs, Q, k, Temp, Aw,
   #   Q + rnorm(1, 0, sqrt(Q)), 
   #   Rw + rnorm(1,0, Rw/10)) 
   # psd values at each frequency point of f with given Q
-  psd <- psdSHO(fseq, f0, Q, k, Temp, unit_conversion) + Aw
+  # psd <- psdSHO(fseq, f0, Q, k, Temp, unit_conversion) + Aw
+  psd <- exp(logSHOW(fseq, f0, Q, tau = sig2, Rw))
   # generate the periodogram values
   Y <- sim_exp * psd * fs
   # convert Y to standard unit (otherwise the NLS optim would fail)

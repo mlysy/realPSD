@@ -133,9 +133,9 @@ saveRDS(fit_data, file = file.path(data_path_result,
 # fit_data_base <- readRDS(file.path("~/realPSD/show_result/fit_data.rds"))
 # get a new dataset with ratios instead of fitted values
 ratio_data <- fit_data %>% 
+  select(-c(tau_hat, Rw_hat, fit_id)) %>% 
   mutate(f0_hat = f0_hat/f0) %>%
   mutate(k_hat = k_hat/k) %>%
-  mutate(Aw_hat = Aw_hat/Aw) %>%
   mutate(Q_hat = case_when(
       Q_level == "Q = 1" ~ Q_hat/Q_vec[1],
       Q_level == "Q = 10" ~ Q_hat/Q_vec[2],
@@ -151,15 +151,13 @@ ratio_data_base <- readRDS(file.path("~/realPSD/show_result/ratio_data.rds"))
 ratio_sum <- ratio_data %>% 
   mutate(f0_hat = (f0_hat - 1)^2,
           Q_hat = (Q_hat - 1)^2,
-          k_hat = (k_hat - 1)^2,
-         Aw_hat = (Aw_hat - 1)^2) %>%
+          k_hat = (k_hat - 1)^2) %>%
   group_by(Q_level, method) %>%
   summarize_all(sum)
 ratio_sum_base <- ratio_data_base %>% 
   mutate(f0_hat = (f0_hat - 1)^2,
           Q_hat = (Q_hat - 1)^2,
-          k_hat = (k_hat - 1)^2,
-         Aw_hat = (Aw_hat - 1)^2) %>%
+          k_hat = (k_hat - 1)^2) %>%
   group_by(Q_level, method) %>%
   summarize_all(sum)
 mse_ratio <- left_join(
@@ -169,8 +167,7 @@ mse_ratio <- left_join(
 ) %>% group_by(Q_level, method.x) %>% 
   transmute(f0_hat = f0_hat.x / f0_hat.y,
             Q_hat = Q_hat.x / Q_hat.y,
-            k_hat = k_hat.x / k_hat.y,
-            Aw_hat = Aw_hat.x / Aw_hat.y) %>% 
+            k_hat = k_hat.x / k_hat.y) %>% 
   ungroup() %>% rename(method = method.x)
 saveRDS(mse_ratio, file = file.path(data_path_result,
   paste0("mse_ratio.rds")))

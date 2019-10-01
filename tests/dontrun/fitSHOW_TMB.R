@@ -92,7 +92,7 @@ fitSHOW_TMB <- function(fseq, Y, bin_size, method, phi, Temp, Kb) {
     if(opt2$convergence != 0) exitflag <- 0
     if(any(opt2$par[c(1,2)] <= 0)) { # if Nelder-Mead fails to find positive optim values
       opt22 <- optim(start, fn = fn_fixed, gr = gr_fixed,
-        method = "bfgs",
+        method = "BFGS",
         obj = obj, fixed_flag = c(0,0,1), fixed_phi = phi[3])
       if(opt22$convergence != 0) exitflag <- 0
       start[c(1,2)] <- opt22$par[c(1,2)]
@@ -149,16 +149,17 @@ fitSHOW_TMB <- function(fseq, Y, bin_size, method, phi, Temp, Kb) {
   if(exitflag != 1) phi_hat <- rep(NA, 3)
   # output
   tau_hat <- get_tau(phi_hat) # fitted tau = sigma^2, unit should be the same as Aw
-  param <- rep(NA, 4) # allocate space for storage
+  param <- rep(NA, 5) # allocate space for storage
   param[1] <- phi_hat[1] # f0_hat
   param[2] <- phi_hat[2] # Q_hat
   param[3] <- Kb * Temp / (tau_hat * pi * param[1] * param[2]) # k_hat
   if(unit_conversion) {
-    param[4] <- phi_hat[3] * tau_hat * 1e30 # Aw_hat, same unit
+    param[4] <- tau_hat * 1e30 # Aw_hat, same unit
   } else {
-    param[4] <- phi_hat[3] * tau_hat
+    param[4] <- tau_hat
   }
-  names(param) <- c("f0_hat", "Q_hat", "k_hat", "Aw_hat")
+  param[5] <- phi_hat[3] # Rw_hat
+  names(param) <- c("f0_hat", "Q_hat", "k_hat", "tau_hat", "Rw_hat")
   return(param)
 }
 

@@ -26,17 +26,18 @@ fitSHOWsine <- function(fseq, sim_cnorm, f0, fs, Q, k, Temp, Aw, Nfreq,
   } else {
     sig2 <- Kb*Temp/(k*pi*f0*Q) # variance, unit: m2/Hz
   }
-  Rw <- Aw/sig2 # re-parameterization, note we input Aw with unit fm2/Hz
+  Rw <- Aw/sig2 # re-parameterization, Rw is unitless, Aw and sig2 are unit converted at the same time 
   phi <- c(f0, Q, Rw) # parameter vector for SHOW model
   # phi <- c(f0 + rnorm(1, 0, sqrt(f0)/10), 
   #   f0*Q + rnorm(1, 0, sqrt(f0*Q)/10), 
   #   Rw + rnorm(1,0, Rw/10)) 
   # psd values at each frequency point of f with given Q
-  if(add_white_noise) {
-    psd <- psdSHO(fseq, f0, Q, k, Temp, unit_conversion) + Aw
-  } else {
-    psd <- psdSHO(fseq, f0, Q, k, Temp, unit_conversion)
-  }
+  # if(add_white_noise) {
+  #   psd <- psdSHO(fseq, f0, Q, k, Temp, unit_conversion) + Aw
+  # } else {
+  #   psd <- psdSHO(fseq, f0, Q, k, Temp, unit_conversion)
+  # }
+  psd <- exp(logSHOW(fseq, f0, Q, tau = sig2, Rw))
   # generate the periodogram values
   sin_fft <- fft_sin(fseq, Nfreq, f0, Q, fs, unit_conversion)
   Y <- sim_cnorm * sqrt(psd * fs)
@@ -49,16 +50,21 @@ fitSHOWsine <- function(fseq, sim_cnorm, f0, fs, Q, k, Temp, Aw, Nfreq,
     # preliminary estimation
     param_pre <- fitSHOW_TMB(fseq, Y, bin_size, method, phi, Temp, Kb)
     # if optim above returns NA, then skip this whole estimation
-    if(any(is.na(param_pre))) return(rep(NA,4))
+    if(any(is.na(param_pre))) return(rep(NA,5))
     # remove sine wave noise
     freq_range <- c(f0-f0/sqrt(2), f0+f0/sqrt(2))
     f0_hat <- param_pre["f0_hat"]
     Q_hat <- param_pre["Q_hat"]
-    k_hat <- param_pre["k_hat"]
-    Aw_hat <- param_pre["Aw_hat"]
+    tau_hat <- param_pre["tau_hat"]
+    Rw_hat <- param_pre["Rw_hat"]
     if(unit_conversion) Y <- Y * 1e30
-    Y <- psd_denoise(fseq, psd_noise = Y, 
-      Q_hat, f0_hat, k_hat, Temp, unit_conversion, Aw_hat, freq_range)
+    Y <- psd_denoise(fseq, 
+      psd_noise = Y, 
+      Q = Q_hat, 
+      f0 = f0_hat, 
+      tau = tau_hat, 
+      Rw = Rw_hat, 
+      freq_range)
   }
   # convert Y to standard unit (otherwise the NLS optim would fail)
   if(unit_conversion) Y <- Y/1e30
