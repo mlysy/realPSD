@@ -1,7 +1,9 @@
 #include "realPSD/SHOWModel.hpp"
-#include "realPSD/LPFit.hpp"
+#include "realPSD/LPMethods.hpp"
 #include "realPSD/MLEFit.hpp"
-#include "realPSD/NLSFit.hpp"
+#include "realPSD/NLSMethods.hpp"
+// #include "realPSD/LPFit.hpp"
+// #include "realPSD/NLSFit.hpp"
 
 #undef TMB_OBJECTIVE_PTR
 #define TMB_OBJECTIVE_PTR obj
@@ -27,63 +29,13 @@ Type SHOWFit(objective_function<Type>* obj) {
     }
     return Type(0);
   } else if(method == "LP_zeta") {
-    // data
-    DATA_MATRIX(fbar);
-    DATA_MATRIX(Zbar);
-    DATA_VECTOR(fs);
-    // parameters
-    PARAMETER_MATRIX(phi);
-    // intermediate variables
-    int N = fbar.size();
-    UFun<Type> Ufun(N);
-    LP<Type> lp(N);
-    matrix<Type> Ubar(N,1);
-    Ufun.set_f(fbar);
-    lp.set_Zbar(Zbar);
-    // calculate Ubar
-    Ufun.eval(Ubar, phi);
-    Ubar = Ubar * fs;
-    // calculate zeta_hat
-    return lp.zeta(Ubar);
+    return LP_zeta(obj);
   } else if(method == "LP_nlp") {
-    // data
-    DATA_MATRIX(fbar);
-    DATA_MATRIX(Zbar);
-    DATA_VECTOR(fs);
-    // parameters
-    PARAMETER_MATRIX(phi);
-    // intermediate variables
-    int N = fbar.size();
-    UFun<Type> Ufun(N);
-    LP<Type> lp(N);
-    matrix<Type> Ubar(N,1);
-    Ufun.set_f(fbar);
-    lp.set_Zbar(Zbar);
-    // calculate Ubar
-    Ufun.eval(Ubar, phi);
-    Ubar = Ubar * fs;
-    // calculate nlp
-    return lp.nlp(Ubar);
+    return LP_nlp(obj);
   } else if(method == "LP_nll") {
-    // data
-    DATA_MATRIX(fbar);
-    DATA_MATRIX(Zbar);
-    DATA_VECTOR(fs);
-    // parameters
-    PARAMETER_MATRIX(phi);
-    PARAMETER(zeta);
-    // intermediate variables
-    int N = fbar.size();
-    UFun<Type> Ufun(N);
-    LP<Type> lp(N);
-    matrix<Type> Ubar(N,1);
-    Ufun.set_f(fbar);
-    lp.set_Zbar(Zbar);
-    // calculate Ubar
-    Ufun.eval(Ubar, phi);
-    Ubar = Ubar * fs;
-    return lp.nll(Ubar, zeta);
+    return LP_nll(obj);
   } else if(method == "MLE_tau") {
+    // FIXME: factor out these methods into MLEMethods.hpp
     // data
     DATA_MATRIX(f);
     DATA_MATRIX(Y);
@@ -142,98 +94,12 @@ Type SHOWFit(objective_function<Type>* obj) {
     // calculate nlp
     return mle.nlp(U);
   } else if(method == "NLS_tau") {
-    // data
-    DATA_MATRIX(fbar);
-    DATA_MATRIX(Ybar);
-    DATA_VECTOR(fs);
-    // parameters
-    PARAMETER_MATRIX(phi);
-    // intermediate variables
-    int N = fbar.size();
-    UFun<Type> Ufun(N);
-    NLS<Type> nls(N);
-    matrix<Type> Ubar(N,1);
-    Ufun.set_f(fbar);
-    nls.set_Ybar(Ybar);
-    // calculate Ubar
-    Ufun.eval(Ubar, phi);
-    Ubar = Ubar * fs;
-    // calculate tau_hat
-    return nls.tau(Ubar);
+    return NLS_tau(obj);
   } else if(method == "NLS_nll") {
-    // data
-    DATA_MATRIX(fbar);
-    DATA_MATRIX(Ybar);
-    DATA_VECTOR(fs);
-    // parameters
-    PARAMETER_MATRIX(phi);
-    PARAMETER(tau);
-    // intermediate variables
-    int N = fbar.size();
-    UFun<Type> Ufun(N);
-    NLS<Type> nls(N);
-    matrix<Type> Ubar(N,1);
-    Ufun.set_f(fbar);
-    nls.set_Ybar(Ybar);
-    // calculate Ubar
-    Ufun.eval(Ubar, phi);
-    Ubar = Ubar * fs;
-    // calculate nll
-    return nls.nll(Ubar, tau);
+    return NLS_nll(obj);
   } else if(method == "NLS_nlp") {
-    // data
-    DATA_MATRIX(fbar);
-    DATA_MATRIX(Ybar);
-    DATA_VECTOR(fs);
-    // parameters
-    PARAMETER_MATRIX(phi);
-    // intermediate variables
-    int N = fbar.size();
-    UFun<Type> Ufun(N);
-    NLS<Type> nls(N);
-    matrix<Type> Ubar(N,1);
-    Ufun.set_f(fbar);
-    nls.set_Ybar(Ybar);
-    // calculate Ubar
-    Ufun.eval(Ubar, phi);
-    Ubar = Ubar * fs;
-    // addtionally report the vector of residuals
-    // calculate the residuals
-    SIMULATE{
-      matrix<Type> RES(N,1);
-      RES = nls.res(Ubar);
-      REPORT(RES); 
-    } 
-    // calculate nlp
-    return nls.nlp(Ubar);
-  } 
-  // else if(method == "NLS_res") {
-  //   // data
-  //   DATA_MATRIX(fbar);
-  //   DATA_MATRIX(Ybar);
-  //   DATA_VECTOR(fs);
-  //   // parameters
-  //   PARAMETER_MATRIX(phi);
-  //   // PARAMETER(tau);
-  //   // intermediate variables
-  //   int N = fbar.size();
-  //   UFun<Type> Ufun(N);
-  //   NLS<Type> nls(N);
-  //   matrix<Type> Ubar(N,1);
-  //   Ufun.set_f(fbar);
-  //   nls.set_Ybar(Ybar);
-  //   // calculate Ubar
-  //   Ufun.eval(Ubar, phi);
-  //   Ubar = Ubar * fs;
-  //   // calculate the residuals
-  //   SIMULATE{
-  //     matrix<Type> RES(N,1);
-  //     RES = nls.res(Ubar);
-  //     REPORT(RES); 
-  //   }
-  //   return Type(0); 
-  // } 
-  else {
+    return NLS_nlp(obj);
+  } else {
     error("Unknown method.");
   }
   return Type(0.0);
