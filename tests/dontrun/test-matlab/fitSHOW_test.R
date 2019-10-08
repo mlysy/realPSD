@@ -1,5 +1,5 @@
 #' @title Fit simulated datasets to get fitted parameters (for internal use)
-#' 
+#'
 #' @param fseq Sequence of frequencies, usually from f0 - f0/sqrt(2) to f0 + f0/sqrt(2).
 #' @param sim_exp Vector of exponential random variables Exp(1) with the same length as fseq.
 #' @param f0 Resonance frequency, Hz.
@@ -17,15 +17,15 @@ fitSHOW <- function(fseq, sim_exp, f0, fs, Q, k, Temp, Aw,
   method <- match.arg(method)
   Kb <- 1.381e-23           # Boltzmann's constant
   if(unit_conversion) {
-    sig2 <- Kb*Temp/(k*pi*f0*Q) * 1e30 # variance, unit: fm2/Hz 
+    sig2 <- Kb*Temp/(k*pi*f0*Q) * 1e30 # variance, unit: fm2/Hz
   } else {
     sig2 <- Kb*Temp/(k*pi*f0*Q) # variance, unit: m2/Hz
   }
-  Rw <- Aw/sig2 # re-parameterization, note Rw is unitless 
+  Rw <- Aw/sig2 # re-parameterization, note Rw is unitless
   # phi <- c(f0, f0*Q, Rw) # parameter vector for SHOW model
-  phi <- c(f0 + rnorm(1, 0, sqrt(f0)/10), 
-    f0*Q + rnorm(1, 0, sqrt(f0*Q)/10), 
-    Rw + rnorm(1,0,Rw/10)) 
+  phi <- c(f0 + rnorm(1, 0, sqrt(f0)/10),
+    f0*Q + rnorm(1, 0, sqrt(f0*Q)/10),
+    Rw + rnorm(1,0,Rw/10))
   # psd values at each frequency point of f with given Q
   psd <- psdSHO(fseq, f0, Q, k, Kb, Temp, unit_conversion) + Aw
   # generate the periodogram values
@@ -41,7 +41,7 @@ fitSHOW <- function(fseq, sim_exp, f0, fs, Q, k, Temp, Aw,
   bias <- digamma(bin_size) - log(bin_size)
   # ---------- fitting ----------
   if (method == "lp") {
-    obj <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+    obj <- TMB::MakeADFun(data = list(model = "SHOWFit",
                                       method = "LP_nlp",
                                       fbar = matrix(fbar),
                                       Zbar = matrix(Zbar),
@@ -49,7 +49,7 @@ fitSHOW <- function(fseq, sim_exp, f0, fs, Q, k, Temp, Aw,
                           parameters = list(phi = matrix(0, 3, 1)),
                           silent = TRUE, DLL = "realPSD_TMBExports")
     get_tau <- function(phi) {
-      gz <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+      gz <- TMB::MakeADFun(data = list(model = "SHOWFit",
                                       method = "LP_zeta",
                                       fbar = matrix(fbar),
                                       Zbar = matrix(Zbar),
@@ -61,7 +61,7 @@ fitSHOW <- function(fseq, sim_exp, f0, fs, Q, k, Temp, Aw,
       exp(zeta - bias)
     }
   } else if (method == "nls") {
-    obj <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+    obj <- TMB::MakeADFun(data = list(model = "SHOWFit",
                                       method = "NLS_nlp",
                                       fbar = matrix(fbar),
                                       Ybar = matrix(Ybar),
@@ -69,7 +69,7 @@ fitSHOW <- function(fseq, sim_exp, f0, fs, Q, k, Temp, Aw,
                           parameters = list(phi = matrix(0, 3, 1)),
                           silent = TRUE, DLL = "realPSD_TMBExports")
     get_tau <- function(phi) {
-      gt <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+      gt <- TMB::MakeADFun(data = list(model = "SHOWFit",
                                       method = "NLS_tau",
                                       fbar = matrix(fbar),
                                       Ybar = matrix(Ybar),
@@ -79,7 +79,7 @@ fitSHOW <- function(fseq, sim_exp, f0, fs, Q, k, Temp, Aw,
       gt$fn(phi)
     }
   } else if (method == "mle") {
-    obj <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+    obj <- TMB::MakeADFun(data = list(model = "SHOWFit",
                                       method = "MLE_nlp",
                                       f = matrix(fseq),
                                       Y = matrix(Y),
@@ -87,7 +87,7 @@ fitSHOW <- function(fseq, sim_exp, f0, fs, Q, k, Temp, Aw,
                           parameters = list(phi = matrix(0, 3, 1)),
                           silent = TRUE, DLL = "realPSD_TMBExports")
     get_tau <- function(phi) {
-      gt <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+      gt <- TMB::MakeADFun(data = list(model = "SHOWFit",
                                       method = "MLE_tau",
                                       f = matrix(fseq),
                                       Y = matrix(Y),
@@ -108,29 +108,29 @@ fitSHOW <- function(fseq, sim_exp, f0, fs, Q, k, Temp, Aw,
               method = "BFGS",
               control = list(maxit = 2000))
     # check convergence for MLE and LP
-    if(opt$convergence != 0) 
+    if(opt$convergence != 0)
       warning(paste0(method, " didn't converge!"))
     phi_hat <- opt$par
   } else {
     # optimize Q (gamma), fix f0 and Rw
     opt1 <- pracma::lsqnonlin(fun = nls_res_fixed,
-      x0 = phi, 
-      obj = obj, fixed_flag = c(1,0,1), fixed_phi = phi[c(1,3)]) 
+      x0 = phi,
+      obj = obj, fixed_flag = c(1,0,1), fixed_phi = phi[c(1,3)])
     # if(opt1$errno != 1) warning("NLS didn't converge at step 1.")
     # optimize Q and f0, fix Rw
-    opt2 <- pracma::lsqnonlin(fun = nls_res_fixed, 
+    opt2 <- pracma::lsqnonlin(fun = nls_res_fixed,
       x0 = opt1$x,
       obj = obj, fixed_flag = c(0,0,1), fixed_phi = phi[3])
     # if(opt1$errno != 1) warning("NLS didn't converge at step 2.")
     # optimize all three parameters
-    opt3 <- pracma::lsqnonlin(fun = nls_res_fixed, 
+    opt3 <- pracma::lsqnonlin(fun = nls_res_fixed,
       x0 = opt2$x,
       obj = obj, fixed_flag = c(0,0,0), fixed_phi = NULL)
     # if(opt1$errno != 1) warning("NLS didn't converge at step 3.")
     # return phi_hat
     phi_hat <- opt3$x
   }
-  
+
   # output
   tau_hat <- get_tau(phi_hat) # fitted tau = sigma^2, unit should be the same as Aw
   param <- rep(NA, 4) # allocate space for storage
@@ -185,7 +185,7 @@ gr_fixed <- function(theta, obj, fixed_flag, fixed_phi) {
 # wrapper function of the vector of residuals for NLS
 nls_res <- function(phi, obj) {
   c(obj$simulate(phi)$RES)
-} 
+}
 # wrapper of nls_res with fixed parameters
 nls_res_fixed <- function(phi, obj, fixed_flag, fixed_phi) {
   phi_full <- rep(NA, length(phi))
@@ -197,7 +197,7 @@ nls_res_fixed <- function(phi, obj, fixed_flag, fixed_phi) {
 # wrapper function of TMB ----- method 2 -----
 MakePSDFun <- function(method = c("lp", "mle", "nls"), map, DLL) {
   if (method == "lp") {
-    obj <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+    obj <- TMB::MakeADFun(data = list(model = "SHOWFit",
                                       method = "LP_nlp",
                                       fbar = matrix(fbar),
                                       Zbar = matrix(Zbar),
@@ -206,7 +206,7 @@ MakePSDFun <- function(method = c("lp", "mle", "nls"), map, DLL) {
                           map = map,
                           silent = TRUE, DLL = DLL)
   } else if (method == "nls") {
-    obj <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+    obj <- TMB::MakeADFun(data = list(model = "SHOWFit",
                                       method = "NLS_nlp",
                                       fbar = matrix(fbar),
                                       Ybar = matrix(Ybar),
@@ -215,7 +215,7 @@ MakePSDFun <- function(method = c("lp", "mle", "nls"), map, DLL) {
                           map = map,
                           silent = TRUE, DLL = DLL)
   } else if (method == "mle") {
-    obj <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+    obj <- TMB::MakeADFun(data = list(model = "SHOWFit",
                                       method = "MLE_nlp",
                                       f = matrix(fseq),
                                       Y = matrix(Y),
@@ -232,7 +232,7 @@ MakePSDFun <- function(method = c("lp", "mle", "nls"), map, DLL) {
 get_tau <- function(method = c("lp", "mle", "nls"), phi, DLL) {
   if(method == "lp"){
     get_tau <- function(phi) {
-      gz <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+      gz <- TMB::MakeADFun(data = list(model = "SHOWFit",
                                       method = "LP_zeta",
                                       fbar = matrix(fbar),
                                       Zbar = matrix(Zbar),
@@ -245,7 +245,7 @@ get_tau <- function(method = c("lp", "mle", "nls"), phi, DLL) {
     }
   } else if(method == "nls") {
     get_tau <- function(phi) {
-      gt <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+      gt <- TMB::MakeADFun(data = list(model = "SHOWFit",
                                       method = "NLS_tau",
                                       fbar = matrix(fbar),
                                       Ybar = matrix(Ybar),
@@ -256,7 +256,7 @@ get_tau <- function(method = c("lp", "mle", "nls"), phi, DLL) {
     }
   } else if (method == "mle") {
      get_tau <- function(phi) {
-      gt <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+      gt <- TMB::MakeADFun(data = list(model = "SHOWFit",
                                       method = "MLE_tau",
                                       f = matrix(fseq),
                                       Y = matrix(Y),

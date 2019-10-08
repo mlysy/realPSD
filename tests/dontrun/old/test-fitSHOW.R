@@ -21,7 +21,7 @@ test_that("Estimated parameters given by fitSHOW (MLE method) are correct", {
     # phi <- c(f0 = 33553, gamma = 3355300, Rw = 19000/1)
     fs <- sample(10:1000, 1) # sampling frequency
     k <- runif(1) # stiffness
-    Temp <- sample(100:500, 1) # temperature   
+    Temp <- sample(100:500, 1) # temperature
     bin_size <- sample(1:3, 1) # bin size
     # derive some constant inputs
     f0 <- phi[1]
@@ -38,14 +38,14 @@ test_that("Estimated parameters given by fitSHOW (MLE method) are correct", {
     Ybar <- binning(Y, bin_size = bin_size)
     Zbar <- log(Ybar)
     # model fitting
-    obj <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+    obj <- TMB::MakeADFun(data = list(model = "SHOWFit",
                                        method = "MLE_nlp",
                                        f = matrix(fseq),
                                        Y = matrix(Y)),
                            parameters = list(phi = matrix(rep(0, 3))),
                            silent = TRUE, DLL = "realPSD_TMBExports")
     # get tau
-    get_tau <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+    get_tau <- TMB::MakeADFun(data = list(model = "SHOWFit",
                                        method = "MLE_tau",
                                        f = matrix(fseq),
                                        Y = matrix(Y)),
@@ -53,9 +53,9 @@ test_that("Estimated parameters given by fitSHOW (MLE method) are correct", {
                            silent = TRUE, DLL = "realPSD_TMBExports")
     opt <- optim(phi, fn = obj$fn, gr = obj$gr,
                control = list(maxit = 1000))
-    phi_hat <- opt$par 
-    tau_hat <- get_tau$fn(phi_hat) 
-    param_r <- rep(NA, 4) 
+    phi_hat <- opt$par
+    tau_hat <- get_tau$fn(phi_hat)
+    param_r <- rep(NA, 4)
     param_r[1] <- phi_hat[1] # f0_hat
     param_r[2] <- phi_hat[2]/phi_hat[1] # Q_hat
     param_r[3] <- Kb * Temp / (tau_hat * pi * phi_hat[2]) # k_hat
@@ -80,7 +80,7 @@ test_that("Estimated parameters given by fitSHOW (LP method) are correct", {
     # phi <- c(f0 = 33553, gamma = 3355300, Rw = 19000/1)
     fs <- sample(10:1000, 1) # sampling frequency
     k <- runif(1) # stiffness
-    Temp <- sample(100:500, 1) # temperature   
+    Temp <- sample(100:500, 1) # temperature
     bin_size <- sample(1:3, 1) # bin size
     # derive some constant inputs
     f0 <- phi[1]
@@ -97,14 +97,14 @@ test_that("Estimated parameters given by fitSHOW (LP method) are correct", {
     Ybar <- binning(Y, bin_size = bin_size)
     Zbar <- log(Ybar)
     # model fitting
-    obj <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+    obj <- TMB::MakeADFun(data = list(model = "SHOWFit",
                                        method = "LP_nlp",
                                        fbar = matrix(fbar),
                                        Zbar = matrix(Zbar)),
                            parameters = list(phi = matrix(rep(0, 3))),
                            silent = TRUE, DLL = "realPSD_TMBExports")
     # get tau
-    get_tau <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+    get_tau <- TMB::MakeADFun(data = list(model = "SHOWFit",
                                        method = "LP_zeta",
                                        fbar = matrix(fbar),
                                        Zbar = matrix(Zbar)),
@@ -112,9 +112,9 @@ test_that("Estimated parameters given by fitSHOW (LP method) are correct", {
                            silent = TRUE, DLL = "realPSD_TMBExports")
     opt <- optim(phi, fn = obj$fn, gr = obj$gr,
                control = list(maxit = 1000))
-    phi_hat <- opt$par 
+    phi_hat <- opt$par
     tau_hat <- exp(get_tau$fn(phi_hat))
-    param_r <- rep(NA, 4) 
+    param_r <- rep(NA, 4)
     param_r[1] <- phi_hat[1] # f0_hat
     param_r[2] <- phi_hat[2]/phi_hat[1] # Q_hat
     param_r[3] <- Kb * Temp / (tau_hat * pi * phi_hat[2]) # k_hat
@@ -139,7 +139,7 @@ test_that("Estimated parameters given by fitSHOW (NLS method) are correct", {
     # phi <- c(f0 = 33553, gamma = 3355300, Rw = 19000/1)
     fs <- sample(10:1000, 1) # sampling frequency
     k <- runif(1) # stiffness
-    Temp <- sample(100:500, 1) # temperature   
+    Temp <- sample(100:500, 1) # temperature
     bin_size <- sample(1:3, 1) # bin size
     # derive some constant inputs
     f0 <- phi[1]
@@ -156,14 +156,14 @@ test_that("Estimated parameters given by fitSHOW (NLS method) are correct", {
     Ybar <- binning(Y, bin_size = bin_size)
     Zbar <- log(Ybar)
     # model fitting
-    obj <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+    obj <- TMB::MakeADFun(data = list(model = "SHOWFit",
                                        method = "NLS_nlp",
                                        fbar = matrix(fbar),
                                        Ybar = matrix(Ybar)),
                            parameters = list(phi = matrix(rep(0, 3))),
                            silent = TRUE, DLL = "realPSD_TMBExports")
     # get tau
-    get_tau <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+    get_tau <- TMB::MakeADFun(data = list(model = "SHOWFit",
                                        method = "NLS_tau",
                                        fbar = matrix(fbar),
                                        Ybar = matrix(Ybar)),
@@ -171,9 +171,9 @@ test_that("Estimated parameters given by fitSHOW (NLS method) are correct", {
                            silent = TRUE, DLL = "realPSD_TMBExports")
     opt <- optim(phi, fn = obj$fn, gr = obj$gr,
                control = list(maxit = 1000))
-    phi_hat <- opt$par 
-    tau_hat <- get_tau$fn(phi_hat) 
-    param_r <- rep(NA, 4) 
+    phi_hat <- opt$par
+    tau_hat <- get_tau$fn(phi_hat)
+    param_r <- rep(NA, 4)
     param_r[1] <- phi_hat[1] # f0_hat
     param_r[2] <- phi_hat[2]/phi_hat[1] # Q_hat
     param_r[3] <- Kb * Temp / (tau_hat * pi * phi_hat[2]) # k_hat

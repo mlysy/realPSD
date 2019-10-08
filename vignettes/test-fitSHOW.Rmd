@@ -141,7 +141,7 @@ phi_list <- lapply(1:length(Q_vec), function(ii) {
 # define get_tau()
 get_tau <- function(phi, method) {
   if (method == "lp") {
-    gz <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+    gz <- TMB::MakeADFun(data = list(model = "SHOWFit",
                                     method = "LP_zeta",
                                     fbar = matrix(fbar),
                                     Zbar = matrix(Zbar),
@@ -151,7 +151,7 @@ get_tau <- function(phi, method) {
     zeta <- gz$fn(phi)
     exp(zeta)
   } else if (method == "nls") {
-    gt <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+    gt <- TMB::MakeADFun(data = list(model = "SHOWFit",
                                     method = "NLS_tau",
                                     fbar = matrix(fbar),
                                     Ybar = matrix(Ybar),
@@ -160,7 +160,7 @@ get_tau <- function(phi, method) {
                         silent = TRUE, DLL = "realPSD_TMBExports")
     gt$fn(phi)
   } else if (method == "mle") {
-    gt <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+    gt <- TMB::MakeADFun(data = list(model = "SHOWFit",
                                     method = "MLE_tau",
                                     f = matrix(fseq),
                                     Y = matrix(Y),
@@ -189,7 +189,7 @@ for(ii in 1:length(Q_vec)) {
   # empirical psd (periodogram values)
   Y <- sim_exp * psd * fs
   # TMB model
-  obj <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+  obj <- TMB::MakeADFun(data = list(model = "SHOWFit",
                                         method = "MLE_nlp",
                                         f = matrix(fseq),
                                         Y = matrix(Y),
@@ -325,7 +325,7 @@ for(ii in 1:length(Q_vec)) {
   fbar <- binning(fseq, bin_size = bin_size)
   Ybar <- binning(Y, bin_size = bin_size)
   # TMB model
-  obj <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+  obj <- TMB::MakeADFun(data = list(model = "SHOWFit",
                                       method = "NLS_nlp",
                                       fbar = matrix(fbar),
                                       Ybar = matrix(Ybar),
@@ -460,7 +460,7 @@ for(ii in 1:length(Q_vec)) {
   Ybar <- binning(Y, bin_size = bin_size)
   Zbar <- log(Ybar)
   # TMB model
-  obj <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+  obj <- TMB::MakeADFun(data = list(model = "SHOWFit",
                                       method = "LP_nlp",
                                       fbar = matrix(fbar),
                                       Zbar = matrix(Zbar),

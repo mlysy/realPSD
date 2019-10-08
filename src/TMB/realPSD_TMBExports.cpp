@@ -6,11 +6,11 @@
 
 template<class Type>
 Type objective_function<Type>::operator() () {
-  DATA_STRING(model_name);
-  if(model_name == "SHOWFit") {
+  DATA_STRING(model);
+  if(model == "SHOWFit") {
     return SHOWFit(this);
   } else {
-    error("Unknown model_name.");
+    error("Unknown model.");
   }
   return 0;
 }

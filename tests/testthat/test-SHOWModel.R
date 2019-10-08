@@ -10,7 +10,7 @@ test_that("UFun is the same in R and TMB", {
     N <- sample(10:20,1)
     f <- sim_f(N)
     # create TMB model and functions
-    tmod <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+    tmod <- TMB::MakeADFun(data = list(model = "SHOWFit",
                                        method = "UFun",
                                        f = matrix(f)),
                            parameters = list(phi = matrix(rep(0, 3))),

@@ -18,7 +18,7 @@ test_that("LP_zeta is the same in R and TMB", {
     Zbar <- sim_Zbar(N)
     fs <- sim_fs()
     # create TMB model and functions
-    tmod <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+    tmod <- TMB::MakeADFun(data = list(model = "SHOWFit",
                                        method = "LP_zeta",
                                        fbar = matrix(fbar),
                                        Zbar = matrix(Zbar),
@@ -45,7 +45,7 @@ test_that("LP_nll is the same in R and TMB", {
     Zbar <- sim_Zbar(N)
     fs <- sim_fs()
     # create TMB model and functions
-    tmod <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+    tmod <- TMB::MakeADFun(data = list(model = "SHOWFit",
                                        method = "LP_nll",
                                        fbar = matrix(fbar),
                                        Zbar = matrix(Zbar),
@@ -76,7 +76,7 @@ test_that("LP_nlp is the same in R and TMB", {
     Zbar <- sim_Zbar(N)
     fs <- sim_fs()
     # create TMB model and functions
-    tmod <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+    tmod <- TMB::MakeADFun(data = list(model = "SHOWFit",
                                        method = "LP_nlp",
                                        fbar = matrix(fbar),
                                        Zbar = matrix(Zbar),
@@ -109,7 +109,7 @@ test_that("LP_nlp is the same in R and TMB", {
 ## nllik_r(phi, zeta, Zbar, fbar)
 ## sum(Zbar^2)
 
-## tmod <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+## tmod <- TMB::MakeADFun(data = list(model = "SHOWFit",
 ##                                    method = "nll",
 ##                                    fbar = matrix(fbar),
 ##                                    Zbar = matrix(Zbar)),

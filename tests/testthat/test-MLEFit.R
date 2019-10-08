@@ -12,7 +12,7 @@ test_that("MLE_tau is the same in R and TMB", {
     Y <- sim_Y(N)
     fs <- sim_fs()
     # create TMB model and functions
-    tmod <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+    tmod <- TMB::MakeADFun(data = list(model = "SHOWFit",
                                        method = "MLE_tau",
                                        f = matrix(f),
                                        Y = matrix(Y),
@@ -39,7 +39,7 @@ test_that("MLE_nll is the same in R and TMB", {
     Y <- sim_Y(N)
     fs <- sim_fs()
     # create TMB model and functions
-    tmod <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+    tmod <- TMB::MakeADFun(data = list(model = "SHOWFit",
                                        method = "MLE_nll",
                                        f = matrix(f),
                                        Y = matrix(Y),
@@ -52,7 +52,7 @@ test_that("MLE_nll is the same in R and TMB", {
     Phi <- replicate(nphi, sim_phi())
     tau <- replicate(nphi, sim_tau())
     nll_r <- sapply(1:nphi, function(ii) {
-      mle_nll_r(phi = Phi[,ii], tau = tau[ii], Y = Y, 
+      mle_nll_r(phi = Phi[,ii], tau = tau[ii], Y = Y,
         f = f, ufun = show_ufun, fs = fs)
     })
     nll_tmb <- sapply(1:nphi, function(ii) mle_nll_tmb(Phi[,ii], tau[ii]))
@@ -70,7 +70,7 @@ test_that("MLE_nlp is the same in R and TMB", {
     Y <- sim_Y(N)
     fs <- sim_fs()
     # create TMB model and functions
-    tmod <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+    tmod <- TMB::MakeADFun(data = list(model = "SHOWFit",
                                        method = "MLE_nlp",
                                        f = matrix(f),
                                        Y = matrix(Y),

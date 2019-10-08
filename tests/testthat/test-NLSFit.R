@@ -12,7 +12,7 @@ test_that("NLS_tau is the same in R and TMB", {
     Ybar <- sim_Y(N)
     fs <- sim_fs()
     # create TMB model and functions
-    tmod <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+    tmod <- TMB::MakeADFun(data = list(model = "SHOWFit",
                                        method = "NLS_tau",
                                        fbar = matrix(fbar),
                                        Ybar = matrix(Ybar),
@@ -39,7 +39,7 @@ test_that("NLS_nll is the same in R and TMB", {
     Ybar <- sim_Y(N)
     fs <- sim_fs()
     # create TMB model and functions
-    tmod <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+    tmod <- TMB::MakeADFun(data = list(model = "SHOWFit",
                                        method = "NLS_nll",
                                        fbar = matrix(fbar),
                                        Ybar = matrix(Ybar),
@@ -52,7 +52,7 @@ test_that("NLS_nll is the same in R and TMB", {
     Phi <- replicate(nphi, sim_phi())
     tau <- replicate(nphi, sim_tau())
     nll_r <- sapply(1:nphi, function(ii) {
-      nls_nll_r(phi = Phi[,ii], tau = tau[ii], Ybar = Ybar, 
+      nls_nll_r(phi = Phi[,ii], tau = tau[ii], Ybar = Ybar,
         fbar = fbar, ufun = show_ufun, fs = fs)
     })
     nll_tmb <- sapply(1:nphi, function(ii) nls_nll_tmb(Phi[,ii], tau[ii]))
@@ -70,7 +70,7 @@ test_that("NLS_nlp is the same in R and TMB", {
     Ybar <- sim_Y(N)
     fs <- sim_fs()
     # create TMB model and functions
-    tmod <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+    tmod <- TMB::MakeADFun(data = list(model = "SHOWFit",
                                        method = "NLS_nlp",
                                        fbar = matrix(fbar),
                                        Ybar = matrix(Ybar),
@@ -98,7 +98,7 @@ test_that("NLS_res is the same in R and TMB", {
     Ybar <- sim_Y(N)
     fs <- sim_fs()
     # create TMB model and functions
-    tmod <- TMB::MakeADFun(data = list(model_name = "SHOWFit",
+    tmod <- TMB::MakeADFun(data = list(model = "SHOWFit",
                                        method = "NLS_nlp",
                                        fbar = matrix(fbar),
                                        Ybar = matrix(Ybar),
@@ -109,7 +109,7 @@ test_that("NLS_res is the same in R and TMB", {
     # check they are equal
     Phi <- replicate(nphi, sim_phi())
     res_r <- sapply(1:nphi, function(ii) {
-      nls_res_r(phi = Phi[,ii], Ybar = Ybar, 
+      nls_res_r(phi = Phi[,ii], Ybar = Ybar,
         fbar = fbar, ufun = show_ufun, fs = fs)
     })
     res_tmb <- sapply(1:nphi, function(ii) nls_res_tmb(Phi[,ii]))
