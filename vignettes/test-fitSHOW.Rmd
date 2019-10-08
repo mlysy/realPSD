@@ -282,7 +282,7 @@ We also found out that when the initial parameters are set to be the true values
 ```{r, warpper functions, echo = FALSE}
 # wrapper function of the vector of residuals for NLS
 nls_res <- function(phi, obj) {
-  c(obj$simulate(phi)$RES)
+  c(obj$simulate(phi)$res)
 } 
 # wrapper of nls_res with fixed parameters
 nls_res_fixed <- function(phi, obj, fixed_flag, fixed_phi) {

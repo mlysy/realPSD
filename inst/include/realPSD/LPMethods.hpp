@@ -49,14 +49,14 @@ namespace realPSD {
     // calculate Ubar
     Ufun.eval(Ubar, phi);
     Ubar = Ubar * fs;
-    // addtionally report the vector of residuals
-    // calculate the residuals
-    // FIXME!!!
-    // SIMULATE{
-    //   matrix<Type> RES(N,1);
-    //   RES = nls.res(Ubar);
-    //   REPORT(RES); 
-    // } 
+    SIMULATE{
+      // addtionally report the vector of residuals
+      // FIXME: lp.zeta(Ubar) wastefully recomputes residuals
+      matrix<Type> res(N,1);
+      lp.res(res, Ubar);
+      res.array() -= lp.zeta(Ubar);
+      REPORT(res); 
+    } 
     // calculate nlp
     return lp.nlp(Ubar);
   }
@@ -77,6 +77,13 @@ namespace realPSD {
     matrix<Type> Ubar(N,1);
     Ufun.set_f(fbar);
     lp.set_Zbar(Zbar);
+    SIMULATE{
+      // additionally report the vector of residuals
+      matrix<Type> res(N,1);
+      lp.res(res, Ubar);
+      res.array() -= zeta;
+      REPORT(res); 
+    } 
     // calculate Ubar
     Ufun.eval(Ubar, phi);
     Ubar = Ubar * fs;

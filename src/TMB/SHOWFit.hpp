@@ -1,7 +1,8 @@
 #include "realPSD/SHOWModel.hpp"
+#include "realPSD/MLEMethods.hpp"
 #include "realPSD/LPMethods.hpp"
-#include "realPSD/MLEFit.hpp"
 #include "realPSD/NLSMethods.hpp"
+// #include "realPSD/MLEFit.hpp"
 // #include "realPSD/LPFit.hpp"
 // #include "realPSD/NLSFit.hpp"
 
@@ -35,64 +36,11 @@ Type SHOWFit(objective_function<Type>* obj) {
   } else if(method == "LP_nll") {
     return LP_nll(obj);
   } else if(method == "MLE_tau") {
-    // FIXME: factor out these methods into MLEMethods.hpp
-    // data
-    DATA_MATRIX(f);
-    DATA_MATRIX(Y);
-    DATA_VECTOR(fs);
-    // parameters
-    PARAMETER_MATRIX(phi);
-    // intermediate variables
-    int N = f.size();
-    UFun<Type> Ufun(N);
-    MLE<Type> mle(N);
-    matrix<Type> U(N,1);
-    Ufun.set_f(f);
-    mle.set_Y(Y);
-    // calculate U
-    Ufun.eval(U, phi);
-    U = U * fs;
-    // calculate tau_hat
-    return mle.tau(U);
+    return MLE_tau(obj);
   } else if(method == "MLE_nll") {
-    // data
-    DATA_MATRIX(f);
-    DATA_MATRIX(Y);
-    DATA_VECTOR(fs);
-    // parameters
-    PARAMETER_MATRIX(phi);
-    PARAMETER(tau);
-    // intermediate variables
-    int N = f.size();
-    UFun<Type> Ufun(N);
-    MLE<Type> mle(N);
-    matrix<Type> U(N,1);
-    Ufun.set_f(f);
-    mle.set_Y(Y);
-    // calculate U
-    Ufun.eval(U, phi);
-    U = U * fs;
-    // calculate nll
-    return mle.nll(U, tau);
+    return MLE_nll(obj);
   } else if(method == "MLE_nlp") {
-    // data
-    DATA_MATRIX(f);
-    DATA_MATRIX(Y);
-    DATA_VECTOR(fs);
-    // parameters
-    PARAMETER_MATRIX(phi);
-    // intermediate variables
-    int N = f.size();
-    UFun<Type> Ufun(N);
-    MLE<Type> mle(N);
-    matrix<Type> U(N,1);
-    Ufun.set_f(f);
-    mle.set_Y(Y);
-    // calculate U
-    Ufun.eval(U, phi);
-    U = U * fs;
-    // calculate nlp
-    return mle.nlp(U);
+    return MLE_nlp(obj);
   } else if(method == "NLS_tau") {
     return NLS_tau(obj);
   } else if(method == "NLS_nll") {

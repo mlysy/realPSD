@@ -105,7 +105,7 @@ test_that("NLS_res is the same in R and TMB", {
                                        fs = fs),
                            parameters = list(phi = matrix(rep(0, 3))),
                            silent = TRUE, DLL = "realPSD_TMBExports")
-    nls_res_tmb <- function(phi) c(tmod$simulate(phi)$RES)
+    nls_res_tmb <- function(phi) c(tmod$simulate(phi)$res)
     # check they are equal
     Phi <- replicate(nphi, sim_phi())
     res_r <- sapply(1:nphi, function(ii) {

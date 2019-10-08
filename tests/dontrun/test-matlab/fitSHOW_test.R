@@ -184,7 +184,7 @@ gr_fixed <- function(theta, obj, fixed_flag, fixed_phi) {
 }
 # wrapper function of the vector of residuals for NLS
 nls_res <- function(phi, obj) {
-  c(obj$simulate(phi)$RES)
+  c(obj$simulate(phi)$res)
 }
 # wrapper of nls_res with fixed parameters
 nls_res_fixed <- function(phi, obj, fixed_flag, fixed_phi) {

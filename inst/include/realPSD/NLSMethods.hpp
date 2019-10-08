@@ -50,7 +50,14 @@ namespace realPSD {
     // calculate Ubar
     Ufun.eval(Ubar, phi);
     Ubar = Ubar * fs;
-    // FIXME: add residual method
+    // FIXME: shouldn't wastefully compute nll if only residuals are desired.
+    SIMULATE{
+      // calculate the vector of residuals
+      matrix<Type> res(N,1);
+      // res = nls.res(Ubar);
+      nls.res(res, Ubar, tau);
+      REPORT(res); 
+    } 
     // calculate nll
     return nls.nll(Ubar, tau);
   }
@@ -73,20 +80,21 @@ namespace realPSD {
     // calculate Ubar
     Ufun.eval(Ubar, phi);
     Ubar = Ubar * fs;
-    // addtionally report the vector of residuals
-    // calculate the residuals
-    // FIXME: RES should be res
+    // FIXME: calculate only one of nlp or res.
     SIMULATE{
-      matrix<Type> RES(N,1);
-      RES = nls.res(Ubar);
-      REPORT(RES); 
+      // calculate the vector of residuals
+      matrix<Type> res(N,1);
+      Type tau = nls.tau(Ubar);
+      // res = nls.res(Ubar);
+      nls.res(res, Ubar, tau);
+      REPORT(res); 
     } 
     // calculate nlp
     return nls.nlp(Ubar);
   }
 
-  #undef TMB_OBJECTIVE_PTR
-  #define TMB_OBJECTIVE_PTR this
+#undef TMB_OBJECTIVE_PTR
+#define TMB_OBJECTIVE_PTR this
 } // end namespace realPSD
 
 #endif

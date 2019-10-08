@@ -39,6 +39,8 @@ namespace realPSD {
     Type nll(cRefMatrix_t& Ubar, const Type zeta);
     /// Profiled objective function for the LP method.
     Type nlp(cRefMatrix_t& Ubar);
+    /// Residual vector for the LP method.
+    void res(RefMatrix_t Z, cRefMatrix_t& Ubar);
   };
 
   /// @param[in] N Length of `Zbar`.
@@ -73,8 +75,9 @@ namespace realPSD {
   /// @return Scalar estimate of `zeta`.
   template <class Type>
   inline Type LP<Type>::zeta(cRefMatrix_t& Ubar) {
-    logUbar_ = Ubar.array().log();
-    ZLU_ = Zbar_ - logUbar_;
+    // logUbar_ = Ubar.array().log();
+    // ZLU_ = Zbar_ - logUbar_;
+    res(ZLU_, Ubar);
     return ZLU_.sum() / N_;
   }
 
@@ -93,8 +96,9 @@ namespace realPSD {
   template <class Type>
   inline Type LP<Type>::nll(cRefMatrix_t& Ubar, const Type zeta) {
     // return logUbar(0,0);
-    logUbar_ = Ubar.array().log();
-    ZLU_ = Zbar_ - logUbar_;
+    // logUbar_ = Ubar.array().log();
+    // ZLU_ = Zbar_ - logUbar_;
+    res(ZLU_, Ubar);
     // ZLU_.array() -= zeta_;
     // return ZLU_.squaredNorm();
     // return ((Zbar_ - logUbar).array() - zeta).matrix().squaredNorm();
@@ -103,6 +107,21 @@ namespace realPSD {
     // return logUbar(0,0);
     // return ZLU_.sum();
     return nll(zeta);
+  }
+
+  /// The LP residuals are defined as
+  ///
+  /// \f[
+  /// R = \bar Z - \bar U.
+  /// \f]
+  ///
+  /// @param[out] R Vector of residuals.
+  /// @param[in] Ubar Vector of bin-averaged normalized PSDs.
+  template <class Type>
+  inline void LP<Type>::res(RefMatrix_t R, cRefMatrix_t& Ubar) {
+    logUbar_ = Ubar.array().log();
+    R = Zbar_ - logUbar_;
+    return;
   }
 
   /// @param[in] zeta Log of the PSD scale factor, `zeta = log(sigma^2)`.
