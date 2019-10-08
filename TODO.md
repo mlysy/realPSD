@@ -34,3 +34,7 @@
 	A more permanent solution that will allow users to readily create their own models can be done via templating, e.g., R package  [**whisker**](https://CRAN.R-project.org/package=whisker).  This is exactly the approach used under the hood by [**usethis**](https://CRAN.R-project.org/package=usethis).
 	
 
+- [ ] Prune git history of large objects -- repo is almost 30Mb and there's no way that's all source code!  Somewhere along the way we must have committed e.g., object files, PDFs, etc.
+
+	This is a really annoying task, somewhat simplified using [this method](https://rtyley.github.io/bfg-repo-cleaner/).
+
