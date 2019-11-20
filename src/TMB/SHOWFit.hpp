@@ -1,4 +1,5 @@
 #include "realPSD/SHOWModel.hpp"
+#include "realPSD/UFunMethods.hpp"
 #include "realPSD/MLEMethods.hpp"
 #include "realPSD/LPMethods.hpp"
 #include "realPSD/NLSMethods.hpp"
@@ -14,21 +15,7 @@ Type SHOWFit(objective_function<Type>* obj) {
   // pick method
   DATA_STRING(method);
   if(method == "UFun") {
-    // data
-    DATA_MATRIX(f);
-    // parameters
-    PARAMETER_MATRIX(phi);
-    // evaluate normalized PSD
-    int N = f.size();
-    UFun<Type> Ufun(N);
-    Ufun.set_f(f);
-    SIMULATE {
-      // calculate U
-      matrix<Type> U(N,1);
-      Ufun.eval(U, phi);
-      REPORT(U);
-    }
-    return Type(0);
+    return UFun_eval(obj);
   } else if(method == "LP_zeta") {
     return LP_zeta(obj);
   } else if(method == "LP_nlp") {
