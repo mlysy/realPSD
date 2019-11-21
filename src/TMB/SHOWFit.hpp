@@ -20,6 +20,8 @@ Type SHOWFit(objective_function<Type>* obj) {
     return LP_zeta(obj);
   } else if(method == "LP_nlp") {
     return LP_nlp(obj);
+  } else if(method == "LP_res") {
+    return LP_res(obj);
   } else if(method == "LP_nll") {
     return LP_nll(obj);
   } else if(method == "MLE_tau") {
@@ -32,6 +34,8 @@ Type SHOWFit(objective_function<Type>* obj) {
     return NLS_tau(obj);
   } else if(method == "NLS_nll") {
     return NLS_nll(obj);
+  } else if(method == "NLS_res") {
+    return NLS_res(obj);
   } else if(method == "NLS_nlp") {
     return NLS_nlp(obj);
   } else {

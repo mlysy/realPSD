@@ -17,11 +17,11 @@
     3. Make modifications on your branch.
     4. Push your branch to remote and create PR of `ferris-devel` to `master`.
 	
-- [ ] Unit test the new `res` methods for `LP_nlp`, `LP_nll`, and `NLS_nll`.
+- [x] Unit test the new `res` methods for `LP_nlp` and `NLS_nlp`.
 
-- [ ] Refactor the `res` methods.  Currently, they are part of a `SIMULATE` branch which also calculates the objective function itself.  If only residuals are desired, then we shouldn't compute the objective function as well.  
+- [x] Refactor the `res` methods.  Currently, they are part of a `SIMULATE` branch which also calculates the objective function itself.  If only residuals are desired, then we shouldn't compute the objective function as well.  The `res` method of `LP_nlp` is particularly inefficient, as to compute `zeta` currently the residuals get calculated twice (logs and all).
 
-- [ ] The `res` method of `LP_nlp` is particularly inefficient, as to compute `zeta` currently the residuals get calculated twice (logs and all).
+    The relevant methods are now called `LP_res` and `NLS_res`.
 
 - [ ] Add new models to the package:
 

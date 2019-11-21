@@ -96,6 +96,36 @@ test_that("LP_nlp is the same in R and TMB", {
   }
 })
 
+test_that("LP_res is the same in R and TMB", {
+  ntest <- 20
+  nphi <- sample(2:5, 1)
+  for(ii in 1:ntest) {
+    # simulate data
+    N <- sample(10:20,1)
+    fbar <- sim_f(N)
+    Zbar <- sim_Zbar(N)
+    fs <- sim_fs()
+    # create TMB model and functions
+    tmod <- TMB::MakeADFun(data = list(model = "SHOWFit",
+                                       method = "LP_res",
+                                       fbar = matrix(fbar),
+                                       Zbar = matrix(Zbar),
+                                       fs = fs),
+                           parameters = list(phi = matrix(rep(0, 3))),
+                           silent = TRUE,
+                           ADreport = TRUE,
+                           DLL = "realPSD_TMBExports")
+    lp_res_tmb <- function(phi) setNames(tmod$fn(phi), nm = NULL)
+    # check they are equal
+    Phi <- replicate(nphi, sim_phi())
+    res_r <- apply(Phi, 2, lp_res_r, fbar = fbar, Zbar = Zbar,
+                    ufun = show_ufun, fs = fs)
+    res_tmb <- apply(Phi, 2, lp_res_tmb)
+    expect_equal(res_r, res_tmb)
+  }
+})
+
+
 #--- scratch -------------------------------------------------------------------
 
 ## N <- 10

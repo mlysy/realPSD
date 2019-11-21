@@ -22,9 +22,9 @@ namespace realPSD {
     UFun<Type> Ufun(N);
     NLS<Type> nls(N);
     matrix<Type> Ubar(N,1);
+    // calculate Ubar
     Ufun.set_f(fbar);
     nls.set_Ybar(Ybar);
-    // calculate Ubar
     Ufun.eval(Ubar, phi);
     Ubar = Ubar * fs;
     // calculate tau_hat
@@ -45,19 +45,11 @@ namespace realPSD {
     UFun<Type> Ufun(N);
     NLS<Type> nls(N);
     matrix<Type> Ubar(N,1);
+    // calculate Ubar
     Ufun.set_f(fbar);
     nls.set_Ybar(Ybar);
-    // calculate Ubar
     Ufun.eval(Ubar, phi);
     Ubar = Ubar * fs;
-    // FIXME: shouldn't wastefully compute nll if only residuals are desired.
-    SIMULATE{
-      // calculate the vector of residuals
-      matrix<Type> res(N,1);
-      // res = nls.res(Ubar);
-      nls.res(res, Ubar, tau);
-      REPORT(res); 
-    } 
     // calculate nll
     return nls.nll(Ubar, tau);
   }
@@ -75,22 +67,39 @@ namespace realPSD {
     UFun<Type> Ufun(N);
     NLS<Type> nls(N);
     matrix<Type> Ubar(N,1);
+    // calculate Ubar
     Ufun.set_f(fbar);
     nls.set_Ybar(Ybar);
-    // calculate Ubar
     Ufun.eval(Ubar, phi);
     Ubar = Ubar * fs;
-    // FIXME: calculate only one of nlp or res.
-    SIMULATE{
-      // calculate the vector of residuals
-      matrix<Type> res(N,1);
-      Type tau = nls.tau(Ubar);
-      // res = nls.res(Ubar);
-      nls.res(res, Ubar, tau);
-      REPORT(res); 
-    } 
     // calculate nlp
     return nls.nlp(Ubar);
+  }
+
+  template<class Type>
+  Type NLS_res(objective_function<Type>* obj) {
+    // data
+    DATA_MATRIX(fbar);
+    DATA_MATRIX(Ybar);
+    DATA_VECTOR(fs);
+    // parameters
+    PARAMETER_MATRIX(phi);
+    // intermediate variables
+    int N = fbar.size();
+    UFun<Type> Ufun(N);
+    NLS<Type> nls(N);
+    matrix<Type> Ubar(N,1);
+    // output variables
+    matrix<Type> res(N,1);
+    // calculate Ubar
+    Ufun.set_f(fbar);
+    nls.set_Ybar(Ybar);
+    Ufun.eval(Ubar, phi);
+    Ubar = Ubar * fs;
+    // calculate residuals
+    nls.res(res, Ubar);
+    ADREPORT(res);
+    return Type(0.0);
   }
 
 #undef TMB_OBJECTIVE_PTR

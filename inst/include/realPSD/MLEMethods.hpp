@@ -22,9 +22,9 @@ namespace realPSD {
     UFun<Type> Ufun(N);
     MLE<Type> mle(N);
     matrix<Type> U(N,1);
+    // calculate U
     Ufun.set_f(f);
     mle.set_Y(Y);
-    // calculate U
     Ufun.eval(U, phi);
     U = U * fs;
     // calculate tau_hat
@@ -45,9 +45,9 @@ namespace realPSD {
     UFun<Type> Ufun(N);
     MLE<Type> mle(N);
     matrix<Type> U(N,1);
+    // calculate U
     Ufun.set_f(f);
     mle.set_Y(Y);
-    // calculate U
     Ufun.eval(U, phi);
     U = U * fs;
     // calculate nll
@@ -67,9 +67,9 @@ namespace realPSD {
     UFun<Type> Ufun(N);
     MLE<Type> mle(N);
     matrix<Type> U(N,1);
+    // calculate U
     Ufun.set_f(f);
     mle.set_Y(Y);
-    // calculate U
     Ufun.eval(U, phi);
     U = U * fs;
     // calculate nlp

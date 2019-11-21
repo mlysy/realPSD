@@ -28,6 +28,8 @@ namespace realPSD {
     void init(int N);
     /// Objective function with internal `ZLU`.
     Type nll(const Type zeta);
+    /// Setter for `ZLU`.
+    void set_ZLU(cRefMatrix_t& Ubar);
   public:
     /// Constructor.
     LP(int N);
@@ -40,7 +42,7 @@ namespace realPSD {
     /// Profiled objective function for the LP method.
     Type nlp(cRefMatrix_t& Ubar);
     /// Residual vector for the LP method.
-    void res(RefMatrix_t Z, cRefMatrix_t& Ubar);
+    void res(RefMatrix_t R, cRefMatrix_t& Ubar);
   };
 
   /// @param[in] N Length of `Zbar`.
@@ -77,7 +79,7 @@ namespace realPSD {
   inline Type LP<Type>::zeta(cRefMatrix_t& Ubar) {
     // logUbar_ = Ubar.array().log();
     // ZLU_ = Zbar_ - logUbar_;
-    res(ZLU_, Ubar);
+    set_ZLU(Ubar);
     return ZLU_.sum() / N_;
   }
 
@@ -98,7 +100,7 @@ namespace realPSD {
     // return logUbar(0,0);
     // logUbar_ = Ubar.array().log();
     // ZLU_ = Zbar_ - logUbar_;
-    res(ZLU_, Ubar);
+    set_ZLU(Ubar);
     // ZLU_.array() -= zeta_;
     // return ZLU_.squaredNorm();
     // return ((Zbar_ - logUbar).array() - zeta).matrix().squaredNorm();
@@ -109,18 +111,32 @@ namespace realPSD {
     return nll(zeta);
   }
 
-  /// The LP residuals are defined as
+  /// Sets the internal value `ZLU_ = Zbar - log(Ubar)`.
+  ///
+  /// @param[in] Ubar Vector of bin-averaged normalized PSDs.
+  template <class Type>
+  inline void LP<Type>::set_ZLU(cRefMatrix_t& Ubar) {
+    logUbar_ = Ubar.array().log();
+    ZLU_ = Zbar_ - logUbar_;
+    return;
+  }
+
+  /// Calculates the LP residual vector
   ///
   /// \f[
-  /// R = \bar Z - \bar U.
+  /// R = \bar Z - \hat \zeta - \log \bar U,
   /// \f]
+  ///
+  /// where \f$\hat \zeta\f$ is the conditional MLE of \f$\zeta\f$ calculated by `zeta(Ubar)`.
   ///
   /// @param[out] R Vector of residuals.
   /// @param[in] Ubar Vector of bin-averaged normalized PSDs.
   template <class Type>
   inline void LP<Type>::res(RefMatrix_t R, cRefMatrix_t& Ubar) {
-    logUbar_ = Ubar.array().log();
-    R = Zbar_ - logUbar_;
+    zeta_ = zeta(Ubar);
+    R = ZLU_.array() - zeta_;
+    // logUbar_ = Ubar.array().log();
+    // R = Zbar_ - logUbar_;
     return;
   }
 

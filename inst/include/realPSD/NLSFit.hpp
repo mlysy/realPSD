@@ -30,15 +30,15 @@ namespace realPSD {
     /// Constructor
     NLS(int N);
     /// setter for internal `Ybar`.
-    void set_Ybar(cRefMatrix_t& Y);
-    /// Optimal value of `tau = sigma^2` given `U`.
-    Type tau(cRefMatrix_t& U);
+    void set_Ybar(cRefMatrix_t& Ybar);
+    /// Optimal value of `tau = sigma^2` given `Ubar`.
+    Type tau(cRefMatrix_t& Ubar);
     /// Objective function for the NLS method.
-    Type nll(cRefMatrix_t& U, const Type tau);
+    Type nll(cRefMatrix_t& Ubar, const Type tau);
     /// Profiled objective function for the NLS method.
-    Type nlp(cRefMatrix_t& U);
-    /// Vector of residuals for the NLS method.
-    void res(RefMatrix_t R, cRefMatrix_t& U, const Type tau);
+    Type nlp(cRefMatrix_t& Ubar);
+    /// Residual vector for the NLS method.
+    void res(RefMatrix_t R, cRefMatrix_t& Ubar);
   };
 
   /// @param[in] N Length of `Ybar`.
@@ -93,24 +93,26 @@ namespace realPSD {
   /// @return Value of the objective function (scalar).
   template <class Type>
   inline Type NLS<Type>::nll(cRefMatrix_t& Ubar, const Type tau) {
-    res(YU_, Ubar, tau);
-    // YU_ = Ybar_ - tau * Ubar;
+    // res(YU_, Ubar, tau);
+    YU_ = Ybar_ - tau * Ubar;
     return YU_.squaredNorm();
   }
 
-  /// Calculates the residual vector
+  /// Calculates the NLS residual vector
   ///
   /// \f[
-  /// R = \bar Y - \tau \cdot \bar U.
+  /// R = \bar Y - \hat \tau \cdot \bar U,
   /// \f]
+  ///
+  /// where \f$\hat \tau\f$ is the conditional optimizer of \f$\tau\f$ calculated by `tau(Ubar)`.
   ///
   /// @param[out] R Vector of residuals.
   /// @param[in] Ubar Vector of normalized PSD values at the bin-average frequencies.
   /// @param[in] tau PSD scale factor `tau = sigma^2`.
   template <class Type>
-  inline void NLS<Type>::res(RefMatrix_t R, cRefMatrix_t& Ubar,
-			     const Type tau) {
-    R = Ybar_ - tau * Ubar;
+  inline void NLS<Type>::res(RefMatrix_t R, cRefMatrix_t& Ubar) {
+    tau_ = tau(Ubar);
+    R = Ybar_ - tau_ * Ubar;
     return;
     // tau_ = tau(Ubar);
     // YU_ = Ybar_ - tau_ * Ubar;
@@ -118,7 +120,7 @@ namespace realPSD {
   }
 
 
-  /// Calculates the objective function given `U` at the optimal value of `tau(U)`.
+  /// Calculates the objective function given `Ubar` at the optimal value of `tau(Ubar)`.
   ///
   /// @param[in] Ubar Vector of normalized PSD values at the bin-average frequencies.
   ///

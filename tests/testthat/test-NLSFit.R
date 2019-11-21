@@ -99,20 +99,24 @@ test_that("NLS_res is the same in R and TMB", {
     fs <- sim_fs()
     # create TMB model and functions
     tmod <- TMB::MakeADFun(data = list(model = "SHOWFit",
-                                       method = "NLS_nlp",
+                                       method = "NLS_res",
                                        fbar = matrix(fbar),
                                        Ybar = matrix(Ybar),
                                        fs = fs),
                            parameters = list(phi = matrix(rep(0, 3))),
-                           silent = TRUE, DLL = "realPSD_TMBExports")
-    nls_res_tmb <- function(phi) c(tmod$simulate(phi)$res)
+                           silent = TRUE, ADreport = TRUE,
+                           DLL = "realPSD_TMBExports")
+    nls_res_tmb <- function(phi) setNames(tmod$fn(phi), nm = NULL)
     # check they are equal
     Phi <- replicate(nphi, sim_phi())
-    res_r <- sapply(1:nphi, function(ii) {
-      nls_res_r(phi = Phi[,ii], Ybar = Ybar,
-        fbar = fbar, ufun = show_ufun, fs = fs)
-    })
-    res_tmb <- sapply(1:nphi, function(ii) nls_res_tmb(Phi[,ii]))
+    res_r <- apply(Phi, 2, nls_res_r, fbar = fbar, Ybar = Ybar,
+                    ufun = show_ufun, fs = fs)
+    res_tmb <- apply(Phi, 2, nls_res_tmb)
+    ## res_r <- sapply(1:nphi, function(ii) {
+    ##   nls_res_r(phi = Phi[,ii], Ybar = Ybar,
+    ##     fbar = fbar, ufun = show_ufun, fs = fs)
+    ## })
+    ## res_tmb <- sapply(1:nphi, function(ii) nls_res_tmb(Phi[,ii]))
     expect_equal(res_r, res_tmb)
   }
 })

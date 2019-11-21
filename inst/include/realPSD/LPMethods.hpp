@@ -22,9 +22,9 @@ namespace realPSD {
     UFun<Type> Ufun(N);
     LP<Type> lp(N);
     matrix<Type> Ubar(N,1);
+    // calculate Ubar
     Ufun.set_f(fbar);
     lp.set_Zbar(Zbar);
-    // calculate Ubar
     Ufun.eval(Ubar, phi);
     Ubar = Ubar * fs;
     // calculate zeta_hat
@@ -44,21 +44,39 @@ namespace realPSD {
     UFun<Type> Ufun(N);
     LP<Type> lp(N);
     matrix<Type> Ubar(N,1);
+    // calculate Ubar
     Ufun.set_f(fbar);
     lp.set_Zbar(Zbar);
-    // calculate Ubar
     Ufun.eval(Ubar, phi);
     Ubar = Ubar * fs;
-    SIMULATE{
-      // addtionally report the vector of residuals
-      // FIXME: lp.zeta(Ubar) wastefully recomputes residuals
-      matrix<Type> res(N,1);
-      lp.res(res, Ubar);
-      res.array() -= lp.zeta(Ubar);
-      REPORT(res); 
-    } 
     // calculate nlp
     return lp.nlp(Ubar);
+  }
+
+  template<class Type>
+  Type LP_res(objective_function<Type>* obj) {
+    // data
+    DATA_MATRIX(fbar);
+    DATA_MATRIX(Zbar);
+    DATA_VECTOR(fs);
+    // parameters
+    PARAMETER_MATRIX(phi);
+    // intermediate variables
+    int N = fbar.size();
+    UFun<Type> Ufun(N);
+    LP<Type> lp(N);
+    matrix<Type> Ubar(N,1);
+    // output variable
+    matrix<Type> res(N,1);
+    // calculate Ubar
+    Ufun.set_f(fbar);
+    lp.set_Zbar(Zbar);
+    Ufun.eval(Ubar, phi);
+    Ubar = Ubar * fs;
+    // calculate residuals
+    lp.res(res, Ubar);
+    ADREPORT(res);
+    return Type(0.0);
   }
 
   template<class Type>
@@ -75,16 +93,9 @@ namespace realPSD {
     UFun<Type> Ufun(N);
     LP<Type> lp(N);
     matrix<Type> Ubar(N,1);
+    // calculate Ubar
     Ufun.set_f(fbar);
     lp.set_Zbar(Zbar);
-    SIMULATE{
-      // additionally report the vector of residuals
-      matrix<Type> res(N,1);
-      lp.res(res, Ubar);
-      res.array() -= zeta;
-      REPORT(res); 
-    } 
-    // calculate Ubar
     Ufun.eval(Ubar, phi);
     Ubar = Ubar * fs;
     return lp.nll(Ubar, zeta);

@@ -12,6 +12,11 @@ lp_zeta_r <- function(fbar, Zbar, phi, ufun, fs) {
   logUbar <- log(fs * ufun(fbar, phi))
   mean(Zbar - logUbar)
 }
+lp_res_r <- function(fbar, Zbar, phi, ufun, fs) {
+  logUbar <- log(fs * ufun(fbar, phi))
+  zeta <- lp_zeta_r(fbar, Zbar, phi, ufun, fs)
+  Zbar - zeta - logUbar
+}
 lp_nll_r <- function(phi, zeta, Zbar, fbar, ufun, fs) {
   logUbar <- log(fs * ufun(fbar, phi))
   sum((Zbar - zeta - logUbar)^2)

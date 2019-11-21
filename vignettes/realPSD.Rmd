@@ -2,7 +2,9 @@
 title: "**realPSD**: Development Notes"
 author: "Martin Lysy, Feiyu Zhu"
 date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
+output:
+  rmarkdown::html_vignette:
+    toc: yes
 vignette: >
   %\VignetteIndexEntry{realPSD Development Notes}
   %\VignetteEngine{knitr::rmarkdown}
@@ -31,7 +33,7 @@ MathJax.Hub.Config({
 \newcommand{\var}{\operatorname{var}}
 \newcommand{\acf}{\operatorname{\gamma}}
 \newcommand{\carfima}{\operatorname{CARFIMA}}
-\newcommand{\rv}[3][1]{#2_{#1},\ldots,#2_{#3}}
+\newcommand{\rv}[3]{#2_{#1},\ldots,#2_{#3}}
 \newcommand{\fs}{\f_s}
 \newcommand{\kbt}{k_BT}
 \newcommand{\Aw}{A_{\tx{w}}}
@@ -76,7 +78,7 @@ This package is essentially a port of `r github_link("realSHO")`, but with the o
 
 ## Methods
 
-**realPSD** provides three different methods for parameter estimation outlined below.  For each method, estimation is via optimization over a function of $\pph$, with the fitted value of $\s$ being profiled out.  In all cases the estimators are built on the discrete Fourier transform of the data, $\YY = (\rv Y K)$, where $N = 2K + 1$ and
+**realPSD** provides three different methods for parameter estimation outlined below.  For each method, estimation is via optimization over a function of $\pph$, with the fitted value of $\s$ being profiled out.  In all cases the estimators are built on the discrete Fourier transform of the data, $\YY = (\rv 1 Y K)$, where $N = 2K + 1$ and
 $$
 Y_k = \frac 1 N \left\vert \sum_{n=0}^{N-1} e^{-2\pi i k n} X_n\right\vert^2.
 $$
@@ -86,13 +88,13 @@ $$
 The maximum likelihood estimator is obtained my maximizing the so-called Whittle loglikelihood function,
 \begin{equation}
 \label{eq:mle}
-\ell_W(\tth \mid \YY) = - \sum_{k=1}^K(Y_k / \psd_k(\tth) + \log \psd_k(\tth)),
+\ell_W(\tth \mid \YY) = - \sum_{k=1}^K\left(\frac{Y_k}{\psd_k(\tth)} + \log \psd_k(\tth)\right),
 \end{equation}
 where $\psd_k(\tth) = \fs \cdot \psd(\f_k, \tth)$ and $f_k = \tfrac k N \fs$.  Note that for given $\pph$, the value of $\s^2$ maximizing \\eqref{eq:mle} is
 $$
-\hat \s^2(\pph) = \frac 1 K \sum_{k=1}^K \frac{Y_k}{U(\f_k,\pph)}.
+\hat \s^2(\pph) = \frac 1 K \sum_{k=1}^K \frac{Y_k}{U_k(\pph)},
 $$
-Therefore, upon maximizing the profile likelihood
+where $U_k(\pph) = \fs \cdot U(\f_k, \pph)$.  Therefore, upon maximizing the profile likelihood
 $$
 \begin{aligned}
 \ell_{W,\tx{prof}}(\pph \mid \YY) & = \ell_W(\pph, \hat \s(\pph) \mid \YY) \\
@@ -107,28 +109,37 @@ In many situations with high-throughput (HTP) data, $K$ is very large, such that
 $$
 \bar Y_m = \frac 1 B \sum_{k \in I_m} Y_k, \qquad I_m = \{k \in \mathbb N: (m-1)B < k \le mB\}.
 $$
-Then the nonlinear least-squares (NLS) estimator minimizes the objective function
+Then the nonlinear least-squares (NLS) estimator maximizes the objective function
 \begin{equation}
 \label{eq:nls}
-Q_{\tx{NLS}}(\tth) = \sum_{m=1}^{N_B} (\bar Y_m - \bar{\psd}_m(\tth))^2,
+Q_{\tx{NLS}}(\tth) = - \sum_{m=1}^{N_B} \big(\bar Y_m - \bar{\psd}_m(\tth)\big)^2,
 \end{equation}
-where $\bar{\psd}_m(\tth) = \fs \cdot \psd(\bar \f_m, \tth)$ and $\bar \f_m = \tfrac 1 B \sum_{k\in I_m} \f_k$.  For given $\pph$, the value of $\s^2$ minimizing \\eqref{eq:nls} is
+where $\bar{\psd}_m(\tth) = \fs \cdot \psd(\bar \f_m, \tth)$ and $\bar \f_m = \tfrac 1 B \sum_{k\in I_m} \f_k$.  For given $\pph$, the value of $\s^2$ maximizing \\eqref{eq:nls} is
 $$
-\hat \s^2(\pph) = \frac{\sum_{m=1}^{N_B} U(\bar \f_m,\pph) \bar Y_m }{\sum_{m=1}^{N_B} U(\bar \f_m,\pph)^2}.
+\hat \s^2(\pph) = \frac{\sum_{m=1}^{N_B} \bar{U}_m(\pph) \bar Y_m }{\sum_{m=1}^{N_B} \bar{U}_m(\pph)^2},
 $$
-By plugging this value into \\eqref{eq:nls} we obtain an objective function in only $\pph$.
+where $\bar{U}_m(\pph) = \fs \cdot U(\bar f_m, \pph)$.  Therefore, upon maximizing the objective function
+$$
+Q_{\tx{NLS},\tx{prof}}(\pph) = -\sum_{m=1}^{N_B} \big(\bar Y_m - \hat \sigma^2(\pph) \cdot \bar{U}_m(\pph)\big)^2,
+$$
+we obtain the maximum of \\eqref{eq:nls} via $\hat \tth = (\hat \pph, \hat \sigma(\hat \pph))$.
 
 ### Variance-Stabilized Least-Squares
 
-Let $Z_m = \log(\bar Y_m)$.  Then an approximate loglikelihood is
+Let $Z_m = \log(\bar Y_m)$.  Then the log-periodogram (LP) estimator maximizes the approximate loglikelihood
 \begin{equation}
 \label{eq:lp}
-\ell_{\tx{LP}}(\tth \mid \YY) = -\frac B 2 \sum_{m=1}^{N_B} (Z_m + C_B - \log \bar{\psd}_m(\tth))^2,
+\ell_{\tx{LP}}(\tth \mid \YY) = -\frac B 2 \sum_{m=1}^{N_B} \big(Z_m + C_B - \log \bar{\psd}_m(\tth)\big)^2,
 \end{equation}
-where $C_B = \log B - \psi(B)$ and $\psi(x)$ is the [digamma function](https://en.wikipedia.org/wiki/Digamma_function).  For given $\pph$, the value of $\s^2$ minimizing \\eqref{eq:lp} is
+where $C_B = \log B - \psi(B)$ and $\psi(x)$ is the [digamma function](https://en.wikipedia.org/wiki/Digamma_function).  For given $\pph$, the value of $\s^2$ maximizing \\eqref{eq:lp} is
 $$
-\hat \s^2(\pph) = \exp\left\{\frac{1}{N_B} \sum_{m=1}^{N_B} Z_m + C_B - \log U(\bar \f_m,\pph)\right\}.
+\hat \s^2(\pph) = \exp\left\{\hat \zeta(\pph) + C_B\right\}, \qquad \hat \zeta(\pph) = \frac{1}{N_B} \sum_{m=1}^{N_B} Z_m - \log \bar{U}_m(\pph),
 $$
+such that upon maximizing
+$$
+\ell_{\tx{LP},\tx{prof}}(\pph \mid \YY) = - \sum_{m=1}^{N_B} \big(Z_m - \hat \zeta(\pph) - \log \bar U_m(\pph)\big)^2
+$$
+we obtain the maximum of \\eqref{eq:lp} via $\hat \tth = (\hat \pph, \hat \sigma(\hat \pph))$.
 
 ### Variance Estimators
 
@@ -150,6 +161,17 @@ $$
 \bm B & = \sum_{m=1}^{N_B} \left[\frac{\partial}{\partial \tth} g_m(\hat \tth_{\tx{NLS}})\right]\left[\frac{\partial}{\partial \tth} g_m(\hat \tth_{\tx{NLS}})\right]'.
 \end{aligned}
 $$
+
+### Model Residuals
+
+Both the NLS and LP (profile) optimizaiton problems can be rewritten as minimizing a sum-of-squares objective function
+$$
+S(\pph) = \sum_{m=1}^{N_B} r_m(\pph)^2,
+$$
+for which specialized optimization algorithms such as [Gauss-Newton](https://en.wikipedia.org/wiki/Gauss%E2%80%93Newton_algorithm) or [Levenberg-Marquardt](https://en.wikipedia.org/wiki/Levenberg%E2%80%93Marquardt_algorithm) can be used.
+
+
+<!-- where $g_m(\tth) = (\bar Y_m - \bar{\psd}_m(\tth))^2$. -->
 
 <!-- ## Implementation -->
 
