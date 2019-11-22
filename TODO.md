@@ -23,16 +23,17 @@
 
     The relevant methods are now called `LP_res` and `NLS_res`.
 
-- [ ] Add new models to the package:
+- [x] Add new models to the package:
 
-	- [ ] `SHOW_nat`: The "natural" parametrization, i.e., that which Bryan original used.
+	- [x] `SHOW_nat`: The "natural" parametrization, i.e., that which Bryan original used.
 	- [ ] `SHOW_comp`: The "computational" parametrizatoin, i.e., the one we originally used for **realPSD** (probably still the one documented in vignette).
-	- [ ] `SHOW_log`: The natural parametrization, but with each parameter input on the log scale.  This is probably the one which will yield the best results.
+	- [x] `SHOW_log`: The natural parametrization, but with each parameter input on the log scale.  This is probably the one which will yield the best results.
 
 	Now that `SHOWFit.hpp` has been properly refactored, adding new models can be done with minimal copy-pasting.  We'll probably need to refactor the unit tests though, lest we want to copy-paste like crazy.
 
 	A more permanent solution that will allow users to readily create their own models can be done via templating, e.g., R package  [**whisker**](https://CRAN.R-project.org/package=whisker).  This is exactly the approach used under the hood by [**usethis**](https://CRAN.R-project.org/package=usethis).
-	
+
+- [ ] Add unit tests for gradients.  Currently only `fn()` method is checked, but with `TMB_OBJECTIVE_PTR` getting passed around so many times it would be a nice sanity check.
 
 - [ ] Prune git history of large objects -- repo is almost 30Mb and there's no way that's all source code!  Somewhere along the way we must have committed e.g., object files, PDFs, etc.
 
