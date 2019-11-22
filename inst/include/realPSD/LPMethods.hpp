@@ -10,97 +10,32 @@ namespace realPSD {
 #define TMB_OBJECTIVE_PTR obj
 
   template<class Type>
-  Type LP_zeta(objective_function<Type>* obj) {
-    // data
-    DATA_MATRIX(fbar);
-    DATA_MATRIX(Zbar);
-    DATA_VECTOR(fs);
-    // parameters
-    PARAMETER_MATRIX(phi);
-    // intermediate variables
+  Type LP_methods(objective_function<Type>* obj,
+		  const std::string& method,
+		  const matrix<Type>& fbar,
+		  const matrix<Type>& Zbar,
+		  const matrix<Type>& Ubar) {
     int N = fbar.size();
-    UFun<Type> Ufun(N);
     LP<Type> lp(N);
-    matrix<Type> Ubar(N,1);
-    // calculate Ubar
-    Ufun.set_f(fbar);
     lp.set_Zbar(Zbar);
-    Ufun.eval(Ubar, phi);
-    Ubar = Ubar * fs;
-    // calculate zeta_hat
-    return lp.zeta(Ubar);
-  }
-
-  template<class Type>
-  Type LP_nlp(objective_function<Type>* obj) {
-    // data
-    DATA_MATRIX(fbar);
-    DATA_MATRIX(Zbar);
-    DATA_VECTOR(fs);
-    // parameters
-    PARAMETER_MATRIX(phi);
-    // intermediate variables
-    int N = fbar.size();
-    UFun<Type> Ufun(N);
-    LP<Type> lp(N);
-    matrix<Type> Ubar(N,1);
-    // calculate Ubar
-    Ufun.set_f(fbar);
-    lp.set_Zbar(Zbar);
-    Ufun.eval(Ubar, phi);
-    Ubar = Ubar * fs;
-    // calculate nlp
-    return lp.nlp(Ubar);
-  }
-
-  template<class Type>
-  Type LP_res(objective_function<Type>* obj) {
-    // data
-    DATA_MATRIX(fbar);
-    DATA_MATRIX(Zbar);
-    DATA_VECTOR(fs);
-    // parameters
-    PARAMETER_MATRIX(phi);
-    // intermediate variables
-    int N = fbar.size();
-    UFun<Type> Ufun(N);
-    LP<Type> lp(N);
-    matrix<Type> Ubar(N,1);
-    // output variable
-    matrix<Type> res(N,1);
-    // calculate Ubar
-    Ufun.set_f(fbar);
-    lp.set_Zbar(Zbar);
-    Ufun.eval(Ubar, phi);
-    Ubar = Ubar * fs;
-    // calculate residuals
-    lp.res(res, Ubar);
-    ADREPORT(res);
+    if(method == "LP_zeta") {
+      return lp.zeta(Ubar);
+    } else if(method == "LP_nlp") {
+      return lp.nlp(Ubar);
+    } else if(method == "LP_res") {
+      matrix<Type> res(N,1); // output variable
+      lp.res(res, Ubar); // calculate residuals
+      ADREPORT(res); // set them to be differentiable
+      return Type(0.0);
+    } else if(method == "LP_nll") {
+      PARAMETER(zeta);
+      return lp.nll(Ubar, zeta);
+    } else {
+      // std::string msg = "Unknown method " + method + ".";
+      error("Unknown LP method.");
+    }
     return Type(0.0);
-  }
-
-  template<class Type>
-  Type LP_nll(objective_function<Type>* obj) {
-    // data
-    DATA_MATRIX(fbar);
-    DATA_MATRIX(Zbar);
-    DATA_VECTOR(fs);
-    // parameters
-    PARAMETER_MATRIX(phi);
-    PARAMETER(zeta);
-    // intermediate variables
-    int N = fbar.size();
-    UFun<Type> Ufun(N);
-    LP<Type> lp(N);
-    matrix<Type> Ubar(N,1);
-    // calculate Ubar
-    Ufun.set_f(fbar);
-    lp.set_Zbar(Zbar);
-    Ufun.eval(Ubar, phi);
-    Ubar = Ubar * fs;
-    return lp.nll(Ubar, zeta);
-  }
-
+  }		  
   
 #undef TMB_OBJECTIVE_PTR
 #define TMB_OBJECTIVE_PTR this

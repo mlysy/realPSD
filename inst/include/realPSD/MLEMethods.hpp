@@ -10,70 +10,25 @@ namespace realPSD {
 #define TMB_OBJECTIVE_PTR obj
 
   template<class Type>
-  Type MLE_tau(objective_function<Type>* obj) {
-    // data
-    DATA_MATRIX(f);
-    DATA_MATRIX(Y);
-    DATA_VECTOR(fs);
-    // parameters
-    PARAMETER_MATRIX(phi);
-    // intermediate variables
+  Type MLE_methods(objective_function<Type>* obj,
+		   const std::string& method,
+		   const matrix<Type>& f,
+		   const matrix<Type>& Y,
+		   const matrix<Type>& U) {
     int N = f.size();
-    UFun<Type> Ufun(N);
     MLE<Type> mle(N);
-    matrix<Type> U(N,1);
-    // calculate U
-    Ufun.set_f(f);
     mle.set_Y(Y);
-    Ufun.eval(U, phi);
-    U = U * fs;
-    // calculate tau_hat
-    return mle.tau(U);
-  }
-
-  template<class Type>
-  Type MLE_nll(objective_function<Type>* obj) {
-    // data
-    DATA_MATRIX(f);
-    DATA_MATRIX(Y);
-    DATA_VECTOR(fs);
-    // parameters
-    PARAMETER_MATRIX(phi);
-    PARAMETER(tau);
-    // intermediate variables
-    int N = f.size();
-    UFun<Type> Ufun(N);
-    MLE<Type> mle(N);
-    matrix<Type> U(N,1);
-    // calculate U
-    Ufun.set_f(f);
-    mle.set_Y(Y);
-    Ufun.eval(U, phi);
-    U = U * fs;
-    // calculate nll
-    return mle.nll(U, tau);
-  }
-
-  template<class Type>
-  Type MLE_nlp(objective_function<Type>* obj) {
-    // data
-    DATA_MATRIX(f);
-    DATA_MATRIX(Y);
-    DATA_VECTOR(fs);
-    // parameters
-    PARAMETER_MATRIX(phi);
-    // intermediate variables
-    int N = f.size();
-    UFun<Type> Ufun(N);
-    MLE<Type> mle(N);
-    matrix<Type> U(N,1);
-    // calculate U
-    Ufun.set_f(f);
-    mle.set_Y(Y);
-    Ufun.eval(U, phi);
-    U = U * fs;
-    // calculate nlp
-    return mle.nlp(U);
+    if(method == "MLE_tau") {
+      return mle.tau(U);
+    } else if(method == "MLE_nlp") {
+      return mle.nlp(U);
+    } else if(method == "MLE_nll") {
+      PARAMETER(tau);
+      return mle.nll(U, tau);
+    } else {
+      error("Unknown MLE method.");
+    }
+    return Type(0.0);
   }
 
 #undef TMB_OBJECTIVE_PTR

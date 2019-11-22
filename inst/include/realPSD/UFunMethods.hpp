@@ -8,11 +8,8 @@ namespace realPSD {
 #define TMB_OBJECTIVE_PTR obj
 
   template<class Type>
-  Type UFun_eval(objective_function<Type>* obj) {
-    // data
-    DATA_MATRIX(f);
-    // parameters
-    PARAMETER_MATRIX(phi);
+  Type UFun_eval(objective_function<Type>* obj,
+		 const matrix<Type>& f, matrix<Type>& phi) {
     // evaluate normalized PSD
     int N = f.size();
     UFun<Type> Ufun(N);

@@ -4,7 +4,7 @@
 ## require(TMB)
 ## require(testthat)
 
-context("LPFit")
+context("LPMethods")
 
 source("realPSD-testfunctions.R")
 
@@ -12,13 +12,16 @@ test_that("LP_zeta is the same in R and TMB", {
   ntest <- 20
   nphi <- sample(2:5, 1)
   for(ii in 1:ntest) {
+    # pick model
+    model <- sim_model()
+    ufun_r <- get_ufun(model)
     # simulate data
     N <- sample(10:20,1)
     fbar <- sim_f(N)
     Zbar <- sim_Zbar(N)
     fs <- sim_fs()
     # create TMB model and functions
-    tmod <- TMB::MakeADFun(data = list(model = "SHOWFit",
+    tmod <- TMB::MakeADFun(data = list(model = model,
                                        method = "LP_zeta",
                                        fbar = matrix(fbar),
                                        Zbar = matrix(Zbar),
@@ -29,7 +32,7 @@ test_that("LP_zeta is the same in R and TMB", {
     # check they are equal
     Phi <- replicate(nphi, sim_phi())
     zeta_r <- apply(Phi, 2, lp_zeta_r, fbar = fbar, Zbar = Zbar,
-                    ufun = show_ufun, fs = fs)
+                    ufun = ufun_r, fs = fs)
     zeta_tmb <- apply(Phi, 2, lp_zeta_tmb)
     expect_equal(zeta_r, zeta_tmb)
   }
@@ -39,13 +42,16 @@ test_that("LP_nll is the same in R and TMB", {
   ntest <- 20
   nphi <- sample(2:5, 1)
   for(ii in 1:ntest) {
+    # pick model
+    model <- sim_model()
+    ufun_r <- get_ufun(model)
     # simulate data
     N <- sample(10:20,1)
     fbar <- sim_f(N)
     Zbar <- sim_Zbar(N)
     fs <- sim_fs()
     # create TMB model and functions
-    tmod <- TMB::MakeADFun(data = list(model = "SHOWFit",
+    tmod <- TMB::MakeADFun(data = list(model = model,
                                        method = "LP_nll",
                                        fbar = matrix(fbar),
                                        Zbar = matrix(Zbar),
@@ -59,7 +65,7 @@ test_that("LP_nll is the same in R and TMB", {
     zeta <- replicate(nphi, sim_zeta())
     nll_r <- sapply(1:nphi, function(ii) {
       lp_nll_r(phi = Phi[,ii], zeta = zeta[ii],
-               Zbar = Zbar, fbar = fbar, ufun = show_ufun, fs = fs)
+               Zbar = Zbar, fbar = fbar, ufun = ufun_r, fs = fs)
     })
     nll_tmb <- sapply(1:nphi, function(ii) lp_nll_tmb(Phi[,ii], zeta[ii]))
     expect_equal(nll_r, nll_tmb)
@@ -70,13 +76,16 @@ test_that("LP_nlp is the same in R and TMB", {
   ntest <- 20
   nphi <- sample(2:5, 1)
   for(ii in 1:ntest) {
+    # pick model
+    model <- sim_model()
+    ufun_r <- get_ufun(model)
     # simulate data
     N <- sample(10:20,1)
     fbar <- sim_f(N)
     Zbar <- sim_Zbar(N)
     fs <- sim_fs()
     # create TMB model and functions
-    tmod <- TMB::MakeADFun(data = list(model = "SHOWFit",
+    tmod <- TMB::MakeADFun(data = list(model = model,
                                        method = "LP_nlp",
                                        fbar = matrix(fbar),
                                        Zbar = matrix(Zbar),
@@ -87,7 +96,7 @@ test_that("LP_nlp is the same in R and TMB", {
     # check they are equal
     Phi <- replicate(nphi, sim_phi())
     nlp_r <- apply(Phi, 2, function(phi) {
-      lp_nlp_r(phi = phi, Zbar = Zbar, fbar = fbar, ufun = show_ufun, fs = fs)
+      lp_nlp_r(phi = phi, Zbar = Zbar, fbar = fbar, ufun = ufun_r, fs = fs)
       ## zeta <- zeta_r(fbar, Zbar, phi)
       ## nllik_r(phi, zeta, Zbar, fbar)
     })
@@ -100,13 +109,16 @@ test_that("LP_res is the same in R and TMB", {
   ntest <- 20
   nphi <- sample(2:5, 1)
   for(ii in 1:ntest) {
+    # pick model
+    model <- sim_model()
+    ufun_r <- get_ufun(model)
     # simulate data
     N <- sample(10:20,1)
     fbar <- sim_f(N)
     Zbar <- sim_Zbar(N)
     fs <- sim_fs()
     # create TMB model and functions
-    tmod <- TMB::MakeADFun(data = list(model = "SHOWFit",
+    tmod <- TMB::MakeADFun(data = list(model = model,
                                        method = "LP_res",
                                        fbar = matrix(fbar),
                                        Zbar = matrix(Zbar),
@@ -119,7 +131,7 @@ test_that("LP_res is the same in R and TMB", {
     # check they are equal
     Phi <- replicate(nphi, sim_phi())
     res_r <- apply(Phi, 2, lp_res_r, fbar = fbar, Zbar = Zbar,
-                    ufun = show_ufun, fs = fs)
+                    ufun = ufun_r, fs = fs)
     res_tmb <- apply(Phi, 2, lp_res_tmb)
     expect_equal(res_r, res_tmb)
   }

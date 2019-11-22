@@ -2,10 +2,18 @@
 sim_f <- function(n) runif(n, 0, 2*n)
 sim_Zbar <- function(n) rnorm(n)
 sim_Y <- function(n) rchisq(n, df = 2)
-sim_phi <- function() c(f0 = runif(1, 100, 1000), Q = sample(seq(1:1000), size = 1), Rw = rexp(1))
+sim_phi <- function(model = c("SHOW_nat", "SHOW_log")) {
+  model <- match.arg(model)
+  phi <- c(f0 = runif(1, 100, 1000),
+           Q = runif(1, 1, 500),
+           Rw = rexp(1))
+  if(model == "SHOW_log") phi <- log(phi)
+  phi
+}
 sim_zeta <- function() rexp(1)
 sim_tau <- function() rexp(1)
 sim_fs <- function() sample(10:1000, size = 1)
+sim_model <- function() sample(c("SHOW_nat", "SHOW_log"), size = 1)
 
 # lp functions
 lp_zeta_r <- function(fbar, Zbar, phi, ufun, fs) {
@@ -65,6 +73,16 @@ nls_nlp_r <- function(phi, Ybar, fbar, ufun, fs) {
 # phi = c(f0, Q, Rw)
 show_ufun <- function(f, phi) {
   phi[3] + 1/(((f/phi[1])^2 - 1)^2 + (f/(phi[1]*phi[2]))^2)
+}
+
+# pick model
+get_ufun <- function(model = c("SHOW_nat", "SHOW_log")) {
+  model <- match.arg(model)
+  if(model == "SHOW_nat") {
+    return(show_ufun)
+  } else if(model == "SHOW_log") {
+    return(function(f, phi) show_ufun(f, exp(phi)))
+  }
 }
 
 # recompile TMB models, install package, and quit

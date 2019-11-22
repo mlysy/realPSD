@@ -2,13 +2,16 @@
 
 #define TMB_LIB_INIT R_init_realPSD_TMBExports
 #include <TMB.hpp>
-#include "SHOWFit.hpp"
+#include "SHOW_log.hpp"
+#include "SHOW_nat.hpp"
 
 template<class Type>
 Type objective_function<Type>::operator() () {
   DATA_STRING(model);
-  if(model == "SHOWFit") {
-    return SHOWFit(this);
+  if(model == "SHOW_log") {
+    return SHOW_log(this);
+  } else if(model == "SHOW_nat") {
+    return SHOW_nat(this);
   } else {
     error("Unknown model.");
   }
