@@ -32,6 +32,10 @@
 	Now that `SHOWFit.hpp` has been properly refactored, adding new models can be done with minimal copy-pasting.  We'll probably need to refactor the unit tests though, lest we want to copy-paste like crazy.
 
 	A more permanent solution that will allow users to readily create their own models can be done via templating, e.g., R package  [**whisker**](https://CRAN.R-project.org/package=whisker).  This is exactly the approach used under the hood by [**usethis**](https://CRAN.R-project.org/package=usethis).
+	
+- [ ] Fix `LP_nll` method.  Right now, we don't pass in `C_B` constant, which means that if the Hessian of `LP_nll` is calculated it won't give the right standard errors.  One way around this is to include `C_B` in the `fs` input.  However, this means we have to wastefully calculate `log(exp(C_B)`.  A more effiicent alternative is perhaps for the `LP` methods to accept argument `logUBar`, rather than calculate it internally.
+
+	On second thought, adding to the `fs` argument is probably easiest.  Besides, we're only talking about a single extra `exp`, and roundoff error is negligible.  To avoid confusion, perhaps we should rename the argment, or add an extra argument?
 
 - [ ] Add unit tests for gradients.  Currently only `fn()` method is checked, but with `TMB_OBJECTIVE_PTR` getting passed around so many times it would be a nice sanity check.
 
