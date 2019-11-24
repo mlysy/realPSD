@@ -2,19 +2,18 @@
 % Please edit documentation in R/binning.R
 \name{binning}
 \alias{binning}
-\title{binning a long vector and return the bin average values}
+\title{Bin a long vector and return the bin average values.}
 \usage{
 binning(x, bin_size)
 }
 \arguments{
-\item{x}{numeric \code{vector} to process}
+\item{x}{Numeric vector.}
 
-\item{bin_size}{length of each bin}
+\item{bin_size}{Size of each bin.}
 }
 \value{
-a \code{matrix} or \code{vector} with average values per bin
+A vector of length \code{floor(length(x)/bin_size) * bin_size} containing the bin averages.
 }
 \description{
 Compute average values of a series in pre-determined bins (column-wise subsets).
-The bin size can be determined either directly or by specifying the number of bins.
 }

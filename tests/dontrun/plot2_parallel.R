@@ -11,19 +11,19 @@ data_path_sim <- "~/realPSD/show_sim"
 data_path_fit <- "~/realPSD/show_fit"
 data_path_result <- "~/realPSD/show_result"
 # clear any existing files
-unlink(file.path(data_path_sim, "*"), recursive = TRUE) 
+unlink(file.path(data_path_sim, "*"), recursive = TRUE)
 unlink(file.path(data_path_fit, "*"), recursive = TRUE)
 unlink(file.path(data_path_result, "*"), recursive = TRUE)
 
 # ---------- SHO model parameters ----------
-Time  <- 5                  # Total time, second
+Time  <- 5                  # Total time, seconds
 fs <- 1e7                   # Sampling frequency, Hz
 f0 <- 33553                 # Resonance frequency, Hz
 Q_vec  <- c(1, 10, 100, 500)# Quality factors
 k  <- 0.172                 # Cantilever stiffness, N/m
 # Kb <- 1.381e-23           # Boltzmann's constant
 Temp <- 298                 # Temperature, Kelvin
-Aw <- 19000                 # white noise, fm2/Hz 
+Aw <- 19000                 # white noise, fm2/Hz
 Const <- 1e30
 unit_conversion <- TRUE    # if TRUE, convert the standard unit m2/Hz to fm2/Hz
 if(!unit_conversion) Aw <- Aw / Const # if FALSE, then we use the standard unit m2/Hz
@@ -55,7 +55,7 @@ system.time(
         saveRDS(rexp(nf, rate = 1),
             file = file.path(data_path_sim,
                             paste0("exp_sim_", ii, ".rds"))),
-        error = function(err) 
+        error = function(err)
           message(paste0("The ", ii, "-th simulation went wrong..."))
       )
       return(TRUE)
@@ -87,7 +87,7 @@ fit_success <- mclapply(1:nfit, function(ii) {
     fitSHOW(fseq, sim_exp = r_exp,
             f0 = f0, fs = fs, Q = Q,
             k = k, Temp = Temp, Aw = Aw,
-            bin_size = bin_size, method = method, 
+            bin_size = bin_size, method = method,
             unit_conversion = unit_conversion)
   }, error = function(err) {
     message("fitting error on job ", ii)
@@ -107,26 +107,26 @@ fit_success <- mclapply(1:nfit, function(ii) {
 # ---------- Output ---------------
 # # read simulated data into workspace
 # for(ii in 1:nfit) {
-#   assign(paste0("fit_", ii), 
+#   assign(paste0("fit_", ii),
 #         readRDS(file.path(data_path_fit, paste0("show_fit_", ii, ".rds"))))
 # }
 # combine each iteration vector into a data frame
 fit_list <- list()
 for(ii in 1:nfit) {
-  fit_list[[ii]] <- readRDS(file.path(data_path_fit, paste0("show_fit_", ii, ".rds"))) 
+  fit_list[[ii]] <- readRDS(file.path(data_path_fit, paste0("show_fit_", ii, ".rds")))
 }
 fit_data <- do.call(rbind, fit_list)
 fit_data <- cbind(fit_data, fit_descr[,c("Q_level", "method")], fit_id = seq(1:nfit))
 # then manipulate the data frame using tidyverse toolbox
 fit_data <- fit_data %>% as_tibble() %>% drop_na() %>%
   mutate(Q_level = factor(Q_level,  # convert the column Q_level into a factor
-    levels = c(1,10,100,500), labels = c("Q = 1", "Q = 10", "Q = 100", "Q = 500"))) %>% 
-  mutate(method = factor(method, levels = c("nls", "lp", "mle"))) # factor column method 
+    levels = c(1,10,100,500), labels = c("Q = 1", "Q = 10", "Q = 100", "Q = 500"))) %>%
+  mutate(method = factor(method, levels = c("nls", "lp", "mle"))) # factor column method
 saveRDS(fit_data, file = file.path(data_path_result,
   paste0("fit_data.rds")))
 # get a new dataset with ratios instead of fitted values
 ratio_data <- fit_data %>%
-  select(-c(tau_hat, Rw_hat, fit_id)) %>% 
+  select(-c(tau_hat, Rw_hat, fit_id)) %>%
   mutate(f0_hat = f0_hat/f0) %>%
   mutate(k_hat = k_hat/k) %>%
   mutate(Q_hat = case_when(
@@ -140,7 +140,7 @@ saveRDS(ratio_data, file = file.path(data_path_result,
   paste0("ratio_data.rds")))
 # calculate the MSE ratio for each method at each Q level
 # the baseline MLE method should always be 1
-mse_ratio <- ratio_data %>% 
+mse_ratio <- ratio_data %>%
   mutate(f0_hat = (f0_hat - 1)^2,
           Q_hat = (Q_hat - 1)^2,
           k_hat = (k_hat - 1)^2) %>%
@@ -162,13 +162,13 @@ ylim_f0 <- max(ratio_data[, "f0_hat"])
 # boxplot
 # Q_hat / Q
 tikzDevice::tikz(file = "boxplot2_Q.tex", width = 8, height = 2)
-fig_Q <- ggplot(ratio_data, aes(x = Q_level, y = Q_hat, fill = method)) + 
+fig_Q <- ggplot(ratio_data, aes(x = Q_level, y = Q_hat, fill = method)) +
   stat_boxplot(geom = "errorbar") +
   geom_boxplot(outlier.size = 0.618) +
   geom_hline(yintercept = 1.0, linetype = "twodash") +
-  geom_text(data = mse_ratio, 
+  geom_text(data = mse_ratio,
     aes(y = ylim_Q + 0.1*(ylim_Q-1), label = round(Q_hat,2)),
-    position = position_dodge(width = 0.8)) + 
+    position = position_dodge(width = 0.8)) +
   xlab(label = NULL)  +
   ylab(label = "$\\hat{Q}/Q$")
 # ggsave("boxplot_Q.pdf")
@@ -177,13 +177,13 @@ dev.off()
 
 # k_hat / k
 tikzDevice::tikz(file = "./boxplot2_k.tex", width = 8, height = 2)
-fig_k <- ggplot(ratio_data, aes(x = Q_level, y = k_hat, fill = method)) + 
+fig_k <- ggplot(ratio_data, aes(x = Q_level, y = k_hat, fill = method)) +
   stat_boxplot(geom = "errorbar") +
   geom_boxplot(outlier.size = 0.618) +
   geom_hline(yintercept = 1.0, linetype = "twodash") +
-  geom_text(data = mse_ratio, 
+  geom_text(data = mse_ratio,
     aes(y = ylim_k + 0.1*(ylim_k-1), label = round(k_hat,2)),
-    position = position_dodge(width = 0.8)) + 
+    position = position_dodge(width = 0.8)) +
   xlab(label = NULL)  +
   ylab(label = "$\\hat{k}/k$")
 print(fig_k)
@@ -192,13 +192,13 @@ dev.off()
 
 # f0_hat / f0
 tikzDevice::tikz(file = "./boxplot2_f0.tex", width = 8, height = 2)
-fig_f0 <- ggplot(ratio_data, aes(x = Q_level, y = f0_hat, fill = method)) + 
+fig_f0 <- ggplot(ratio_data, aes(x = Q_level, y = f0_hat, fill = method)) +
   stat_boxplot(geom = "errorbar") +
-  geom_boxplot(outlier.size = 0.618) + 
+  geom_boxplot(outlier.size = 0.618) +
   geom_hline(yintercept = 1.0, linetype = "twodash") +
-  geom_text(data = mse_ratio, 
+  geom_text(data = mse_ratio,
     aes(y = ylim_f0 + 0.1*(ylim_f0-1), label = round(f0_hat,2)),
-    position = position_dodge(width = 0.8)) + 
+    position = position_dodge(width = 0.8)) +
   xlab(label = NULL)  +
   ylab(label = "$\\hat{f_0}/f_0$")
 print(fig_f0)
