@@ -29,8 +29,10 @@ namespace realPSD {
   public:
     /// Constructor
     NLS(int N);
-    /// setter for internal `Ybar`.
+    /// Setter for internal `Ybar`.
     void set_Ybar(cRefMatrix_t& Ybar);
+    /// Getter for internal `tau`.
+    Type get_tau();
     /// Optimal value of `tau = sigma^2` given `Ubar`.
     Type tau(cRefMatrix_t& Ubar);
     /// Objective function for the NLS method.
@@ -79,6 +81,14 @@ namespace realPSD {
     wgt_ = Ybar_.cwiseProduct(Ubar).sum();
     return wgt_ / Ubar.cwiseProduct(Ubar).sum();
   }
+
+  /// @return Scalar value of `tau_`.
+  /// @warning Must be called after a call to `NLS.nlp`.
+  template <class Type>
+  inline Type NLS<Type>::get_tau() {
+    return tau_;
+  }
+
 
   /// The NLS objective function is given by
   ///

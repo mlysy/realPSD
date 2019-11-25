@@ -38,6 +38,36 @@ test_that("LP_zeta is the same in R and TMB", {
   }
 })
 
+test_that("LP_nlp_zeta is the same in R and TMB", {
+  ntest <- 20
+  nphi <- sample(2:5, 1)
+  for(ii in 1:ntest) {
+    # pick model
+    model <- sim_model()
+    ufun_r <- get_ufun(model)
+    # simulate data
+    N <- sample(10:20,1)
+    fbar <- sim_f(N)
+    Zbar <- sim_Zbar(N)
+    fs <- sim_fs()
+    # create TMB model and functions
+    tmod <- TMB::MakeADFun(data = list(model = model,
+                                       method = "LP_nlp",
+                                       fbar = matrix(fbar),
+                                       Zbar = matrix(Zbar),
+                                       fs = fs),
+                           parameters = list(phi = matrix(rep(0, 3))),
+                           silent = TRUE, DLL = "realPSD_TMBExports")
+    lp_zeta_tmb <- function(phi) tmod$simulate(phi)$zeta
+    # check they are equal
+    Phi <- replicate(nphi, sim_phi())
+    zeta_r <- apply(Phi, 2, lp_zeta_r, fbar = fbar, Zbar = Zbar,
+                    ufun = ufun_r, fs = fs)
+    zeta_tmb <- apply(Phi, 2, lp_zeta_tmb)
+    expect_equal(zeta_r, zeta_tmb)
+  }
+})
+
 test_that("LP_nll is the same in R and TMB", {
   ntest <- 20
   nphi <- sample(2:5, 1)

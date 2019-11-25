@@ -29,10 +29,12 @@ namespace realPSD {
     // Objective function with internal `YU` and `logU`.
     Type nll(const Type tau);
   public:
-    /// Constructor
+    /// Constructor.
     MLE(int N);
-    /// setter for internal `Y`.
+    /// Setter for internal `Y`.
     void set_Y(cRefMatrix_t& Y);
+    /// Getter for internal `tau`.
+    Type get_tau();
     /// Optimal value of `tau = sigma^2` given `U`.
     Type tau(cRefMatrix_t& U);
     /// Objective function for the MLE method.
@@ -77,6 +79,14 @@ namespace realPSD {
     YU_ = Y_.array() / U.array();
     return YU_.sum() / N_;
   }
+
+  /// @return Scalar value of `tau_`.
+  /// @warning Must be called after a call to `MLE.nlp`.
+  template <class Type>
+  inline Type MLE<Type>::get_tau() {
+    return tau_;
+  }
+
 
   /// The MLE objective function is given by
   ///

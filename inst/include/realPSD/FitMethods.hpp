@@ -53,7 +53,12 @@ namespace realPSD {
       if(method == "LP_zeta") {
 	return lp.zeta(Ubar);
       } else if(method == "LP_nlp") {
-	return lp.nlp(Ubar);
+	Type nlp = lp.nlp(Ubar);
+	SIMULATE {
+	  Type zeta = lp.get_zeta();
+	  REPORT(zeta);
+	}
+	return nlp;
       } else if(method == "LP_res") {
 	matrix<Type> res(N,1); // output variable
 	lp.res(res, Ubar); // calculate residuals
@@ -86,7 +91,12 @@ namespace realPSD {
       if(method == "MLE_tau") {
 	return mle.tau(U);
       } else if(method == "MLE_nlp") {
-	return mle.nlp(U);
+	Type nlp = mle.nlp(U);
+	SIMULATE {
+	  Type tau = mle.get_tau();
+	  REPORT(tau);
+	}
+	return nlp;
       } else if(method == "MLE_nll") {
 	PARAMETER(tau);
 	return mle.nll(U, tau);
@@ -113,7 +123,12 @@ namespace realPSD {
       if(method == "NLS_tau") {
 	return nls.tau(Ubar);
       } else if(method == "NLS_nlp") {
-	return nls.nlp(Ubar);
+	Type nlp = nls.nlp(Ubar);
+	SIMULATE {
+	  Type tau = nls.get_tau();
+	  REPORT(tau);
+	}
+	return nlp;
       } else if(method == "NLS_res") {
 	// calculate residuals
 	matrix<Type> res(N,1);

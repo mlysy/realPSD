@@ -37,7 +37,7 @@
 
 	On second thought, adding to the `fs` argument is probably easiest.  Besides, we're only talking about a single extra `exp`, and roundoff error is negligible.  To avoid confusion, should rename the argment, or add an extra argument?
 	
-- [ ] `_nlp` methods should optionally `REPORT` `tau`/`zeta`.  It's a little extra work if we don't actually want `_nlp`, but creating a whole new computational graph just to get `tau`/`zeta` alone seems like a lot of extra work.
+- [x] `_nlp` methods should optionally `REPORT` `tau`/`zeta`.  It's a little extra work if we don't actually want `_nlp`, but creating a whole new computational graph just to get `tau`/`zeta` alone seems like a lot of extra work.
 
 - [ ] Add unit tests for gradients.  Currently only `fn()` method is checked, but with `TMB_OBJECTIVE_PTR` getting passed around so many times it would be a nice sanity check.
 

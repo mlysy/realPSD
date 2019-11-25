@@ -33,8 +33,10 @@ namespace realPSD {
   public:
     /// Constructor.
     LP(int N);
-    /// Setter for `Zbar`.
+    /// Setter for internal `Zbar`.
     void set_Zbar(cRefMatrix_t& Zbar);
+    /// Getter for internal `zeta`.
+    Type get_zeta();
     /// Optimal value of `zeta = log(sigma^2)` given `Ubar`.
     Type zeta(cRefMatrix_t& Ubar);
     /// Objective function for the LP method.
@@ -81,6 +83,13 @@ namespace realPSD {
     // ZLU_ = Zbar_ - logUbar_;
     set_ZLU(Ubar);
     return ZLU_.sum() / N_;
+  }
+
+  /// @return Scalar value of `zeta_`.
+  /// @warning Must be called after a call to `LP.nlp`.
+  template <class Type>
+  inline Type LP<Type>::get_zeta() {
+    return zeta_;
   }
 
   /// The LP objective function is given by

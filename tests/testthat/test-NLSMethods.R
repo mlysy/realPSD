@@ -32,6 +32,36 @@ test_that("NLS_tau is the same in R and TMB", {
   }
 })
 
+test_that("NLS_nlp_tau is the same in R and TMB", {
+  ntest <- 20
+  nphi <- sample(2:5, 1)
+  for(ii in 1:ntest) {
+    # pick model
+    model <- sim_model()
+    ufun_r <- get_ufun(model)
+    # simulate data
+    N <- sample(10:20,1)
+    fbar <- sim_f(N)
+    Ybar <- sim_Y(N)
+    fs <- sim_fs()
+    # create TMB model and functions
+    tmod <- TMB::MakeADFun(data = list(model = model,
+                                       method = "NLS_nlp",
+                                       fbar = matrix(fbar),
+                                       Ybar = matrix(Ybar),
+                                       fs = fs),
+                           parameters = list(phi = matrix(rep(0, 3))),
+                           silent = TRUE, DLL = "realPSD_TMBExports")
+    nls_tau_tmb <- function(phi) tmod$simulate(phi)$tau
+    # check they are equal
+    Phi <- replicate(nphi, sim_phi())
+    tau_r <- apply(Phi, 2, nls_tau_r, fbar = fbar, Ybar = Ybar,
+                    ufun = ufun_r, fs = fs)
+    tau_tmb <- apply(Phi, 2, nls_tau_tmb)
+    expect_equal(tau_r, tau_tmb)
+  }
+})
+
 test_that("NLS_nll is the same in R and TMB", {
   ntest <- 20
   nphi <- sample(2:5, 1)
