@@ -1,0 +1,104 @@
+---
+title: "FFT Conventions for PSD Calculations"
+author: "Martin Lysy, Feiyu Zhu"
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_vignette:
+    toc: yes
+vignette: >
+  %\VignetteIndexEntry{FFT Conventions}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: { autoNumber: "AMS" } }
+});
+</script>
+
+\newcommand{\bm}[1]{\boldsymbol{#1}}
+\newcommand{\tx}[1]{\textrm{#1}}
+\newcommand{\XX}{{\bm{X}}}
+\newcommand{\YY}{{\bm{Y}}}
+\newcommand{\ZZ}{{\bm{Z}}}
+\newcommand{\tth}{{\bm{\theta}}}
+\newcommand{\pph}{{\bm{\varphi}}}
+\newcommand{\aal}{{\bm{\alpha}}}
+\newcommand{\bbe}{{\bm{\beta}}}
+\newcommand{\s}{\sigma}
+\newcommand{\f}{f}
+\newcommand{\psd}{\operatorname{\mathcal S}}
+\newcommand{\cov}{\operatorname{cov}}
+\newcommand{\var}{\operatorname{var}}
+\newcommand{\acf}{\operatorname{\gamma}}
+\newcommand{\carfima}{\operatorname{CARFIMA}}
+\newcommand{\rv}[3]{#2_{#1},\ldots,#2_{#3}}
+\newcommand{\fs}{\f_s}
+\newcommand{\dt}{\Delta t}
+\newcommand{\kbt}{k_BT}
+\newcommand{\Aw}{A_{\tx{w}}}
+\newcommand{\Rw}{R_{\tx{w}}}
+\newcommand{\ud}{\mathrm{d}}
+\newcommand{\fft}{\texttt{fft}}
+\newcommand{\ind}{\stackrel{\mathrm{ind}}{\sim}}
+\newcommand{\N}{\mathcal N}
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+# link to packages
+pkg_link <- function(pkg, link) {
+  if(link == "github") {
+    link <- paste0("https://github.com/mlysy/", pkg)
+  } else if(link == "cran") {
+    link <- paste0("https://CRAN.R-project.org/package=", pkg)
+  }
+  paste0("[**", pkg, "**](", link, ")")
+}
+cran_link <- function(pkg) pkg_link(pkg, "cran")
+github_link <- function(pkg) pkg_link(pkg, "github")
+```
+
+## Continuous-Time and Discrete-Time PSDs
+
+Suppose that we have a continuous mean-zero stationary process $X(t)$ with autocorrelation function $\acf(t)$ and power spectral density function (PSD) $\psd(\f)$ defined as the unique symmetric nonnegative integrable function for which
+$$
+\acf(t) = \int_{-\infty}^\infty \eta(t \f) \psd(\f) \,\ud \f, \qquad \eta(x) = \exp(-2\pi i x).
+$$
+If $\acf(t)$ is integrable, then we have the inversion formula
+$$
+\psd(\f) = \int_{-\infty}^\infty \eta(-t\f) \acf(t) \,\ud t.
+$$
+Let $X_n = X(n \cdot \dt)$ denote discrete observations of $X(t)$ sampled at a frequency $\fs = 1/\dt$.  The discrete-time PSD $\psd_{\dt}(\f)$ is defined as the unique symmetric nonnegative integrable function for which
+$$
+\acf_n = \acf(n \cdot \dt) = \frac{1}{\fs} \int_{-\fs/2}^{\fs/2} \eta(n\dt \f) \psd_{\dt}(\f) \, \ud \f.
+$$
+If the discrete-time autocorrelation function is absolutely summable, then we have the inversion formula
+$$
+\psd_{\dt}(\f) = \sum_{n=-\infty}^\infty \eta(-n\dt \f) \acf_n.
+$$
+Moreover, under appropriate regularity conditions, we have the Poisson summation formula
+$$
+\psd_{\dt}(\f) = \fs \sum_{n=-\infty}^\infty \psd(\f - n \fs).
+$$
+
+## Finite Samples
+
+Now suppose we have a finite sample of observations $\XX = (\rv 0 X {N-1})$ and $N = 2K + 1$.  The Fourier transform of data is defined as the vector $\tilde \XX = (\tilde X_{-K}, \ldots, \tilde X_0, \ldots, \tilde X_K)$ such that 
+$$
+\tilde X_k = \sum_{n=0}^{N-1} \eta(kn/N) X_n.
+$$
+As with each observation $X_n$ we associate a time point $t_n = n\dt$, with each Fourier observation $\tilde X_k$ we associate a frequency $\f_k = k\fs/N$.  Moreover, if $\fft(\cdot)$ denotes the FFT function in $\mathsf{R}$ or $\mathsf{MATLAB}$, then
+$$
+\fft(\XX) = (\tilde X_0, \ldots, \tilde X_K, \tilde X_{-K}, \ldots \tilde X_{-1}).
+$$
+Finally, under appropriate conditions on $\psd(\f)$, as $N \to \infty$ we have
+$$
+\frac{1}{\sqrt{N}}(a_k, b_k) \ind \N(\bm{0}, \psd_{\dt}(\f_k) \cdot \bm{I}_2)
+$$
+$$
+Y_k = \frac{1}{N} |\tilde X_k|^2 \ind \psd_{\dt}(\f_k) \cdot \mathrm{Expo}(1).
+$$
