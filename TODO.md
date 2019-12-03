@@ -1,5 +1,17 @@
 ## TODO List
 
+- [ ] Settle on some naming conventions.
+
+	- `tseq`: Vector of time points.
+	- `dt`: Interobservation time.
+	- `Xt`: Vector of observations in the time domain.
+	- `fseq`: Vector of frequencies.
+	- `fs`: Sampling frequency.
+	- `Xf`: Vector of observations in the frequency domain.
+	- `Yf`: Vector of periodogram ordinates in the frequency domain, i.e., `Yf = abs(Xf)^2/N`.
+	- `psd_c`: PSD of continuous-time signal.
+	- `psd_fs`: PSD of discrete-time signal.
+
 - [x] Create the R functions `tsSim`, `periodogram`, and `fisherGstat` mentioned in the vignette.  To do this:
 
     - [x] Port the corresponding MATLAB code from [**realSHO**](https://github.com/mlysy/realSHO) into R (`periodogram` is called `get_periodogram` there).

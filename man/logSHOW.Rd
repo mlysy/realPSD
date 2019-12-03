@@ -13,7 +13,7 @@ logSHOW(fseq, f0, Q, tau, Rw)
 
 \item{Q}{Quality factor.}
 
-\item{tau}{kB * Temp / (k*pi*f0*Q), tau should supplied with unit_conversion if it is required}
+\item{tau}{kB * Temp / (k\emph{pi}f0*Q), tau should supplied with unit_conversion if it is required}
 
 \item{Rw}{Aw/tau}
 }

@@ -6,7 +6,6 @@
 #' @param cpsd Vector of continuous-time PSD values corresponding to `fseq`.
 #' @return Simulated time series (real numeric vector).
 #'
-#' @details
 #' @export
 sim_time <- function(fs, N, fseq, cpsd) {
   # check frequency basis

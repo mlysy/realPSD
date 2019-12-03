@@ -2,25 +2,20 @@
 % Please edit documentation in R/psd_denoise.R
 \name{psd_denoise}
 \alias{psd_denoise}
-\title{PSD denoise}
+\title{Remove periodic noise from the periodogram.}
 \usage{
-psd_denoise(fseq, psd_noise, Q, f0, tau, Rw, freq_range)
+psd_denoise(Yf, psd_fs, alpha = 0.01)
 }
 \arguments{
-\item{fseq}{Frequency vector}
+\item{Yf}{Vector of periodogram ordinates.}
 
-\item{psd_noise}{Noisy PSD}
+\item{psd_fs}{Discrete-time PSD at the values in \code{Yf}, i.e., theoretical expectation of \code{Yf} in the absence of noise.}
 
-\item{Q}{Quality factor}
-
-\item{f0}{Resonance frequency}
-
-\item{tau}{sig2}
-
-\item{Rw}{Aw/sig2}
-
-\item{freq_range}{frequency range, i.e. f0 +- f0/sqrt(2)}
+\item{alpha}{Type-I error tolerance level.}
+}
+\value{
+The vector \code{Yf} with outliers replaced by random Exponential draws with mean given by \code{psd_d}.
 }
 \description{
-PSD denoise
+Remove periodic noise from the periodogram.
 }

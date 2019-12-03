@@ -18,9 +18,9 @@ noise_sin(f_noise, A_noise, T, SF, detrend_flag)
 \item{f}{Frequency.}
 }
 \value{
-A list of 
-xTime: Time values, 
-yTime: Sine signal values, 
+A list of
+xTime: Time values,
+yTime: Sine signal values,
 xFreq: Frequencies,
 yFreq: First freq. up to Nyquist freq of: fft(yTime)/(sqrt(FR)*N)
 }

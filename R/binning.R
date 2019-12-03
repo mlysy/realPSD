@@ -4,11 +4,19 @@
 #'
 #' @param x Numeric vector.
 #' @param bin_size Size of each bin.
-#' @return A vector of length \code{floor(length(x)/bin_size) * bin_size} containing the bin averages.
+#' @param bin_type Type of binning (mean or median).
+#' @return A vector of length \code{floor(length(x)/bin_size) * bin_size} containing the bin means or medians.
 #' @export
-binning <- function(x, bin_size) {
+binning <- function(x, bin_size, bin_type = c("mean", "median")) {
+  bin_type <- match.arg(bin_type)
   nbins <- floor(length(x) / bin_size) # number of bins
-  colMeans(matrix(x[1:(nbins*bin_size)], nrow = bin_size))
+  xmat <- matrix(x[1:(nbins*bin_size)], nrow = bin_size)
+  if(bin_type == "mean") {
+    out <- colMeans(xmat)
+  } else if (bin_type == "median") {
+    out <- apply(xmat, 2, median)
+  }
+  out
   ## # number of positions left
   ## nleft <- nbins*bin_size - length(x)
   ## # fill the remaining positions with 0s
