@@ -1,0 +1,157 @@
+---
+title: Notes on Power Rejection Ratio
+author: Martin Lysy
+output:
+  rmarkdown::html_document:
+    theme: readable
+    toc: yes
+    toc_float: yes
+---
+
+\newcommand{\bm}[1]{\boldsymbol{#1}}
+\newcommand{\fs}{f_s}
+\newcommand{\Fr}{F_r}
+\newcommand{\xx}{\bm{x}}
+\newcommand{\fft}{\textrm{$\texttt{fft}$}}
+\newcommand{\epi}[1]{e^{2\pi i #1}}
+\newcommand{\cpi}[1]{\cos(2\pi #1)}
+\newcommand{\spi}[1]{\sin(2\pi #1)}
+\newcommand{\fo}{f_0}
+\newcommand{\w}{\omega}
+\newcommand{\wo}{\w_0}
+
+
+```{r setup, include = FALSE}
+source("sine_fft_functions.R")
+```
+
+## Setup
+
+To simplify things, suppose we have a sine wave
+$$
+g(t) = \sin(2\pi \fo t + \phi)
+$$
+which we observe for $N$ timepoints with sampling frequency $\fs$.  We take the FFT and compute the power.  That is, if `tseq = (0:N-1)/fs`, then we calculate
+```octave
+x = g(tseq)
+y = fft(x)
+gpow = abs(y).^2
+```
+Now we're going to group observations of `gpow` into bins of size $M$ (the median factor), and replace the value of `gpow` in each of those bins by the median of the bin.  Let's call this value `gpow_med`.  We want to calculate
+```octave
+prr = sum(gpow_med) / sum(gpow)
+```
+I know this isn't exactly the power rejection ratio, but this calculation should yield it in the case that the sine wave's peak (on the Fourier scale) is much higher than that of the underlying white noise.
+
+## Infinite-Length Sequence
+
+Simply plugging in $N = \infty$ is problematic for two reasons:
+
+1. The frequency basis is no longer countable, so binning by $M$ frequencies makes no sense.
+2.  The Fourier transform of the sine wave is a delta function, which is difficult to work with (see below).
+
+## Finite-Length Sequence
+
+Instead let's take $N$ to be arbitrarily large.  For given frequency $f$ in Hertz, consider the angular frequency $\w = 2\pi f/\fs$ and the corresponding sine wave frequency $\wo = 2\pi \fo/\fs$.  Now consider the summation formula
+$$
+\begin{aligned}
+\hat g(\w) & = \sum_{n=0}^{N-1} e^{-i \w n} g_n \\
+& = \frac{1}{2i} \left(e^{\phi i} \frac{e^{i (\wo - \w)N} - 1}{e^{i (\wo - \w)} - 1} - e^{-\phi i} \frac{e^{- i (\wo + \w)N} - 1}{e^{-i (\wo + \w)} - 1}\right),
+\end{aligned}
+$$
+where $g_n = g(n/\fs)$.  Note that $\hat g_n = \hat g(2\pi n/N)$, $n = 0,\ldots,N-1$, is the $n$th element of the FFT of $\xx = (g_0, \ldots, g_{N-1})$.
+
+Assume for simplicity that $\phi = 0$.  Then the formula simplifies to
+$$
+\begin{aligned}
+\hat g(\w) & = e^{- i \w N} \times \frac{\sin(\wo(N-1)) + e^{i \w N} \sin(\wo) - e^{i \w} \sin(N\wo)}{2 \cos(\w) - 2 \cos(\wo)}, \\
+\hat g_n & = \frac{\sin(\wo(N-1)) + \sin(\wo) - e^{2\pi i n/N} \sin(N\wo)}{2\cos(2\pi n/N) - 2 \cos(\wo)} \\
+& = \frac{A - B \cos(2\pi n/N)}{\cos(2\pi n/N) - \cos(\wo)} - i\frac{B\sin(2\pi n/N)}{\cos(2\pi n/N) - \cos(\wo)}, \\
+|\hat g_n|^2 & = \frac{A^2 -2AB \cos(2\pi n/N) + B^2}{\big(\cos(2\pi n/N) - \cos(\wo)\big)^2},
+\end{aligned}
+$$
+where
+$$
+A = \frac{\sin(\wo(N-1)) + \sin(\wo)}{2} \qquad B = \frac{\sin(N\wo)}{2}.
+$$
+Moreover, note that for $y_k = \fft(\xx)_k$, we have
+$$
+\sum_{k=0}^{N-1} |y_k|^2 = \frac{2N^2 - N - 2\pi N D_{N-1}(2\wo)}{4},
+$$
+where $D_n(x) = \sin((n+1/2)x)/(2\pi \sin(x/2))$ is the [Dirichlet kernel](https://en.wikipedia.org/wiki/Dirichlet_kernel).
+
+### Scratch
+
+The formula for the FFT of $\xx = (g_0, \ldots, g_{N-1})$, $g_n = g(n/\fs)$, is
+$$
+\begin{aligned}
+y_k = \fft(\xx)_k & = \frac{1}{2i} \left(e^{\phi i} \frac{e^{2\pi i (\omega - f_k)N/\fs} - 1}{e^{2\pi i (\omega - f_k)/\fs} - 1} - e^{-\phi i} \frac{e^{-2\pi i (\omega + f_k)N/fs} - 1}{e^{-2\pi i (\omega + f_k)/\fs} - 1}\right) \\
+& = e^{-2\pi i f_k N/\fs} \times \frac{\sin(2\pi \omega(N-1)/\fs) + e^{2\pi i f_kN/\fs} \sin(2\pi \omega/\fs) - e^{2\pi i f_k/\fs} \sin(2\pi N\omega/\fs)}{2 \cos(2\pi f_k/\fs) - 2 \cos(2\pi \omega/\fs)},
+\end{aligned}
+$$
+where $f_k = k\fs/N$ and $k = 0,\ldots,N-1$.  Also, note that
+$$
+\sum_{k=0}^{N-1} |y_k|^2 = \frac{2N^2 - N(1 + 2\pi D_{N-1}(4\pi \omega/\fs))}{4},
+$$
+where $D_n(x) = sin((n+1/2)x)/(2\pi \sin(x/2))$ is the [Dirichlet kernel](https://en.wikipedia.org/wiki/Dirichlet_kernel).  Thus we have
+$$
+\sum_{k=0}^{N-1} |y_k|^2 \in \frac{N^2 - N(1 \pm C)}{2}.
+$$
+
+
+
+The expression for $|y_k|^2$ is a disgusting mess of powers of sines and cosines which I was unable to make any sense of.  Here's an example of what it looks like:
+```{r sine_plot_calc, echo = FALSE, cache = TRUE}
+# calculations
+xi <- 1.001e4
+phi <- runif(1, 0, 2*pi)
+fs <- 5e5
+N <- 1e7
+mfac <- 41
+marg <- 1e-1
+imin <- floor(xi * (1-marg)/fs * N)
+imax <- ceiling(xi * (1+marg)/fs * N)
+nmax <- 1e5
+fseq <- unique(floor(seq(imin, imax, len = nmax)))/N * fs
+fsine <- sine_fft(fseq, fs = fs, N = N, xi = xi, phi = phi)
+fsine2 <- abs(fsine)^2
+fsine2[which(is.na(fsine2))] <- fsine2[which(is.na(fsine2))-1]
+fsine2 <- fsine2/max(fsine2)/nmax
+fmed2 <- medbin(fsine2, m = mfac)
+Mfac <- seq(1, 10001, by = 2)
+Fmed2 <- sapply(Mfac, function(mfac) {
+  sum(medbin(fsine2, m = mfac))
+})
+```
+<!-- ```{r sine_plot, echo = FALSE, fig.width = 10, fig.height = 10} -->
+<!-- # plot -->
+<!-- par(mfrow = c(2,1), mar = c(4,4,2,.5)+.1) -->
+<!-- plot(fseq, fsine2, type = "l", log = "y", -->
+<!--      xlab = "", ylab = "") -->
+<!-- title(ylab = "Power", xlab = "Frequency", line = 2.5) -->
+<!-- title(main = "Power", line = 1) -->
+<!-- lines(fseq, fmed2, col = "red") -->
+<!-- legend("topright", y = c("Raw PSD", "Median Decimation"), -->
+<!--        fill = c("black", "red")) -->
+<!-- plot(fseq, cumsum(fsine2), type = "l", log = "y", -->
+<!--      ylab = "", xlab = "") -->
+<!-- title(ylab = "Power", xlab = "Frequency", line = 2.5) -->
+<!-- title(main = "Cumulative Power", line = 1) -->
+<!-- leg <- paste0(c("xi", "f[s]", "N", "M"), " == ", c(xi, fs, N, mfac)) -->
+<!-- legend("bottomright", y = parse(text = leg)) -->
+<!-- lines(fseq, cumsum(fmed2), col = "red") -->
+<!-- ``` -->
+<!-- There's a huge number of local modes as you move away from the peak.  I think getting an approximation to the envelope would be very difficult. -->
+
+<!-- Here's a plot of the final cumulative power of the median as a function of $M$: -->
+<!-- ```{r med_plot, echo = FALSE} -->
+<!-- par(mfrow = c(1,1), mar = c(4,4,2,.5)+.1) -->
+<!-- plot(Mfac, Fmed2, type = "l", log = "xy", -->
+<!--      xlab = "", ylab = "") -->
+<!-- title(ylab = "Power", xlab = "Median Factor", line = 2.5) -->
+<!-- ``` -->
+<!-- The fitted line indeed has a slope remarkably close to 1.  This suggests the result holds for any fixed resonance frequency $\omega$. -->
+
+<!-- ### Heuristic Explanation -->
+
+<!-- If $N$ is large enough, then an arbitrarily large fraction of the power of the signal is going to be concentrated at the  -->

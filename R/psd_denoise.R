@@ -3,10 +3,13 @@
 #' @param Yf Vector of periodogram ordinates.
 #' @param psd_fs Discrete-time PSD at the values in `Yf`, i.e., theoretical expectation of `Yf` in the absence of noise.
 #' @param alpha Type-I error tolerance level.
+#' @param method Denoising method to use.  Either `fisherG` for Fisher's G-statistic test, or `BH` for the Benjamini-Hochberg method, in which case `alpha` specifies the false discovery rate.
 #'
 #' @return The vector `Yf` with outliers replaced by random Exponential draws with mean given by `psd_d`.
 #' @export
-psd_denoise <- function(Yf, psd_fs, alpha = .01) {
+psd_denoise <- function(Yf, psd_fs, alpha = .01,
+                        method = c("fisherG", "BH")) {
+  method <- match.arg(method)
   nY <- length(Yf) # number of periodogram ordinates
   Zf <- Yf/psd_fs # normalized periodogram ordinates
   # do while loop (implemented as for-loop + break)
@@ -24,6 +27,33 @@ psd_denoise <- function(Yf, psd_fs, alpha = .01) {
   # replace periodogram values
   if(length(iout) > 0) Yf[iout] <- psd_fs[iout] * Zf[iout]
   Yf
+}
+
+#--- helper functions ----------------------------------------------------------
+
+# fisherG denoising
+fisherG_denoise <- function(Zf, alpha) {
+  nZ <- length(Zf) # number of periodogram ordinates
+  # do while loop (implemented as for-loop + break)
+  iout <- NULL # indices of outliers
+  for(ii in 1:nZ) {
+    imax <- which.max(Zf)
+    Gstat <- Zf[imax]/sum(Zf) # observed value of G
+    pval <- fisherG(a = Gstat, q = nZ)
+    if(pval < alpha) {
+      # found outlier
+      iout <- c(iout, imax)
+      Zf[imax] <- rexp(1) # replace by a random exponential
+    } else break
+  }
+  if(is.null(iout)) return(NULL)
+  cbind(iout = iout, Zf = Zf[iout])
+}
+
+# benjamini-hochberg denoising
+BH_denoise <- function(Zf, alpha) {
+  nZ <- length(Zf) # number of periodogram ordinates
+  Uf <- exp(-Zf) # convert to uniforms, in opposite direction
 }
 
 #--- depreciated ---------------------------------------------------------------

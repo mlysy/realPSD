@@ -28,6 +28,7 @@ MathJax.Hub.Config({
 \newcommand{\bbe}{{\bm{\beta}}}
 \newcommand{\s}{\sigma}
 \newcommand{\f}{f}
+\newcommand{\ud}{\mathrm{d}}
 \newcommand{\psd}{\operatorname{\mathcal S}}
 \newcommand{\cov}{\operatorname{cov}}
 \newcommand{\var}{\operatorname{var}}
@@ -61,7 +62,7 @@ github_link <- function(pkg) pkg_link(pkg, "github")
 
 Let $X(t)$ denote a continuous time mean-zero stationary process with autocorrelation $\acf(t) = \cov(X_s, X_{s+t})$. with power spectral density (PSD) defined via the inverse Fourier transform relation
 $$
-\acf(t) = \int_{-\infty}^\infty e^{-2\pi i t\f} \psd(\f) \, \mathrm{d} \f,
+\acf(t) = \int_{-\infty}^\infty e^{-2\pi i t\f} \psd(\f) \, \ud \f,
 $$
 where $\f \in \mathbb R$ is the frequency in Hertz.  The **realPSD** package provides tools for estimation of parametric PSDs of the form
 $$
@@ -164,11 +165,65 @@ $$
 
 ### Model Residuals
 
-Both the NLS and LP (profile) optimizaiton problems can be rewritten as minimizing a sum-of-squares objective function
+Both the NLS and LP (profile) optimization problems can be rewritten as minimizing a sum-of-squares objective function
 $$
 S(\pph) = \sum_{m=1}^{N_B} r_m(\pph)^2,
 $$
 for which specialized optimization algorithms such as [Gauss-Newton](https://en.wikipedia.org/wiki/Gauss%E2%80%93Newton_algorithm) or [Levenberg-Marquardt](https://en.wikipedia.org/wiki/Levenberg%E2%80%93Marquardt_algorithm) can be used.
+
+## Examples
+
+### Simple Harmonic Oscillator with Noise Floor
+
+The SHOW model is given by
+\begin{equation}
+\label{eq:show}
+\begin{aligned}
+\psd(\f, \tth) & = \Aw + \frac{\kbt/(k \cdot \pi \f_0 Q)}{[(\f/\f_0)^2-1]^2 + [f/(\f_0Q)]^2} \\
+& = \sigma^2 \times \left\{\Rw + \frac{1}{[(\f/\f_0)^2-1]^2 + [f/\gamma]^2}\right\},
+\end{aligned}
+\end{equation}
+where $\sigma^2 = \kbt/(k\cdot \pi \f_0Q)$, $\Rw = \Aw/\sigma^2$, $\gamma = \f_0Q$, and $\pph = (\f_0, \gamma, \Rw)$.
+
+### Fractional Ornstein-Uhlenbeck Model
+
+The fOU model is expressed as
+$$
+\ud X(t) = -\gamma X(t)\, \ud t + \tau \, \ud B_t^H,
+$$
+where $\gamma, \tau > 0$ and $B_t^H$ is fractional Brownian motion with Hurst parameter $0 < H < 1$.  The PSD for this model is
+\begin{equation}
+\label{eq:fcar}
+\psd(\f, \tth) = \sigma^2 \times \frac{|\f|^{1-2H}}{\f^2 + \gamma^2},
+\end{equation}
+where $\pph = (H, \gamma)$ and $\sigma^2 = \tau^2 \cdot \Gamma(2H+1)\sin(\pi H)/(2\pi)$.
+
+### CARFIMA Models
+
+More generally, a $\carfima(p,q)$ process is defined by the differential equation
+$$
+X_t^{(p)} = + \sum_{k=1}^{p-1} \alpha_k X_t^{(k-1)} + \tau \left[B_t^{H(1)} + \sum_{m=1}^{q} \beta_m B_t^{H(m+1)}\right],
+$$
+where $X(t)$ is stationary if and only if
+$$
+\alpha(x) = x^p - \sum_{k=1}^{p-1} \alpha_k x^{k-1} = \prod_{k=1}^p(x - r_k)
+$$
+is such that $\mathscr R(r_k) < 0$ for $k = 1,\ldots,p$. The PSD of the model is given by
+\begin{equation}
+\label{eq:carfima}
+\psd(\f, \tth) = \sigma^2 \times \frac{|\f|^{1-2H} \cdot |1 + \sum_{m=1}^q \beta_m (i\f)^m|^2}{|(i\f)^p - \sum_{k=1}^p \alpha_k (i\f)^{k-1}|^2}, 
+\end{equation}
+where $\pph = (H, \aal, \bbe)$, and $\sigma^2 = \tau^2 \cdot \Gamma(2H+1)\sin(\pi H)/(2\pi)$.  
+<!-- , $0 < H < 1$, and $\aal = (\rv 1 \alpha q )$ and $\bbe = (\rv 1 \beta p )$ are such that the complex polynomials in the numerator and denominator of \\eqref{eq:carfima} have no roots in the unit circle.  The model parameters are $\pph = (\aal, \bbe, H)$. -->
+Since **TMB** does not support complex arithmetic, the polynomials are calculated as follows.
+
+Consider a polynomial $p(x) = \sum_{k=0}^p \alpha_k x^k$ with $\alpha_k \in \mathbb R$.
+\begin{align*}
+p(i\f) 
+	& = \sum_{k=0}^p \alpha_k (i\f)^k \\
+	& = \sum_{k=0}^{q} \alpha_{2k} (i\f)^{2k} + \sum_{k=0}^r \alpha_{2k+1} (i\f)^{2k+1} \\
+	& = \sum_{k=0}^q (-1)^k \alpha_{2k} f^{2k} + i\f \sum_{k=0}^r (-1)^k \alpha_{2k+1} f^{2k}
+\end{align*}
 
 
 <!-- where $g_m(\tth) = (\bar Y_m - \bar{\psd}_m(\tth))^2$. -->
@@ -222,65 +277,3 @@ for which specialized optimization algorithms such as [Gauss-Newton](https://en.
 <!-- - `tsSim`: Simulate time series with given PSD. -->
 <!-- - `periodogram`: Calculate the periodogram of a time series. -->
 <!-- - `fisherGstat`: For denoising. -->
-
-
-## Examples
-
-### Simple Harmonic Oscillator with Noise Floor
-
-The SHOW model is given by
-\begin{equation}
-\label{eq:show}
-\begin{aligned}
-\psd(\f, \tth) & = \Aw + \frac{\kbt/(k \cdot \pi \f_0 Q)}{[(\f/\f_0)^2-1]^2 + [f/(\f_0Q)]^2} \\
-& = \sigma^2 \times \left\{\Rw + \frac{1}{[(\f/\f_0)^2-1]^2 + [f/\gamma]^2}\right\},
-\end{aligned}
-\end{equation}
-where $\sigma^2 = \kbt/(k\cdot \pi \f_0Q)$, $\Rw = \Aw/\sigma^2$, $\gamma = \f_0Q$, and $\pph = (\f_0, \gamma, \Rw)$.
-
-### CARFIMA Models
-
-The PSD of a $\carfima(p,q)$ model is given by
-\begin{equation}
-\label{eq:carfima}
-\psd(\f, \tth) = \sigma^2 \times \frac{|\f|^{1-2H} \cdot |1 + \sum_{k=1}^q \alpha_k (i\f)^k|^2}{|(i\f)^p - \sum_{m=1}^p \beta_m (i\f)^{m-1}|^2}, 
-\end{equation}
-where $\sigma^2 = \tau^2 \cdot \Gamma(2H+1)\sin(\pi H)/(2\pi)$, $0 < H < 1$, and $\aal = (\rv 1 \alpha q )$ and $\bbe = (\rv 1 \beta p )$ are such that the complex polynomials in the numerator and denominator of \\eqref{eq:carfima} have no roots in the unit circle.  The model parameters are $\pph = (\aal, \bbe, H)$.
-
-As **TMB** does not support complex arithmetic, 
-
-```{r}
-# square norm of complex polynomial sum( alpha * (1i * x)^(0:d) )
-# vectorize in argument x
-sqr_poly <- function(alpha, x) {
-  pol <- sapply(x, function(xx) sum( alpha * (1i * xx)^(1:length(alpha)-1) ))
-  pol
-  ## abs(pol)^2
-}
-
-# now the for-loop way
-sqr_poly2 <- function(alpha, x) {
-  deg <- length(alpha)-1 # degree
-  polr <- poli <- 0 # real and imaginary parts
-  sigr <- sigi <- 1 # real and imaginary signs
-  x2 <- x * x # square of argument
-  for(j in 0:deg) {
-    if(j %% 2 == 0) {
-      polr <- polr + sigr * alpha[j+1] * x^j
-      sigr <- sigr * -1
-    } else {
-      poli <- poli + sigi * alpha[j+1] * x^j
-      sigi <- sigi * -1
-    }
-  }
-  polr + 1i * poli
-}
-
-deg <- 5
-n <- 10
-alpha <- rnorm(deg+1)
-x <- rnorm(n)
-
-sqr_poly(alpha, x) - sqr_poly2(alpha, x)
-
-```
