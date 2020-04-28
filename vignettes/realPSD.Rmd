@@ -86,7 +86,7 @@ $$
 
 ### Maximum Likelihood
 
-The maximum likelihood estimator is obtained my maximizing the so-called Whittle loglikelihood function,
+The maximum likelihood estimator is obtained by maximizing the so-called Whittle loglikelihood function,
 \begin{equation}
 \label{eq:mle}
 \ell_W(\tth \mid \YY) = - \sum_{k=1}^K\left(\frac{Y_k}{\psd_k(\tth)} + \log \psd_k(\tth)\right),
