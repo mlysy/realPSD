@@ -4,7 +4,7 @@
 \alias{psd_denoise}
 \title{Remove periodic noise from the periodogram.}
 \usage{
-psd_denoise(Yf, psd_fs, alpha = 0.01)
+psd_denoise(Yf, psd_fs, alpha = 0.01, method = c("fisherG", "BH"))
 }
 \arguments{
 \item{Yf}{Vector of periodogram ordinates.}
@@ -12,6 +12,8 @@ psd_denoise(Yf, psd_fs, alpha = 0.01)
 \item{psd_fs}{Discrete-time PSD at the values in \code{Yf}, i.e., theoretical expectation of \code{Yf} in the absence of noise.}
 
 \item{alpha}{Type-I error tolerance level.}
+
+\item{method}{Denoising method to use.  Either \code{fisherG} for Fisher's G-statistic test, or \code{BH} for the Benjamini-Hochberg method, in which case \code{alpha} specifies the false discovery rate.}
 }
 \value{
 The vector \code{Yf} with outliers replaced by random Exponential draws with mean given by \code{psd_d}.

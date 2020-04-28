@@ -20,7 +20,7 @@ Tail probability of Fisher's G statistic: \code{Pr(G > a)}.
 Calculate the tail probability of Fisher's G statistic.
 }
 \details{
-Let \code{U = U_0 < ... < U_q}, where \code{U_1, ... ,U_{q-1}} are the \emph{order statistics} of \code{n-1} iid Uniforms, \code{U_0 = 0}, and \code{U_q = 1}.  Then Fisher's G statistic is defined as \code{G = max(diff(U))}.
+Let \verb{U = U_0 < ... < U_q}, where \verb{U_1, ... ,U_\{q-1\}} are the \emph{order statistics} of \code{n-1} iid Uniforms, \code{U_0 = 0}, and \code{U_q = 1}.  Then Fisher's G statistic is defined as \code{G = max(diff(U))}.
 
 It turns out that if \code{Yf} are \code{n} periodogram ordinates corresponding to white noise, then \code{G = max(Yf)/sum(Yf)}, such that Fisher's G statistic can be used to test for hidden periodic components in \code{Yf}.
 }
