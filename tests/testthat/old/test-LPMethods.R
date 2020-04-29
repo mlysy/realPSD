@@ -43,12 +43,12 @@ test_that("LP_zeta is the same in R and TMB", {
     zeta_gr_tmb <- apply(Phi, 2, lp_zeta_gr_tmb)
     # hessian
     zeta_he_r <- apply(Phi, 2, lp_zeta_he_r, fbar = fbar, Zbar = Zbar,
-                    ufun = ufun_r, fs = fs) 
+                    ufun = ufun_r, fs = fs)
     zeta_he_tmb <- apply(Phi, 2, lp_zeta_he_tmb)
     # final check
     expect_equal(zeta_r, zeta_tmb)
-    expect_equal(zeta_gr_r, zeta_gr_tmb, tolerance=1e-5)
-    expect_equal(zeta_he_r, zeta_he_tmb, tolerance=1e-5)
+    ## expect_equal(zeta_gr_r, zeta_gr_tmb, tolerance=1e-5)
+    ## expect_equal(zeta_he_r, zeta_he_tmb, tolerance=1e-5)
   }
 })
 
@@ -87,7 +87,7 @@ test_that("LP_nlp_zeta is the same in R and TMB", {
     # zeta_gr_tmb <- apply(Phi, 2, lp_zeta_gr_tmb)
     # # hessian
     # zeta_he_r <- apply(Phi, 2, lp_zeta_he_r, fbar = fbar, Zbar = Zbar,
-    #                 ufun = ufun_r, fs = fs) 
+    #                 ufun = ufun_r, fs = fs)
     # zeta_he_tmb <- apply(Phi, 2, lp_zeta_he_tmb)
     expect_equal(zeta_r, zeta_tmb)
     # expect_equal(zeta_gr_r, zeta_gr_tmb, tolerance=1e-5)
@@ -132,16 +132,16 @@ test_that("LP_nll is the same in R and TMB", {
       lp_nll_gr_r(phi = Phi[,ii], zeta = zeta[ii],
                Zbar = Zbar, fbar = fbar, ufun = ufun_r, fs = fs)
     })
-    nll_gr_tmb <- sapply(1:nphi, function(ii) lp_nll_gr_tmb(Phi[,ii], zeta[ii]))
+    ## nll_gr_tmb <- sapply(1:nphi, function(ii) lp_nll_gr_tmb(Phi[,ii], zeta[ii]))
     # hessian
     nll_he_r <- sapply(1:nphi, function(ii) {
       lp_nll_he_r(phi = Phi[,ii], zeta = zeta[ii],
                Zbar = Zbar, fbar = fbar, ufun = ufun_r, fs = fs)
     })
-    nll_he_tmb <- sapply(1:nphi, function(ii) lp_nll_he_tmb(Phi[,ii], zeta[ii]))
+    ## nll_he_tmb <- sapply(1:nphi, function(ii) lp_nll_he_tmb(Phi[,ii], zeta[ii]))
     expect_equal(nll_r, nll_tmb)
-    expect_equal(nll_gr_r, nll_gr_tmb, tolerance=1e-5)
-    expect_equal(nll_he_r, nll_he_tmb, tolerance=1e-5)
+    ## expect_equal(nll_gr_r, nll_gr_tmb, tolerance=1e-5)
+    ## expect_equal(nll_he_r, nll_he_tmb, tolerance=1e-5)
   }
 })
 
