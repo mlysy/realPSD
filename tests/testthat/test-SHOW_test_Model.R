@@ -12,7 +12,7 @@ test_that("The UFun returned is the same in R and TMB", {
     #   u <- phi[3] + 1/(((f/phi[1])^2 - 1)^2 + (f/(phi[1]*phi[2]))^2)
     #   u <- mult_factor * u
     # }
-    ufun_r <- get_ufun("SHOW_nat") # since the test model is based on SHOW_nat
+    ufun_r <- get_ufun("SHOW_log") # since the test model is based on SHOW_log
     # simulate data
     N <- sample(10:20,1)
     f <- sim_f(N)
@@ -21,12 +21,12 @@ test_that("The UFun returned is the same in R and TMB", {
     tmod <- TMB::MakeADFun(data = list(model = model,
                                        method = "UFun",
                                        f = matrix(f),
-                                       mult_factor = mult_factor),
+                                       mult_factor = matrix(mult_factor)),
                            parameters = list(phi = matrix(rep(0, 3))),
                            silent = TRUE, DLL = "realPSD_TMBExports")
     ufun_tmb <- function(phi) c(tmod$simulate(phi)$U)
     # check they are equal
-    Phi <- replicate(nphi, sim_phi(model = "SHOW_nat"))
+    Phi <- replicate(nphi, sim_phi(model = "SHOW_log"))
     U_r <- apply(Phi, 2, ufun_r, f = f)
     U_tmb <- apply(Phi, 2, ufun_tmb)
     expect_equal(U_r, U_tmb)
