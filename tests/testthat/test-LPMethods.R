@@ -28,13 +28,27 @@ test_that("LP_zeta is the same in R and TMB", {
                                        fs = fs),
                            parameters = list(phi = matrix(rep(0, 3))),
                            silent = TRUE, DLL = "realPSD_TMBExports")
-    lp_zeta_tmb <- function(phi) tmod$fn(phi)
+    lp_zeta_tmb <- function(phi) tmod$fn(phi) # objective function value returned by TMB
+    lp_zeta_gr_tmb <- function(phi) tmod$gr(phi)[1,] # gradient returned by TMB
+    lp_zeta_he_tmb <- function(phi) tmod$he(phi) # Hessian returned by TMB
     # check they are equal
     Phi <- replicate(nphi, sim_phi())
+    # fn
     zeta_r <- apply(Phi, 2, lp_zeta_r, fbar = fbar, Zbar = Zbar,
                     ufun = ufun_r, fs = fs)
     zeta_tmb <- apply(Phi, 2, lp_zeta_tmb)
+    # gr
+    zeta_gr_r <- apply(Phi, 2, lp_zeta_gr_r, fbar = fbar, Zbar = Zbar,
+                    ufun = ufun_r, fs = fs)
+    zeta_gr_tmb <- apply(Phi, 2, lp_zeta_gr_tmb)
+    # hessian
+    zeta_he_r <- apply(Phi, 2, lp_zeta_he_r, fbar = fbar, Zbar = Zbar,
+                    ufun = ufun_r, fs = fs) 
+    zeta_he_tmb <- apply(Phi, 2, lp_zeta_he_tmb)
+    # final check
     expect_equal(zeta_r, zeta_tmb)
+    expect_equal(zeta_gr_r, zeta_gr_tmb, tolerance=1e-5)
+    expect_equal(zeta_he_r, zeta_he_tmb, tolerance=1e-5)
   }
 })
 
@@ -59,12 +73,25 @@ test_that("LP_nlp_zeta is the same in R and TMB", {
                            parameters = list(phi = matrix(rep(0, 3))),
                            silent = TRUE, DLL = "realPSD_TMBExports")
     lp_zeta_tmb <- function(phi) tmod$simulate(phi)$zeta
+    # lp_zeta_gr_tmb <- function(phi) tmod$gr(phi)[1,] # gradient returned by TMB
+    # lp_zeta_he_tmb <- function(phi) tmod$he(phi) # Hessian returned by TMB
     # check they are equal
     Phi <- replicate(nphi, sim_phi())
+    # fn
     zeta_r <- apply(Phi, 2, lp_zeta_r, fbar = fbar, Zbar = Zbar,
                     ufun = ufun_r, fs = fs)
     zeta_tmb <- apply(Phi, 2, lp_zeta_tmb)
+    # # gr
+    # zeta_gr_r <- apply(Phi, 2, lp_zeta_gr_r, fbar = fbar, Zbar = Zbar,
+    #                 ufun = ufun_r, fs = fs)
+    # zeta_gr_tmb <- apply(Phi, 2, lp_zeta_gr_tmb)
+    # # hessian
+    # zeta_he_r <- apply(Phi, 2, lp_zeta_he_r, fbar = fbar, Zbar = Zbar,
+    #                 ufun = ufun_r, fs = fs) 
+    # zeta_he_tmb <- apply(Phi, 2, lp_zeta_he_tmb)
     expect_equal(zeta_r, zeta_tmb)
+    # expect_equal(zeta_gr_r, zeta_gr_tmb, tolerance=1e-5)
+    # expect_equal(zeta_he_r, zeta_he_tmb, tolerance=1e-5)
   }
 })
 
@@ -90,6 +117,8 @@ test_that("LP_nll is the same in R and TMB", {
                                              zeta = 0),
                            silent = TRUE, DLL = "realPSD_TMBExports")
     lp_nll_tmb <- function(phi, zeta) tmod$fn(c(phi, zeta))
+    lp_nll_gr_tmb <- function(phi) tmod$gr(c(phi, zeta))[1,] # gradient returned by TMB
+    lp_nll_he_tmb <- function(phi) tmod$he(c(phi, zeta)) # Hessian returned by TMB
     # check they are equal
     Phi <- replicate(nphi, sim_phi())
     zeta <- replicate(nphi, sim_zeta())
@@ -98,7 +127,21 @@ test_that("LP_nll is the same in R and TMB", {
                Zbar = Zbar, fbar = fbar, ufun = ufun_r, fs = fs)
     })
     nll_tmb <- sapply(1:nphi, function(ii) lp_nll_tmb(Phi[,ii], zeta[ii]))
+    # gr
+    nll_gr_r <- sapply(1:nphi, function(ii) {
+      lp_nll_gr_r(phi = Phi[,ii], zeta = zeta[ii],
+               Zbar = Zbar, fbar = fbar, ufun = ufun_r, fs = fs)
+    })
+    nll_gr_tmb <- sapply(1:nphi, function(ii) lp_nll_gr_tmb(Phi[,ii], zeta[ii]))
+    # hessian
+    nll_he_r <- sapply(1:nphi, function(ii) {
+      lp_nll_he_r(phi = Phi[,ii], zeta = zeta[ii],
+               Zbar = Zbar, fbar = fbar, ufun = ufun_r, fs = fs)
+    })
+    nll_he_tmb <- sapply(1:nphi, function(ii) lp_nll_he_tmb(Phi[,ii], zeta[ii]))
     expect_equal(nll_r, nll_tmb)
+    expect_equal(nll_gr_r, nll_gr_tmb, tolerance=1e-5)
+    expect_equal(nll_he_r, nll_he_tmb, tolerance=1e-5)
   }
 })
 
