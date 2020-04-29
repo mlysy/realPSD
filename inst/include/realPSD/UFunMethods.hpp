@@ -12,7 +12,7 @@ namespace realPSD {
 		 const matrix<Type>& f, matrix<Type>& phi) {
     // evaluate normalized PSD
     int N = f.size();
-    UFun<Type> Ufun(N);
+    UFun<Type> Ufun(N, obj);
     Ufun.set_f(f);
     SIMULATE {
       // calculate U

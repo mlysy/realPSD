@@ -38,6 +38,8 @@ namespace realPSD {
     public:
       /// Constructor.
       UFun(int N);
+      /// TMB-specific constructor.
+      UFun(int N, objective_function<Type>* obj);
       /// Set frequency vector.
       void set_f(cRefMatrix_t& f);
       /// Evaluate the normalized PSD.
@@ -49,6 +51,17 @@ namespace realPSD {
       N_ = N;
       f2_ = zero_matrix<Type>(N_,1);
     }
+
+    #undef TMB_OBJECTIVE_PTR
+    #define TMB_OBJECTIVE_PTR obj
+
+    template<class Type>
+    inline UFun<Type>::UFun(int N, objective_function<Type>* obj) {
+      (UFun(N));
+    }
+
+    #undef TMB_OBJECTIVE_PTR
+    #define TMB_OBJECTIVE_PTR this
 
     template<class Type>
     inline void UFun<Type>::set_f(cRefMatrix_t& f) {

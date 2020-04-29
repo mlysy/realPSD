@@ -25,12 +25,12 @@ namespace realPSD {
       PARAMETER_MATRIX(phi);
       // calculate U
       int N = f.size();
-      UFun Ufun(N);
+      UFun Ufun(N, obj);
       Ufun.set_f(f);
       SIMULATE {
-	matrix<Type> U(N,1);
-	Ufun.eval(U, phi);
-	REPORT(U);
+      	matrix<Type> U(N,1);
+      	Ufun.eval(U, phi);
+      	REPORT(U);
       }
       return Type(0);
     } else if(method.find("LP_") == 0) {
@@ -43,7 +43,7 @@ namespace realPSD {
       // calculate Ubar
       int N = fbar.size();
       matrix<Type> Ubar(N,1);
-      UFun Ufun(N);
+      UFun Ufun(N, obj);
       Ufun.set_f(fbar);
       Ufun.eval(Ubar, phi);
       Ubar = Ubar * fs;
@@ -51,25 +51,25 @@ namespace realPSD {
       LP<Type> lp(N);
       lp.set_Zbar(Zbar);
       if(method == "LP_zeta") {
-	return lp.zeta(Ubar);
+      	return lp.zeta(Ubar);
       } else if(method == "LP_nlp") {
-	Type nlp = lp.nlp(Ubar);
-	SIMULATE {
-	  Type zeta = lp.get_zeta();
-	  REPORT(zeta);
-	}
-	return nlp;
+      	Type nlp = lp.nlp(Ubar);
+      	SIMULATE {
+      	  Type zeta = lp.get_zeta();
+      	  REPORT(zeta);
+      	}
+      	return nlp;
       } else if(method == "LP_res") {
-	matrix<Type> res(N,1); // output variable
-	lp.res(res, Ubar); // calculate residuals
-	ADREPORT(res); // set them to be differentiable
-	return Type(0.0);
+      	matrix<Type> res(N,1); // output variable
+      	lp.res(res, Ubar); // calculate residuals
+      	ADREPORT(res); // set them to be differentiable
+      	return Type(0.0);
       } else if(method == "LP_nll") {
-	PARAMETER(zeta);
-	return lp.nll(Ubar, zeta);
+      	PARAMETER(zeta);
+      	return lp.nll(Ubar, zeta);
       } else {
-	// std::string msg = "Unknown method " + method + ".";
-	error("Unknown LP method.");
+      	// std::string msg = "Unknown method " + method + ".";
+      	error("Unknown LP method.");
       }
     } else if(method.find("MLE_") == 0) {
       // data
@@ -81,7 +81,7 @@ namespace realPSD {
       // calculate U
       int N = f.size();
       matrix<Type> U(N,1);
-      UFun Ufun(N);
+      UFun Ufun(N, obj);
       Ufun.set_f(f);
       Ufun.eval(U, phi);
       U = U * fs;
@@ -89,19 +89,19 @@ namespace realPSD {
       MLE<Type> mle(N);
       mle.set_Y(Y);
       if(method == "MLE_tau") {
-	return mle.tau(U);
+      	return mle.tau(U);
       } else if(method == "MLE_nlp") {
-	Type nlp = mle.nlp(U);
-	SIMULATE {
-	  Type tau = mle.get_tau();
-	  REPORT(tau);
-	}
-	return nlp;
+      	Type nlp = mle.nlp(U);
+      	SIMULATE {
+      	  Type tau = mle.get_tau();
+      	  REPORT(tau);
+      	}
+      	return nlp;
       } else if(method == "MLE_nll") {
-	PARAMETER(tau);
-	return mle.nll(U, tau);
+      	PARAMETER(tau);
+      	return mle.nll(U, tau);
       } else {
-	error("Unknown MLE method.");
+      	error("Unknown MLE method.");
       }
     } else if(method.find("NLS_") == 0) {
       // data
@@ -113,7 +113,7 @@ namespace realPSD {
       // calculate Ubar
       int N = fbar.size();
       matrix<Type> Ubar(N,1);
-      UFun Ufun(N);
+      UFun Ufun(N, obj);
       Ufun.set_f(fbar);
       Ufun.eval(Ubar, phi);
       Ubar = Ubar * fs;
@@ -121,25 +121,25 @@ namespace realPSD {
       NLS<Type> nls(N);
       nls.set_Ybar(Ybar);
       if(method == "NLS_tau") {
-	return nls.tau(Ubar);
+      	return nls.tau(Ubar);
       } else if(method == "NLS_nlp") {
-	Type nlp = nls.nlp(Ubar);
-	SIMULATE {
-	  Type tau = nls.get_tau();
-	  REPORT(tau);
-	}
-	return nlp;
+      	Type nlp = nls.nlp(Ubar);
+      	SIMULATE {
+      	  Type tau = nls.get_tau();
+      	  REPORT(tau);
+      	}
+      	return nlp;
       } else if(method == "NLS_res") {
-	// calculate residuals
-	matrix<Type> res(N,1);
-	nls.res(res, Ubar);
-	ADREPORT(res); // make residuals differentiable
-	return Type(0.0);
+      	// calculate residuals
+      	matrix<Type> res(N,1);
+      	nls.res(res, Ubar);
+      	ADREPORT(res); // make residuals differentiable
+      	return Type(0.0);
       } else if(method == "NLS_nll") {
-	PARAMETER(tau);
-	return nls.nll(Ubar, tau);
+      	PARAMETER(tau);
+      	return nls.nll(Ubar, tau);
       } else {
-	error("Unknown NLS method.");
+      	error("Unknown NLS method.");
       }
     } else {
       error("Unknown method.");
