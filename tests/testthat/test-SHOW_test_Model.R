@@ -8,19 +8,19 @@ test_that("The UFun returned is the same in R and TMB", {
   for(ii in 1:ntest) {
     # pick model
     model <- "SHOW_test"
-    # ufun_r <- function(f, phi, mult_factor) {
-    #   u <- phi[3] + 1/(((f/phi[1])^2 - 1)^2 + (f/(phi[1]*phi[2]))^2)
-    #   u <- mult_factor * u
-    # }
     ufun_r <- get_ufun("SHOW_log") # since the test model is based on SHOW_log
     # simulate data
     N <- sample(10:20,1)
-    f <- sim_f(N)
+    fbar <- sim_f(N)
+    Zbar <- sim_Zbar(N)
+    fs <- sim_fs()
     mult_factor <- 1 # if mult_factor == 1, then the result should be the same as test-UFunMethods.R
     # create TMB model and functions
     tmod <- TMB::MakeADFun(data = list(model = model,
                                        method = "LP_nlp",
-                                       f = matrix(f),
+                                       fbar = matrix(fbar),
+                                       Zbar = matrix(Zbar),
+                                       fs = fs,
                                        mult_factor = matrix(mult_factor)),
                            parameters = list(phi = matrix(rep(0, 3))),
                            silent = TRUE, DLL = "realPSD_TMBExports")
