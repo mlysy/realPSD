@@ -13,8 +13,13 @@ sim_phi <- function(model = c("SHOW_nat", "SHOW_log", "SHOW_comp")) {
 sim_zeta <- function() rexp(1)
 sim_tau <- function() rexp(1)
 sim_fs <- function() sample(10:1000, size = 1)
+<<<<<<< HEAD
 # sim_model <- function() sample(c("SHOW_nat", "SHOW_log", "SHOW_comp"), size = 1)
 sim_model <- function() {"SHOW_comp"} # force the unit test to test SHOW_comp only
+=======
+sim_model <- function() sample(c("SHOW_nat", "SHOW_log", "SHOW_comp"), size = 1)
+## sim_model <- function() {"SHOW_comp"} # force the unit test to test SHOW_comp only
+>>>>>>> ca74bce3fa39be73e569f1c7bd492a06bf944166
 
 # lp functions
 lp_zeta_r <- function(fbar, Zbar, phi, ufun, fs) {
@@ -36,23 +41,39 @@ lp_nlp_r <- function(phi, Zbar, fbar, ufun, fs) {
 }
 # lp function, gradient and hessian
 lp_zeta_gr_r <- function(phi, fbar, Zbar, ufun, fs) {
+<<<<<<< HEAD
   numDeriv::grad(func = lp_zeta_r, x = phi, 
+=======
+  numDeriv::grad(func = lp_zeta_r, x = phi,
+>>>>>>> ca74bce3fa39be73e569f1c7bd492a06bf944166
                   fbar = fbar, Zbar = Zbar,
                   ufun = ufun, fs = fs)
 }
 lp_zeta_he_r <- function(phi, fbar, Zbar, ufun, fs) {
+<<<<<<< HEAD
   numDeriv::hessian(func = lp_zeta_r, x = phi, 
+=======
+  numDeriv::hessian(func = lp_zeta_r, x = phi,
+>>>>>>> ca74bce3fa39be73e569f1c7bd492a06bf944166
                     fbar = fbar, Zbar = Zbar,
                     ufun = ufun, fs = fs)
 }
 
 lp_nll_gr_r <- function(phi, zeta, fbar, Zbar, ufun, fs) {
+<<<<<<< HEAD
   numDeriv::grad(func = lp_nll_r, x = phi, 
+=======
+  numDeriv::grad(func = lp_nll_r, x = phi,
+>>>>>>> ca74bce3fa39be73e569f1c7bd492a06bf944166
                   zeta = zeta, fbar = fbar, Zbar = Zbar,
                   ufun = ufun, fs = fs)
 }
 lp_nll_he_r <- function(phi, zeta, fbar, Zbar, ufun, fs) {
+<<<<<<< HEAD
   numDeriv::hessian(func = lp_nll_r, x = phi, 
+=======
+  numDeriv::hessian(func = lp_nll_r, x = phi,
+>>>>>>> ca74bce3fa39be73e569f1c7bd492a06bf944166
                     zeta = zeta, fbar = fbar, Zbar = Zbar,
                     ufun = ufun, fs = fs)
 }

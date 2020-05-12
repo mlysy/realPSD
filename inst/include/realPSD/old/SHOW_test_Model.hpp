@@ -1,4 +1,6 @@
 /// @file SHOW_test_Model.hpp
+///
+/// Test a new way of passing R obj to C++
 
 #ifndef realPSD_SHOW_test_Model_hpp
 #define realPSD_SHOW_test_Model_hpp 1
@@ -17,7 +19,7 @@ namespace realPSD {
     /// U(f \mid f_0, Q, R_w) = R_w + \frac{1}{[(f/f_0)^2-1]^2 + [f/(f_0 Q)]^2}.
     /// \f]
     ///
-    /// The parameters are supplied as the vector \f$\boldsymbol{\phi} = (\log f_0, \log Q, \log R_w)\f$.
+    /// The parameters are supplied as the vector \f$\boldsymbol{\phi} = (f_0, Q, R_w)\f$.
     template <class Type>
     class UFun {
     private:
@@ -31,10 +33,10 @@ namespace realPSD {
       // internal variables
       int N_; ///> problem dimensions
       matrix<Type> f2_; ///> Vector of squared frequencies.
-      matrix<Type> mult_factor_; ///> Multiplicative factor.
+      matrix<Type> mult_factor_; /// a uesless obj for testing purposes only
     public:
       /// Constructor.
-      UFun(int N, cRefMatrix_t& mult_factor);
+      UFun(int N, int mult_factor);
       /// TMB-specific constructor.
       UFun(int N, objective_function<Type>* obj);
       /// Set frequency vector.
@@ -44,13 +46,12 @@ namespace realPSD {
     };
 
     template<class Type>
-    inline UFun<Type>::UFun(int N, cRefMatrix_t& mult_factor) {
+    inline UFun<Type>::UFun(int N, int mult_factor) {
       N_ = N;
       f2_ = zero_matrix<Type>(N_,1);
-      // matrix<Type> mult_factor(1,1);
-      // mult_factor(0,0) = Type(1.0);
       mult_factor_ = zero_matrix<Type>(1,1);
-      mult_factor_ = mult_factor;
+      mult_factor_(0,0) = Type(1.0);
+      // mult_factor_ = mult_factor;
     }
 
     #undef TMB_OBJECTIVE_PTR
@@ -58,8 +59,10 @@ namespace realPSD {
 
     template<class Type>
     inline UFun<Type>::UFun(int N, objective_function<Type>* obj) {
-      DATA_MATRIX(mult_factor);
+      // DATA_SCALAR(mult_factor);
+      int mult_factor = 0;
       UFun(N, mult_factor);
+      // printf("mult_factor = %f\n", mult_factor);
     }
 
     #undef TMB_OBJECTIVE_PTR
@@ -77,16 +80,16 @@ namespace realPSD {
     // psd = 1/((f^2 / f0^2 - 1)^2 + f^2/(f0*Q)^2) + Rw
     template <class Type>
     inline void UFun<Type>::eval(RefMatrix_t U, cRefMatrix_t& phi) {
-      U = (f2_/exp(Type(2.0) * phi(0,0))).array() - Type(1.0);
+      U = (f2_/(phi(0,0) * phi(0,0))).array() - Type(1.0);
       U = U.cwiseProduct(U);
-      U += f2_/exp(Type(2.0) * (phi(0,0) + phi(1,0)));
-      U = 1.0/U.array() + exp(phi(2,0));
-      // Type mult_factor_ = Type(1.0);
-      U *= mult_factor_(0,0);
+      U += f2_/(phi(0,0) * phi(1,0) * phi(0,0) * phi(1,0));
+      U = 1.0/U.array() + phi(2,0);
+      // U = U * mult_factor_; // would lead to errors in the unit test
+      U = U.array() * mult_factor_(0,0);
       return;
     }
 
-  } // end namespace SHOW_log
+  } // end namespace SHOW_test
 
 } // end namespace realPSD
 
