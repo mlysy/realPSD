@@ -47,8 +47,8 @@ test_that("LP_zeta is the same in R and TMB", {
     zeta_he_tmb <- apply(Phi, 2, lp_zeta_he_tmb)
     # final check
     expect_equal(zeta_r, zeta_tmb)
-    ## expect_equal(zeta_gr_r, zeta_gr_tmb, tolerance=1e-5)
-    ## expect_equal(zeta_he_r, zeta_he_tmb, tolerance=1e-5)
+    expect_equal(zeta_gr_r, zeta_gr_tmb, tolerance=1e-5)
+    expect_equal(zeta_he_r, zeta_he_tmb, tolerance=1e-5)
   }
 })
 

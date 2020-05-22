@@ -50,7 +50,7 @@ namespace realPSD {
       // matrix<Type> mult_factor(1,1);
       // mult_factor(0,0) = Type(1.0);
       mult_factor_ = zero_matrix<Type>(1,1);
-      mult_factor_ = mult_factor.cwiseProduct(mult_factor);
+      mult_factor_ = mult_factor;
     }
 
     #undef TMB_OBJECTIVE_PTR
