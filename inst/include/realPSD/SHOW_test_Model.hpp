@@ -31,12 +31,12 @@ namespace realPSD {
       // internal variables
       int N_; ///> problem dimensions
       matrix<Type> f2_; ///> Vector of squared frequencies.
-      matrix<Type> mult_factor_; ///> Multiplicative factor.
+      Type alpha_; ///> Multiplicative factor.
     public:
       /// Constructor.
-      UFun(int N, cRefMatrix_t& mult_factor);
+      UFun(int N, Type alpha);
       /// TMB-specific constructor.
-      UFun(int N, objective_function<Type>* obj);
+      // UFun(int N, objective_function<Type>* obj);
       /// Set frequency vector.
       void set_f(cRefMatrix_t& f);
       /// Evaluate the normalized PSD.
@@ -44,26 +44,11 @@ namespace realPSD {
     };
 
     template<class Type>
-    inline UFun<Type>::UFun(int N, cRefMatrix_t& mult_factor) {
+    inline UFun<Type>::UFun(int N, Type alpha) {
       N_ = N;
       f2_ = zero_matrix<Type>(N_,1);
-      // matrix<Type> mult_factor(1,1);
-      // mult_factor(0,0) = Type(1.0);
-      mult_factor_ = zero_matrix<Type>(1,1);
-      mult_factor_ = mult_factor;
+      alpha_ = alpha;
     }
-
-    #undef TMB_OBJECTIVE_PTR
-    #define TMB_OBJECTIVE_PTR obj
-
-    template<class Type>
-    inline UFun<Type>::UFun(int N, objective_function<Type>* obj) {
-      DATA_MATRIX(mult_factor);
-      UFun(N, mult_factor);
-    }
-
-    #undef TMB_OBJECTIVE_PTR
-    #define TMB_OBJECTIVE_PTR this
 
     template<class Type>
     inline void UFun<Type>::set_f(cRefMatrix_t& f) {
@@ -81,12 +66,56 @@ namespace realPSD {
       U = U.cwiseProduct(U);
       U += f2_/exp(Type(2.0) * (phi(0,0) + phi(1,0)));
       U = 1.0/U.array() + exp(phi(2,0));
-      // Type mult_factor_ = Type(1.0);
-      U *= mult_factor_(0,0);
+      U *= alpha_;
       return;
     }
 
-  } // end namespace SHOW_log
+    #undef TMB_OBJECTIVE_PTR
+    #define TMB_OBJECTIVE_PTR obj
+    /// TMB-style constructor.
+    ///
+    /// The `PARAMETER` macro does not work properly inside class methods, 
+    /// only regular functions.  Therefore, the following "external" constructor is used.
+    template<class Type>
+    UFun<Type> make_Ufun(int N, objective_function<Type>* obj) {
+      PARAMETER(alpha);
+      UFun<Type> Ufun(N, alpha);
+      return Ufun;
+    }
+
+    #undef TMB_OBJECTIVE_PTR
+    #define TMB_OBJECTIVE_PTR this
+
+  } // end namespace SHOW_test
+
+  #undef TMB_OBJECTIVE_PTR
+  #define TMB_OBJECTIVE_PTR obj
+  /// TMB method dispatch.
+  ///
+  /// The external constructor is passed to `FitMethods` via a C++ callback, i.e., a function-pointer argument to a function.
+  template<class Type, class UFun>
+  Type FitMethods(objective_function<Type>* obj,
+      UFun (*make_Ufun)(int, objective_function<Type>*)) {
+    // data
+    DATA_MATRIX(f);
+    // parameters
+    PARAMETER_MATRIX(phi);
+    // PARAMETER_MATRIX(alpha);
+    // calculate U
+    int N = f.size();
+    // UFun<Type> Ufun(N, alpha);
+    // UFun<Type> Ufun(N, this);
+    UFun Ufun = make_Ufun(N, obj);
+    Ufun.set_f(f);
+    SIMULATE {
+      matrix<Type> U(N,1);
+      Ufun.eval(U, phi);
+      REPORT(U);
+    }
+    return Type(0.0);
+  }
+  #undef TMB_OBJECTIVE_PTR
+  #define TMB_OBJECTIVE_PTR this
 
 } // end namespace realPSD
 
