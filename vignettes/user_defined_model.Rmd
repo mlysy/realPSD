@@ -1,0 +1,308 @@
+---
+title: "**realPSD**: How to define your own model in C++"
+author: "Martin Lysy, Feiyu Zhu"
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_vignette:
+    toc: yes
+vignette: >
+  %\VignetteIndexEntry{realPSD How to define your own model}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: { autoNumber: "AMS" } }
+});
+</script>
+
+\newcommand{\bm}[1]{\boldsymbol{#1}}
+\newcommand{\tx}[1]{\textrm{#1}}
+\newcommand{\XX}{{\bm{X}}}
+\newcommand{\YY}{{\bm{Y}}}
+\newcommand{\ZZ}{{\bm{Z}}}
+\newcommand{\tth}{{\bm{\theta}}}
+\newcommand{\pph}{{\bm{\varphi}}}
+\newcommand{\aal}{{\bm{\alpha}}}
+\newcommand{\bbe}{{\bm{\beta}}}
+\newcommand{\s}{\sigma}
+\newcommand{\f}{f}
+\newcommand{\ud}{\mathrm{d}}
+\newcommand{\psd}{\operatorname{\mathcal S}}
+\newcommand{\cov}{\operatorname{cov}}
+\newcommand{\var}{\operatorname{var}}
+\newcommand{\acf}{\operatorname{\gamma}}
+\newcommand{\carfima}{\operatorname{CARFIMA}}
+\newcommand{\rv}[3]{#2_{#1},\ldots,#2_{#3}}
+\newcommand{\fs}{\f_s}
+\newcommand{\kbt}{k_BT}
+\newcommand{\Aw}{A_{\tx{w}}}
+\newcommand{\Rw}{R_{\tx{w}}}
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+# link to packages
+pkg_link <- function(pkg, link) {
+  if(link == "github") {
+    link <- paste0("https://github.com/mlysy/", pkg)
+  } else if(link == "cran") {
+    link <- paste0("https://CRAN.R-project.org/package=", pkg)
+  }
+  paste0("[**", pkg, "**](", link, ")")
+}
+cran_link <- function(pkg) pkg_link(pkg, "cran")
+github_link <- function(pkg) pkg_link(pkg, "github")
+```
+
+## Write your own model in C++ using **realPSD**
+
+**realPSD** allows users to easily implement their own model in C++ using **TMB** interface to R. **TMB** (Template Model Builder) is an R package for fitting statistical latent variable models to data, which is extensively documented [here](https://github.com/kaskr/adcomp/wiki/Documentation). **TMB** uses the C++ library for linear algebra [**Eigen**](http://eigen.tuxfamily.org/index.php?title=Main_Page) which is extensively documented [here](http://eigen.tuxfamily.org/dox/). We should be familiar with the basic data types provided by **Eigen** and an entry-level understanding of how to use **TMB** in R.
+
+For any parametric PSD of the form 
+$$
+\psd(\f,\tth) = \s^2 \cdot U(\f, \pph),
+$$
+where $\tth = (\s, \pph)$ are the parameters and $\f$ represents a sequence of observations (frequency points), all we need to do is to write a model template class (in C++) with the following structure:
+
+```{Rcpp, model_structure, eval = FALSE}
+/// we need to include the TMB header file
+#include <TMB.hpp>
+
+/// To avoid any potential conflict, we construct our model class within a user-defined namespace
+namespace OUR_MODEL {  
+  /// Any helper function we may need later (optional)
+  ...
+
+  /// A template class for the (normalized) PSD, i.e. U function.
+  template <class Type>
+  class UFun {  
+    private:
+      /* define the private members
+      ...
+      ...
+      */
+    public:
+      /// define the public members
+      /// Constructor
+      UFun(int N, Type arg1, Type arg2 ...);
+      /// Set frequency vector.
+      void set_f(cRefMatrix_t& f);
+      /// Evaluate the normalized PSD.
+      void eval(RefMatrix_t U, cRefMatrix_t& phi);
+  };
+  
+  /// Definitions of all the member functions
+  template<class Type>
+  inline UFun<Type>::UFun(int N, Type arg1, Type arg2 ...) {
+    ...
+  }
+
+  template<class Type>
+  inline void UFun<Type>::set_f(cRefMatrix_t& f) {
+    ...
+  }
+
+  template <class Type>
+  inline void UFun<Type>::eval(RefMatrix_t U, cRefMatrix_t& phi) {
+    ...
+  }
+
+  #undef TMB_OBJECTIVE_PTR
+  #define TMB_OBJECTIVE_PTR obj
+  /// TMB-style constructor.
+  ///
+  /// The `PARAMETER` macro does not work properly inside class methods, only regular functions. 
+  /// Therefore, the following "external" constructor is used.
+  template<class Type>
+  UFun<Type> make_Ufun(int N, objective_function<Type>* obj) {
+    PARAMETER(...);
+    UFun<Type> Ufun(N, ...);
+    return Ufun;
+  }
+  #undef TMB_OBJECTIVE_PTR
+  #define TMB_OBJECTIVE_PTR this
+} // end namespace OUR_MODEL
+
+#undef TMB_OBJECTIVE_PTR
+#define TMB_OBJECTIVE_PTR obj
+/// TMB method dispatch.
+///
+/// The external constructor is passed to realPSD `FitMethods` via a C++ callback
+template<class Type, class UFun>
+Type FitMethods(objective_function<Type>* obj,
+    UFun (*make_Ufun)(int, objective_function<Type>*)) {
+  // data
+  DATA_MATRIX(f);
+  // parameters
+  PARAMETER_MATRIX(phi);
+  // calculate U
+  int N = f.size();
+  UFun Ufun = make_Ufun(N, obj);
+  Ufun.set_f(f);
+  SIMULATE {
+    matrix<Type> U(N, ...);
+    Ufun.eval(U, phi);
+    REPORT(U);
+  }
+  return Type(0.0);
+}
+#undef TMB_OBJECTIVE_PTR
+#define TMB_OBJECTIVE_PTR this
+
+/// The objective function should be of the following C++ type required by TMB
+template<class Type>
+Type objective_function<Type>::operator() () {
+  using namespace OUR_MODEL;
+  return FitMethods<Type, UFun<Type> >(this, make_Ufun<Type>);
+}
+```
+
+We can name the above source file as `user_model.cpp` and put it under the current working directory. To estimate this model, we need to follow the TMB steps:
+
+```{r, TMB_steps, eval = FALSE}
+require(TMB)
+
+model <- "user_model"
+compile(paste0(model, ".cpp"))
+dyn.load(dynlib(model))
+
+N <- 10 # number of observations
+f <- matrix(rexp(N)) # simulate frequency points
+
+obj <- MakeADFun(data = list(f = f),
+                 parameters = list(...),
+                 DLL = model, silent = TRUE)
+
+# play with the model object obj
+# ...
+# ...
+```
+
+## An example: Fractional Ornstein-Uhlenbeck Model
+
+Here we implement a fractional OU model to make the above steps more concrete. Recall that the fOU model is expressed as
+$$
+\ud X(t) = -\gamma X(t)\, \ud t + \tau \, \ud B_t^H,
+$$
+where $\gamma, \tau > 0$ and $B_t^H$ is fractional Brownian motion with Hurst parameter $0 < H < 1$.  The PSD for this model is
+\begin{equation}
+\label{eq:fcar}
+\psd(\f, \tth) = \sigma^2 \times \frac{|\f|^{1-2H}}{\f^2 + \gamma^2},
+\end{equation}
+where $\pph = (H, \gamma)$ and $\sigma^2 = \tau^2 \cdot \Gamma(2H+1)\sin(\pi H)/(2\pi)$.
+
+The C++ source file `fou.cpp` is given by 
+
+```{Rcpp, fou, eval = FALSE}
+/// @file fou.cpp
+///
+/// @brief fractional OU model, passing data to TMB
+
+#include <TMB.hpp>
+
+namespace fou {
+  /// create `matrix<Type>` of zeros.
+  ///
+  /// @param[in] n Integer number of rows.
+  /// @param[in] p Integer number of columns.
+  /// @return A `matrix<Type>` of size `n x p` initialized with zeros.
+  template<class Type>
+  matrix<Type> zero_matrix(int n, int p) {
+    matrix<Type> out(n,p);
+    out.setZero();
+    return out;
+  }
+
+  /// A template class for fractional OU model
+  template <class Type>
+  class UFun {
+  private:
+    //typedefs
+    /// Typedef equivalent to `matrix<Type>`.
+    typedef Eigen::Matrix<Type, Eigen::Dynamic, Eigen::Dynamic> MatrixXd_t;
+    /// Typedef equivalent to `Ref <matrix<Type> >`.
+    typedef Eigen::Ref <MatrixXd_t> RefMatrix_t;
+    /// Typedef equivalent to `const Ref <const matrix<Type> >`.
+    typedef const Eigen::Ref <const MatrixXd_t> cRefMatrix_t;
+    // internal variables
+    int N_; ///> problem dimensions
+    matrix<Type> f2_; ///> column vector of squared frequencies.
+  public:
+    /// Constructor.
+    UFun(int N);
+    /// Set frequency vector.
+    void set_f(cRefMatrix_t& f);
+    /// Evaluate the normalized PSD.
+    void eval(RefMatrix_t U, cRefMatrix_t& phi, cRefMatrix_t& f);
+  };
+
+  template<class Type>
+  inline UFun<Type>::UFun(int N) {
+    N_ = N;
+    f2_ = zero_matrix<Type>(N_,1);
+  }
+
+  template<class Type>
+  inline void UFun<Type>::set_f(cRefMatrix_t& f) {
+    N_ = f.size();
+    f2_ = zero_matrix<Type>(N_,1);
+    f2_ = f.cwiseProduct(f);
+    return;
+  }
+
+  /// Parameters are: `phi = (H, gamma)`
+  // psd = |f|^(1-2H) / (f^2 + gamma^2)
+  template <class Type>
+  inline void UFun<Type>::eval(RefMatrix_t U, cRefMatrix_t& phi, cRefMatrix_t& f) {
+    U = f2_.array() + phi(1,0) * phi(1,0);
+    U = (f.array().abs()).pow(1-Type(2.0)*phi(0,0)) / U.array(); // use ArrayBase::pow() and ::abs() functions
+    return;
+  }
+
+  #undef TMB_OBJECTIVE_PTR
+  #define TMB_OBJECTIVE_PTR obj
+    template<class Type>
+    UFun<Type> make_Ufun(int N, objective_function<Type>* obj) {
+      UFun<Type> Ufun(N);
+      return Ufun;
+    }
+  #undef TMB_OBJECTIVE_PTR
+  #define TMB_OBJECTIVE_PTR this
+} // end namespace fou
+
+#undef TMB_OBJECTIVE_PTR
+#define TMB_OBJECTIVE_PTR obj
+template<class Type, class UFun>
+Type FitMethods(objective_function<Type>* obj,
+    UFun (*make_Ufun)(int, objective_function<Type>*)) {
+  // data
+  DATA_MATRIX(f);
+  // parameters
+  PARAMETER_MATRIX(phi);
+  // calculate U
+  int N = f.size();
+  UFun Ufun = make_Ufun(N, obj);
+  Ufun.set_f(f);
+  SIMULATE {
+    matrix<Type> U(N,1);
+    Ufun.eval(U, phi, f);
+    REPORT(U);
+  }
+  return Type(0.0);
+}
+#undef TMB_OBJECTIVE_PTR
+#define TMB_OBJECTIVE_PTR this
+
+template<class Type>
+Type objective_function<Type>::operator() () {
+  using namespace fou;
+  return FitMethods<Type, UFun<Type> >(this, make_Ufun<Type>);
+}
+```
+
+
+
