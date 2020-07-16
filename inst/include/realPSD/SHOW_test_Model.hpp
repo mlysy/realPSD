@@ -88,35 +88,6 @@ namespace realPSD {
 
   } // end namespace SHOW_test
 
-  #undef TMB_OBJECTIVE_PTR
-  #define TMB_OBJECTIVE_PTR obj
-  /// TMB method dispatch.
-  ///
-  /// The external constructor is passed to `FitMethods` via a C++ callback, i.e., a function-pointer argument to a function.
-  template<class Type, class UFun>
-  Type FitMethods(objective_function<Type>* obj,
-      UFun (*make_Ufun)(int, objective_function<Type>*)) {
-    // data
-    DATA_MATRIX(f);
-    // parameters
-    PARAMETER_MATRIX(phi);
-    // PARAMETER_MATRIX(alpha);
-    // calculate U
-    int N = f.size();
-    // UFun<Type> Ufun(N, alpha);
-    // UFun<Type> Ufun(N, this);
-    UFun Ufun = make_Ufun(N, obj);
-    Ufun.set_f(f);
-    SIMULATE {
-      matrix<Type> U(N,1);
-      Ufun.eval(U, phi);
-      REPORT(U);
-    }
-    return Type(0.0);
-  }
-  #undef TMB_OBJECTIVE_PTR
-  #define TMB_OBJECTIVE_PTR this
-
 } // end namespace realPSD
 
 #endif

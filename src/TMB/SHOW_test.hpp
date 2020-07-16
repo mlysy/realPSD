@@ -1,5 +1,5 @@
 #include "realPSD/SHOW_test_Model.hpp"
-// #include "realPSD/FitMethods.hpp"
+#include "realPSD/FitMethods.hpp"
 
 #undef TMB_OBJECTIVE_PTR
 #define TMB_OBJECTIVE_PTR obj

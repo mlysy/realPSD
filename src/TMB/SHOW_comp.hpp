@@ -6,7 +6,7 @@
 template<class Type>
 Type SHOW_comp(objective_function<Type>* obj) {
   using namespace realPSD;
-  return FitMethods<Type, SHOW_comp::UFun<Type> >(obj);
+  return FitMethods<Type, SHOW_comp::UFun<Type> >(obj, SHOW_comp::make_Ufun<Type>);
 }
 #undef TMB_OBJECTIVE_PTR
 #define TMB_OBJECTIVE_PTR this

@@ -35,8 +35,8 @@ namespace realPSD {
     public:
       /// Constructor.
       UFun(int N);
-      /// TMB-specific constructor.
-      UFun(int N, objective_function<Type>* obj);
+      // /// TMB-specific constructor.
+      // UFun(int N, objective_function<Type>* obj);
       /// Set frequency vector.
       void set_f(cRefMatrix_t& f);
       /// Evaluate the normalized PSD.
@@ -49,16 +49,16 @@ namespace realPSD {
       f2_ = zero_matrix<Type>(N_,1);
     }
 
-    #undef TMB_OBJECTIVE_PTR
-    #define TMB_OBJECTIVE_PTR obj
+    // #undef TMB_OBJECTIVE_PTR
+    // #define TMB_OBJECTIVE_PTR obj
 
-    template<class Type>
-    inline UFun<Type>::UFun(int N, objective_function<Type>* obj) {
-      (UFun(N));
-    }
+    // template<class Type>
+    // inline UFun<Type>::UFun(int N, objective_function<Type>* obj) {
+    //   (UFun(N));
+    // }
 
-    #undef TMB_OBJECTIVE_PTR
-    #define TMB_OBJECTIVE_PTR this
+    // #undef TMB_OBJECTIVE_PTR
+    // #define TMB_OBJECTIVE_PTR this
 
     template<class Type>
     inline void UFun<Type>::set_f(cRefMatrix_t& f) {
@@ -78,6 +78,21 @@ namespace realPSD {
       U = 1.0/U.array() + phi(2,0);
       return;
     }
+
+    #undef TMB_OBJECTIVE_PTR
+    #define TMB_OBJECTIVE_PTR obj
+    /// TMB-style constructor.
+    ///
+    /// The `PARAMETER` macro does not work properly inside class methods, 
+    /// only regular functions.  Therefore, the following "external" constructor is used.
+    template<class Type>
+    UFun<Type> make_Ufun(int N, objective_function<Type>* obj) {
+      UFun<Type> Ufun(N);
+      return Ufun;
+    }
+
+    #undef TMB_OBJECTIVE_PTR
+    #define TMB_OBJECTIVE_PTR this
 
   } // end namespace SHOW_comp
 

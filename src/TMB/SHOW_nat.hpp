@@ -6,7 +6,7 @@
 template<class Type>
 Type SHOW_nat(objective_function<Type>* obj) {
   using namespace realPSD;
-  return FitMethods<Type, SHOW_nat::UFun<Type> >(obj);
+  return FitMethods<Type, SHOW_nat::UFun<Type> >(obj, SHOW_nat::make_Ufun<Type>);
 }
 #undef TMB_OBJECTIVE_PTR
 #define TMB_OBJECTIVE_PTR this
