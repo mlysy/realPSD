@@ -3,8 +3,7 @@
 /// @brief fractional OU model, passing data to TMB
 
 #include <TMB.hpp>
-// #include "realPSD/FitMethods.hpp"
-#include "../../inst/include/realPSD/FitMethods.hpp"
+#include "realPSD/FitMethods.hpp"
 
 namespace fou {
   /// create `matrix<Type>` of zeros.

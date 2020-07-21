@@ -4,7 +4,8 @@ require(TMB)
 require(testthat)
 
 model <- "fou"
-compile(paste0(model, ".cpp"))
+compile(paste0(model, ".cpp"), 
+  PKG_CXXFLAGS = paste0("-I", system.file("include", package = "realPSD")))
 dyn.load(dynlib(model))
 
 # helper function: calculate the psd in R
