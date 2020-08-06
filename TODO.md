@@ -148,3 +148,125 @@ To check if this works:
 2.  Let's try a test model  `SHOW_test::UFun()`.  The constructor will have an extra argument `double mult_factor` which simply scales `UFun.eval()` by a constant factor.  Of course this is useless, but it allows us to test the new `obj` constructor approach.
 
 3.  Implement the CARFIMA model.  In this case, the additional constructor arguments are `p` and `q`.  Please see `vignettes/realPSD.Rmd`, `tests/dontrun/ComplexPoly.cpp` and accompanying `tests/dontrun/carfima-poly.R` for how to evaluate "PSD" polynomials efficiently using only real operations.
+
+**Update:** Turns out the method above doesn't work because the **TMB** macros `DATA_MATRIX()`, etc. don't work inside class member functions.  Instead we define an external constructor as follows:
+
+```c
+#undef TMB_OBJECTIVE_PTR
+#define TMB_OBJECTIVE_PTR obj
+
+template<class Type>
+UFun<Type> MyModel_ctor(objective_function<Type>* obj) {
+  DATA_VECTOR(arg1);
+  DATA_SCALAR(arg2); // etc
+  return UFun<Type>(N, arg1, arg2);
+}
+
+#undef TMB_OBJECTIVE_PTR
+#define TMB_OBJECTIVE_PTR this
+```
+
+This works fine, except there's a potential copy of the `UFun<Type>` object constructed inside the function when it is returned.
+
+### General Paradigm
+
+- User writes `MyModel` class which defines two types of public members:
+
+	1.  Generic public members which have the same name and signature for each user defined class `MyModelA`, `MyModelB`, etc.
+	
+	2.  A class constructor which has model-specific input parameters.
+
+- Package `GenPkg` contains generic code which can operate on an instantiated object `my_model` of type `MyModel<Type>`.
+
+- Package automatically creates a **TMB** file out of user + package code, i.e., which can be compiled on-the-fly or added to the user's R/**TMB** package created with **TMBtools**.
+
+Here's what different pieces might look like:
+
+```c
+/// @file {{{Model}}}_Generics.hpp
+/// @brief Generic code which supplies everything needed to the **TMB** compiler for `{{{Model}}}`.
+
+#ifndef {{{Model}}}_Generics_hpp
+#define {{{Model}}}_Generics_hpp 1
+
+#include "{{{Header}}}.hpp" // model class definition
+#include "GenPkg.hpp" // the generic package code
+
+#undef TMB_OBJECTIVE_PTR
+#define TMB_OBJECTIVE_PTR obj
+
+template<class Type>
+Type {{{Model}}}_Generics(objective_function<Type>* obj) {
+  return GenericMethods<Type, {{{Class}}}<Type> >(obj, {{{Ctor}}}<Type>);
+}
+
+#undef TMB_OBJECTIVE_PTR
+#define TMB_OBJECTIVE_PTR this
+
+#endif
+```
+
+The replacements here are:
+
+- `Model`: The name of the model to use.
+- `Header`: The name of the header file which declares it.
+- `Class`: The name of the class and possibly the namespace containing it.
+- `Ctor`: The name of the external constructor and possibly the namespace containing it.
+
+Upon replacing these terms, the file `MyModel_Generics.hpp` can be placed in the `src/TMB` folder of the user's package and work as expected.  Alternatively, if we change the extension to `cpp` and append the following lines to the bottom:
+
+```
+template<class Type>
+Type objective_function<Type>::operator() () {
+  return MyModel_Generics<Type>(this);
+}
+```
+
+Then we can compile `MyModel_Generics.cpp` on-the-fly within an R session.  (Note: We also need to add `#include <TMB.hpp>` at the top of the file and remove include guards to switch to on-the-fly mode.)
+
+```c
+/// @file GenericMethods.hpp
+/// @brief Metafile to include all generic TMB functionality that gets attached to `MyModel`.
+
+#undef TMB_OBJECTIVE_PTR
+#define TMB_OBJECTIVE_PTR obj
+
+template<class Type, class MyModel>
+Type GenericMethods(objective_function<Type>* obj,
+                    MyModel (*make_MyModel)(objective_function<Type>*)) {
+  // construct MyModel object
+  MyModel my_model = make_MyModel(obj);
+  // do other things
+  return ...;
+}
+
+#undef TMB_OBJECTIVE_PTR
+#define TMB_OBJECTIVE_PTR this
+```
+
+Note that `MyModel` and `make_MyModel` are called without the template `Type` argument, but it must be supplied when calling the function, i.e.,
+
+```c
+val = GenericMethods<Type, MyNS::MyModel<Type> >(obj, MyNS::make_MyModel<Type>);
+```
+It might be possible to use `template<class> class MyModel` as the second template parameter, in which case the `<Type>` should be added to `MyModel` inside the function and removed from its call above.
+
+So, please write the following function:
+
+```r
+#' Create a generic TMB file from user's model definition.
+#'
+#' @param model Name of model.
+#' @param header Name of header file including extension.  If missing defaults to `{model}.hpp`.
+#' @param class Name of class definition, with enclosing namespace if it exists.  If missing defaults to `{model}`.
+#' @param ctor Name of external constructor, with enclosing namespace if it exists.  If missing defaults to `make_{model}`.
+#' @param standalone If `TRUE` creates a standalone `cpp` file to pass to [TMB::compile()].  Otherwise, creates an `hpp` header file to be placed in a package created with **TMBtools**.
+#' @param path Name of output file.  If missing defaults to `{model}_Generics.{cpp/hpp}` depending on the value of `standalone`.  If `NULL` doesn't create file but prints contents to console.  Generates an error if `path` file already exists.
+#'
+#' @return The name of the file (invisibly), or nothing but prints the output to the console.
+make_psd_model <- funtion(name, include, class, ctor, 
+                          standalone = TRUE, path) {}
+```
+
+As for the template file `Model_Generics.hpp`, it should be placed in `inst/include/realPSD`.
+
