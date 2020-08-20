@@ -83,7 +83,7 @@ where $\gamma, \tau > 0$ and $B_t^H$ is fractional Brownian motion with Hurst pa
 \end{equation}
 where $\pph = (H, \gamma)$ and $\sigma^2 = \tau^2 \cdot \Gamma(2H+1)\sin(\pi H)/(2\pi)$.
 
-We first define our fOU model in a C++ header file `fou.hpp`. To avoid potential scope conflict, we enclose the class definition within a user-defined namespace. 
+We first define our fOU model in a C++ header file `fou.hpp`. To avoid potential scope conflict, we enclose the class definition within a user-defined namespace. Since **TMB** macros `DATA_MATRIX()`, etc. don't work inside class member functions, to allow users to decide and change input arguments to the model, we define an external constructor `make_Ufun(int N, objective_function<Type>* obj)` at the very end.
 
 ```{Rcpp, fou, eval = FALSE}
 /// @file fou.cpp
