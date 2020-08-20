@@ -17,7 +17,6 @@ namespace realPSD {
   template<class Type, class UFun>
   Type FitMethods(objective_function<Type>* obj,
 		  UFun (*make_Ufun)(int, objective_function<Type>*)) {
-    UFun Ufun = make_Ufun(N, obj);
     // pick method
     DATA_STRING(method);
     if(method == "UFun") {
@@ -28,7 +27,7 @@ namespace realPSD {
       // calculate U
       int N = f.size();
       // UFun Ufun(N, obj);
-      // UFun Ufun = make_Ufun(N, obj);
+      UFun Ufun = make_Ufun(N, obj);
       Ufun.set_f(f);
       SIMULATE {
         matrix<Type> U(N,1);
@@ -47,7 +46,7 @@ namespace realPSD {
       int N = fbar.size();
       matrix<Type> Ubar(N,1);
       // UFun Ufun(N, obj);
-      // UFun Ufun = make_Ufun(N, obj);
+      UFun Ufun = make_Ufun(N, obj);
       Ufun.set_f(fbar);
       Ufun.eval(Ubar, phi);
       Ubar = Ubar * fs;
@@ -86,7 +85,7 @@ namespace realPSD {
       int N = f.size();
       matrix<Type> U(N,1);
       // UFun Ufun(N, obj);
-      // UFun Ufun = make_Ufun(N, obj);
+      UFun Ufun = make_Ufun(N, obj);
       Ufun.set_f(f);
       Ufun.eval(U, phi);
       U = U * fs;
@@ -119,7 +118,7 @@ namespace realPSD {
       int N = fbar.size();
       matrix<Type> Ubar(N,1);
       // UFun Ufun(N, obj);
-      // UFun Ufun = make_Ufun(N, obj);
+      UFun Ufun = make_Ufun(N, obj);
       Ufun.set_f(fbar);
       Ufun.eval(Ubar, phi);
       Ubar = Ubar * fs;
