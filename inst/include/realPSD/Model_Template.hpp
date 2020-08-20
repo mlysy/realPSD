@@ -9,8 +9,8 @@
 {{#Show}}
 #include <TMB.hpp>
 {{/Show}}
-#include "{{{Header}}}.hpp" // model class definition
-#include "{{{Include}}}.hpp" // the generic package code
+#include "{{{Header}}}" // model class definition
+#include "{{{Include}}}" // the generic package code
 
 #undef TMB_OBJECTIVE_PTR
 #define TMB_OBJECTIVE_PTR obj

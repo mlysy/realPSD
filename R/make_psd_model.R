@@ -11,28 +11,27 @@
 #'
 #' @return The name of the file (invisibly), or nothing but prints the output to the console.
 #' @export
-make_psd_model <- funtion(name, header, class, ctor, include, method,
-                          standalone = TRUE, path) {
+make_psd_model <- function(name, header, class, ctor, include, method, standalone=TRUE, path) {
   # check missing inputs
   if(missing(name)) name <- "MyModel"
   if(missing(header)) header <- paste0(name, ".hpp")
   if(missing(class)) class <- name
   if(missing(ctor)) ctor <- paste0("make_", name)
   if(!missing(method)) {
-    if(missing(include)) include <- file.path(".", method)
+    if(missing(include)) include <- file.path(".", paste0(method, ".hpp"))
   }
   if(dir.exists(path)) error(paste0(path, "already exists!"))
   # read template header file
-  template <- readLines("../inst/include/realPSD/Model_Template.hpp") # read generic model header file
+  template <- readLines(paste0(system.file("include", package = "realPSD"), "/realPSD/Model_Template.hpp")) # read generic model header file
   # set up whisker render
   settings <- list(
-    Model = model # "fou"
-    Header = header # "fou.hpp"
-    Class = class # fou::UFun, a "UFun" class name is mandatory if realPSD::FitMethods is to be used
-    Ctor = ctor # "make_Ufun" is mandatory if realPSD::FitMethods is to be used
-    Include = include # "realPSD/FitMethods.hpp"
-    GenericMethods = method # "realPSD::FitMethods"
-    Show = standalone # if standalone == TRUE, show the part of the code for on-the-fly compilation
+    Model = name, # "fou"
+    Header = header, # "fou.hpp"
+    Class = class, # fou::UFun, a "UFun" class name is mandatory if realPSD::FitMethods is to be used
+    Ctor = ctor, # "make_Ufun" is mandatory if realPSD::FitMethods is to be used
+    Include = include, # "realPSD/FitMethods.hpp"
+    GenericMethods = method, # "realPSD::FitMethods"
+    Show = standalone, # if standalone == TRUE, show the part of the code for on-the-fly compilation
     Hide = !standalone
   )
   model_scr <- whisker.render(template, settings)
