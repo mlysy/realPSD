@@ -2,48 +2,24 @@
 
 #define TMB_LIB_INIT R_init_realPSD_TMBExports
 #include <TMB.hpp>
-// #include "SHOW_comp.hpp"
-// #include "SHOW_log.hpp"
-// #include "SHOW_nat.hpp"
-// #include "SHOW_test.hpp"
-#include <mstch/mstch.hpp>
-#include "{{PSDTemplate}}.hpp"
-#include "FitMethods.hpp"
-
-#undef TMB_OBJECTIVE_PTR
-#define TMB_OBJECTIVE_PTR obj
-template<class Type>
-Type {{PSDTemplate}}(objective_function<Type>* obj) {
-  using namespace realPSD;
-  return FitMethods<Type, {{PSDTemplate}}::UFun<Type> >(obj, {{PSDTemplate}}::make_Ufun<Type>);
-}
-#undef TMB_OBJECTIVE_PTR
-#define TMB_OBJECTIVE_PTR this
+#include "SHOW_comp.hpp"
+#include "SHOW_log.hpp"
+#include "SHOW_nat.hpp"
+#include "SHOW_test.hpp"
 
 template<class Type>
 Type objective_function<Type>::operator() () {
   DATA_STRING(model);
-  if(model == "{{PSDTemplate}}") {
-    return {{PSDTemplate}}(this);
+  if(model == "SHOW_comp") {
+    return SHOW_comp(this);
+  } else if(model == "SHOW_log") {
+    return SHOW_log(this);
+  } else if(model == "SHOW_nat") {
+    return SHOW_nat(this);
+  } else if(model == "SHOW_test") {
+    return SHOW_test(this);
   } else {
     error("Unknown model.");
   }
   return 0;
 }
-
-// template<class Type>
-// Type objective_function<Type>::operator() () {
-//   DATA_STRING(model);
-//   if(model == "SHOW_comp") {
-//     return SHOW_comp(this);
-//   } else if(model == "SHOW_log") {
-//     return SHOW_log(this);
-//   } else if(model == "SHOW_nat") {
-//     return SHOW_nat(this);
-//   } else if(model == "SHOW_test") {
-//     return SHOW_test(this);
-//   } else {
-//     error("Unknown model.");
-//   }
-//   return 0;
-// }
