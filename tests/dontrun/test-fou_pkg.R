@@ -22,4 +22,8 @@ tmb_create_package(path = "../../../testPackage",
     tmb_files = "fou_Generics.hpp")
 getwd()
 
+# Then we need to put "fou.hpp" to the same directory of fou_Generics.hpp
+# and change the DESCRIPTION file of the testPackage created by TMBtools linking to realPSD
+# (to make sure the header file "realPSD/FitMethods.hpp" can be found)
+# We can successfully compile the build testPackage
 
