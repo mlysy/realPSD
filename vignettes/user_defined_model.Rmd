@@ -66,98 +66,9 @@ For any parametric PSD of the form
 $$
 \psd(\f,\tth) = \s^2 \cdot U(\f, \pph),
 $$
-where $\tth = (\s, \pph)$ are the parameters and $\f$ represents a sequence of observations (frequency points), all we need to do is to write a model template class (in C++) with the following structure:
+where $\tth = (\s, \pph)$ are the parameters and $\f$ represents a sequence of observations (frequency points), it will be easy for users to define their own model class definition and supply it to TMB for later model fitting.
 
-```{Rcpp, model_structure, eval = FALSE}
-/// we need to include the TMB header file
-#include <TMB.hpp>
-
-/// To avoid any potential conflict, we construct our model class within a user-defined namespace
-namespace OUR_MODEL {  
-  /// Any helper function we may need later (optional)
-  ...
-
-  /// A template class for the (normalized) PSD, i.e. U function.
-  template <class Type>
-  class UFun {  
-    private:
-      /* define the private members
-      ...
-      ...
-      */
-    public:
-      /// define the public members
-      /// Constructor
-      UFun(int N, Type arg1, Type arg2 ...);
-      /// Set frequency vector.
-      void set_f(cRefMatrix_t& f);
-      /// Evaluate the normalized PSD.
-      void eval(RefMatrix_t U, cRefMatrix_t& phi);
-  };
-  
-  /// Definitions of all the member functions
-  template<class Type>
-  inline UFun<Type>::UFun(int N, Type arg1, Type arg2 ...) {
-    ...
-  }
-
-  template<class Type>
-  inline void UFun<Type>::set_f(cRefMatrix_t& f) {
-    ...
-  }
-
-  template <class Type>
-  inline void UFun<Type>::eval(RefMatrix_t U, cRefMatrix_t& phi) {
-    ...
-  }
-
-  #undef TMB_OBJECTIVE_PTR
-  #define TMB_OBJECTIVE_PTR obj
-  /// TMB-style constructor.
-  /// 
-  /// The `PARAMETER` macro does not work properly inside class methods, only regular functions. 
-  /// Therefore, the following "external" constructor is used.
-  ///
-  /// This is the key for us to separate the customized UFun definition and the hidden FitMethods 
-  /// provided by realPSD. 
-  template<class Type>
-  UFun<Type> make_Ufun(int N, objective_function<Type>* obj) {
-    PARAMETER(...);
-    UFun<Type> Ufun(N, ...);
-    return Ufun;
-  }
-  #undef TMB_OBJECTIVE_PTR
-  #define TMB_OBJECTIVE_PTR this
-} // end namespace OUR_MODEL
-
-/// The objective function should be of the following C++ type required by TMB
-template<class Type>
-Type objective_function<Type>::operator() () {
-  using namespace OUR_MODEL;
-  return FitMethods<Type, UFun<Type> >(this, make_Ufun<Type>);
-}
-```
-
-We can name the above source file as `user_model.cpp` and put it under the current working directory. To estimate this model, we need to follow the TMB steps:
-
-```{r, TMB_steps, eval = FALSE}
-require(TMB)
-
-model <- "user_model"
-compile(paste0(model, ".cpp"))
-dyn.load(dynlib(model))
-
-N <- 10 # number of observations
-f <- matrix(rexp(N)) # simulate frequency points
-
-obj <- MakeADFun(data = list(f = f),
-                 parameters = list(...),
-                 DLL = model, silent = TRUE)
-
-# play with the model object obj
-# ...
-# ...
-```
+Now let us see an example.
 
 ## An example: Fractional Ornstein-Uhlenbeck Model
 
@@ -172,18 +83,14 @@ where $\gamma, \tau > 0$ and $B_t^H$ is fractional Brownian motion with Hurst pa
 \end{equation}
 where $\pph = (H, \gamma)$ and $\sigma^2 = \tau^2 \cdot \Gamma(2H+1)\sin(\pi H)/(2\pi)$.
 
-The C++ source file `fou.cpp` is given by 
+We first define our fOU model in a C++ header file `fou.hpp`. To avoid potential scope conflict, we enclose the class definition within a user-defined namespace. 
 
 ```{Rcpp, fou, eval = FALSE}
 /// @file fou.cpp
 ///
 /// @brief fractional OU model, passing data to TMB
-
-#include <TMB.hpp>
-#include "realPSD/FitMethods.hpp"
-
 namespace fou {
-  /// create `matrix<Type>` of zeros.
+  /// create `matrix<Type>` of zeros as a helper function
   ///
   /// @param[in] n Integer number of rows.
   /// @param[in] p Integer number of columns.
@@ -247,32 +154,48 @@ namespace fou {
 
   #undef TMB_OBJECTIVE_PTR
   #define TMB_OBJECTIVE_PTR obj
-    template<class Type>
-    UFun<Type> make_Ufun(int N, objective_function<Type>* obj) {
-      UFun<Type> Ufun(N);
-      return Ufun;
-    }
+
+  template<class Type>
+  UFun<Type> make_Ufun(int N, objective_function<Type>* obj) {
+    return UFun<Type>(N);
+  }
+
   #undef TMB_OBJECTIVE_PTR
   #define TMB_OBJECTIVE_PTR this
 } // end namespace fou
-
-template<class Type>
-Type objective_function<Type>::operator() () {
-  using namespace fou;
-  return realPSD::FitMethods<Type, UFun<Type> >(this, make_Ufun<Type>);
-}
 ```
 
-We can compile and test the source file by using the following unit tests:
 
-```{r, fou_tests, eval = FALSE}
+
+We can compile our template class `fou.hpp` and supply it to TMB in an R session on-the-fly.
+
+```{r, fou_test_setup, eval = FALSE}
+# test generic fou model header created by make_psd_model
+require(realPSD)
+require(whisker)
 require(TMB)
+
+# standalone == TRUE, compile on-the-fly mode
+make_psd_model(
+  name = "fou",
+  header = "fou.hpp",
+  class = "fou::UFun",
+  ctor = "fou::make_Ufun",
+  include = "realPSD/FitMethods.hpp",
+  method = "realPSD::FitMethods",
+  standalone = TRUE,
+  path = "fou_Generics.cpp"
+)
+
+compile("fou_Generics.cpp", PKG_CXXFLAGS = paste0("-I", system.file("include", package = "realPSD")))
+dyn.load(dynlib("fou_Generics"))
+model <- "fou_Generics"
+```
+
+Then we can test the model by using the following unit tests:
+
+```{r, fou_test_on_the_fly, eval = FALSE}
 require(testthat)
-
-model <- "fou"
-compile(paste0(model, ".cpp"))
-dyn.load(dynlib(model))
-
 # helper function: calculate the psd in R
 fou_psd_r <- function(f, phi) {
  psd <- abs(f)^(1-2*phi[1]) / (f^2 + phi[2]^2)
