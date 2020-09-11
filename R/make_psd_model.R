@@ -27,8 +27,8 @@ make_psd_model <- function(name, header, class, ctor, include, method, standalon
   settings <- list(
     Model = name, # "fou"
     Header = header, # "fou.hpp"
-    Class = class, # fou::UFun, a "UFun" class name is mandatory if realPSD::FitMethods is to be used
-    Ctor = ctor, # "make_Ufun" is mandatory if realPSD::FitMethods is to be used
+    Class = class, # fou::UFun
+    Ctor = ctor, # "make_Ufun"
     Include = include, # "realPSD/FitMethods.hpp"
     GenericMethods = method, # "realPSD::FitMethods"
     Show = standalone, # if standalone == TRUE, show the part of the code for on-the-fly compilation

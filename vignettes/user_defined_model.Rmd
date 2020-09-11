@@ -3,7 +3,7 @@ title: "**realPSD**: How to define your own model in C++"
 author: "Martin Lysy, Feiyu Zhu"
 date: "`r Sys.Date()`"
 output:
-  rmarkdown::html_vignette:
+  html_document:
     toc: yes
 vignette: >
   %\VignetteIndexEntry{realPSD How to define your own model}
@@ -68,9 +68,9 @@ $$
 $$
 where $\tth = (\s, \pph)$ are the parameters and $\f$ represents a sequence of observations (frequency points), it will be easy for users to define their own model class definition and supply it to TMB for later model fitting.
 
-Now let us see an example.
+We will explain the general paradigm through an example.
 
-## An example: Fractional Ornstein-Uhlenbeck Model
+## An example: Fractional Ornstein-Uhlenbeck Model (compiled on-the-fly)
 
 Here we implement a fractional OU model to make the above steps more concrete. Recall that the fOU model is expressed as
 $$
@@ -83,7 +83,239 @@ where $\gamma, \tau > 0$ and $B_t^H$ is fractional Brownian motion with Hurst pa
 \end{equation}
 where $\pph = (H, \gamma)$ and $\sigma^2 = \tau^2 \cdot \Gamma(2H+1)\sin(\pi H)/(2\pi)$.
 
-We first define our fOU model in a C++ header file `fou.hpp`. To avoid potential scope conflict, we enclose the class definition within a user-defined namespace. Since **TMB** macros `DATA_MATRIX()`, etc. don't work inside class member functions, to allow users to decide and change input arguments to the model, we define an external constructor `make_Ufun(int N, objective_function<Type>* obj)` at the very end.
+The first step to realize the above model is to create a C++ class (`my_model`) which defines two types of members:
+
+1.  Generic public members which have the same name and signature for each user defined class. 
+2.  A class constructor which has model-specific input parameters.
+
+The basic structure is given as
+
+```{Rcpp, class, eval = FALSE}
+/// @file my_model.hpp
+///
+/// @brief ...
+template <class Type>
+  class model_class {
+  private:
+    //typedefs
+    /// Typedef equivalent to `matrix<Type>`.
+    typedef Eigen::Matrix<Type, Eigen::Dynamic, Eigen::Dynamic> MatrixXd_t;
+    /// Typedef equivalent to `Ref <matrix<Type> >`.
+    typedef Eigen::Ref <MatrixXd_t> RefMatrix_t;
+    /// Typedef equivalent to `const Ref <const matrix<Type> >`.
+    typedef const Eigen::Ref <const MatrixXd_t> cRefMatrix_t;
+    // internal variables
+    int N_; ///> problem dimensions
+    matrix<Type> f_; ///>column vector of frequencies
+    matrix<Type> f2_; ///> column vector of squared frequencies.
+  public:
+    /// Constructor.
+    model_class(int N);
+    /// Set frequency vector.
+    void set_f(cRefMatrix_t& f);
+    /// Evaluate the normalized PSD.
+    void eval(RefMatrix_t U, cRefMatrix_t& phi);
+  };
+
+/// definitions given below
+...
+...
+```
+
+Here let us name `my_model` as `fou`. We may create a C++ header file `fou.hpp` and define the class name as `UFun` (i.e. U function $U(\f, \pph)$). To avoid potential scope conflict, we enclose the class definition within a user-defined namespace `fou`. Thus `model_class` is given by `fou::UFun`. As we can see, some class members are mandatory, e.g. `set_f` and `eval` since they are required in our spectral estimation methods. Users may use different argument names and give them specific definitions based on the specific problems at hand, but these member functions should be defined in the same way as shown above. The private members are defined accordingly (as auxiliary components). For our fOU model, we give the definitions of `set_f(cRefMatrix_t& f)` and `eval(RefMatrix_t U, cRefMatrix_t& phi)` as a reference.
+
+```{Rcpp, fou_class_required_parts, eval = FALSE}
+template<class Type>
+inline void UFun<Type>::set_f(cRefMatrix_t& f) {
+  N_ = f.size();
+  f_ = zero_matrix<Type>(N_,1);
+  f_ = f;
+  f2_ = zero_matrix<Type>(N_,1);
+  f2_ = f.cwiseProduct(f);
+  return;
+}
+
+/// Parameters are: `phi = (H, gamma)`
+/// psd = |f|^(1-2H) / (f^2 + gamma^2)
+template <class Type>
+inline void UFun<Type>::eval(RefMatrix_t U, cRefMatrix_t& phi) {
+  U = f2_.array() + phi(1,0) * phi(1,0);
+  U = (f_.array().abs()).pow(1-Type(2.0)*phi(0,0)) / U.array(); // use ArrayBase::pow() and ::abs() functions
+  return;
+}
+```
+
+As for the class constructor, since **TMB** macros `DATA_MATRIX()`, etc. don't work inside class member functions, to allow users to decide and change input arguments to the model, we need to define an external constructor `model_ctor(int N, objective_function<Type>* obj)`:
+
+```{Rcpp, external_ctor, eval = FALSE}
+#undef TMB_OBJECTIVE_PTR
+#define TMB_OBJECTIVE_PTR obj
+
+template<class Type>
+UFun<Type> model_ctor(objective_function<Type>* obj) {
+  DATA_VECTOR(arg1);
+  DATA_SCALAR(arg2); // etc
+  return model_class<Type>(N, arg1, arg2);
+}
+
+#undef TMB_OBJECTIVE_PTR
+#define TMB_OBJECTIVE_PTR this
+```
+
+In this way, users may supply their own input arguments with freedom. As developers, we do not need to know these input variables beforehand.
+
+Here we call `model_ctor` as `make_Ufun`. For our fOU model, the definitions of the default class constructor and the external constructor are given below.
+
+```{Rcpp, fou_class_ctor, eval = FALSE}
+template<class Type>
+inline UFun<Type>::UFun(int N) {
+  N_ = N;
+  f_ = zero_matrix<Type>(N_, 1);
+  f2_ = zero_matrix<Type>(N_,1);
+}
+
+#undef TMB_OBJECTIVE_PTR
+#define TMB_OBJECTIVE_PTR obj
+
+template<class Type>
+UFun<Type> make_Ufun(int N, objective_function<Type>* obj) {
+  return UFun<Type>(N);
+}
+
+#undef TMB_OBJECTIVE_PTR
+#define TMB_OBJECTIVE_PTR this
+```
+
+The full souce code of `fou.hpp` is attached at the very end for a complete reference. To warp up the whole process, users only need to do the following things:
+
+1. Come up with a model name `my_model` and create a C++ header file `my_model.hpp` (any helper functions can be included in the same file).
+2. Define its `model_class` (possibly within a name scope) by including the default constructor `model_class`, some necessary member functions `set_f` and `eval` and the required private members accordingly.
+3. Add an external model class constructor `model_ctor` as previously described.
+
+Now we are ready to compile our template class `fou.hpp` by using `make_psd_model` which automatically supplies the user-defined model to TMB in an R session on-the-fly. Here is the example.
+
+```{r, fou_test_setup, eval = FALSE}
+# test generic fou model header created by make_psd_model
+require(realPSD)
+require(whisker)
+require(TMB)
+
+# standalone == TRUE, compile on-the-fly mode
+make_psd_model(
+  name = "fou", # my_model
+  header = "fou.hpp", # name of the header file with extensions, usually it is my_model.hpp
+  class = "fou::UFun", # model_class with name scope (if any)
+  ctor = "fou::make_Ufun", # model_ctro with name scope (if any)
+  include = "realPSD/FitMethods.hpp", # to use the pre-compiled methods provided by realPSD
+  method = "realPSD::FitMethods", # to use the pre-compiled methods provided by realPSD
+  standalone = TRUE,
+  path = "fou_Generics.cpp"
+)
+
+compile("fou_Generics.cpp", PKG_CXXFLAGS = paste0("-I", system.file("include", package = "realPSD")))
+dyn.load(dynlib("fou_Generics"))
+model <- "fou_Generics"
+```
+
+Now we explain the above input arguments of `make_psd_model` in detail:
+
+- `name`: Name of `my_model`.
+- `header`: Name of the header file with extensions, usually it is `my_model.hpp`.
+- `class`: `model_class` with name scope (if any).
+- `ctor`: `model_ctor` with name scope (if any).
+- `include`: Additional include directive path, usually package specific, in this example, the path to `FitMethods.hpp`.
+- `method`: Generic method class with enclosing namespace if it exists, to use our package realPSD, then it's always realPSD::FitMethods.
+- `standalone`: If `TRUE` creates a standalone `cpp` file to pass to [TMB::compile()].  Otherwise, creates an `hpp` header file to be placed in a package created with **TMBtools**.
+- `path`: Name of output file includeing path.
+
+We can test the model by using the following unit tests:
+
+```{r, fou_test_on_the_fly, eval = FALSE}
+require(testthat)
+# helper function: calculate the psd in R
+fou_psd_r <- function(f, phi) {
+ psd <- abs(f)^(1-2*phi[1]) / (f^2 + phi[2]^2)
+}
+
+context("Test: fractional OU model")
+
+test_that("The UFun returned by TMB (C++) is the same as that given by R", {
+  ntests <- 20
+  for(ii in 1:ntests) {
+    N <- sample(10:20, 1)
+    f <- matrix(runif(N, 0, 2*N))
+    phi <- matrix(c(runif(1), rexp(1))) # phi = c(H, gamma) where 0 < H < 1, gamma > 0
+    obj <- MakeADFun(data = list(f = f, method = "UFun"),
+                 parameters = list(phi = matrix(c(runif(1), rexp(1)))),
+                 DLL = model, silent = TRUE)
+    psd_tmb <- obj$simulate(c(phi))$U
+    psd_r <- fou_psd_r(f, phi)
+    expect_equal(psd_tmb, psd_r)
+  }
+})
+
+# helpfer function
+mle_tau_r <- function(f, Y, phi, ufun, fs) {
+  U <- fs * ufun(f, phi)
+  mean(Y/U)
+}
+sim_Y <- function(n) rchisq(n, df = 2)
+# normalized PSD
+# phi = c(H, gamma)
+fou_ufun <- function(f, phi) {
+  abs(f)^(1-2*phi[1]) / (f^2 + phi[2]^2)
+}
+# simulate the sampling freq
+sim_fs <- function() sample(10:1000, size = 1)
+
+test_that("sigma^2 returned by TMB (C++) is the same as that given by R", {
+  ntests <- 20
+  for(ii in 1:ntests) {
+    N <- sample(50:100, 1)
+    f <- matrix(runif(N, 0, 2*N))
+    fs <- sim_fs()
+    phi <- matrix(c(runif(1), rexp(1))) 
+    Y <- matrix(sim_Y(N))
+    # TMB obj
+    obj <- MakeADFun(
+      data = list(f = f, Y = Y, fs = fs, method = "MLE_tau"), 
+      parameters = list(phi = matrix(0.5, 2)), 
+      DLL = model, silent = TRUE
+    )
+    # define mle_tau from TMB
+    mle_tau_tmb <- function(phi) obj$fn(phi)
+    # comparison
+    tau_tmb <- mle_tau_tmb(phi)
+    tau_r <- mle_tau_r(f, Y, phi, ufun = fou_ufun, fs)
+    expect_equal(tau_tmb, tau_r)
+  }
+})
+```
+Please feel free to try to design your own model and fit its parameters by using the three different methods (MLE, NLS, LP) provided by **realPSD**. Have fun!
+
+## Write your own package
+
+If you are trying to include such a TMB model in your own R package and to make use of the `realPSD` methods, it is easy to do with `make_psd_model` by only changing `standalone` to `FALSE` and then apply `TMBtools::export_models()`. For more details, please see [here](https://github.com/mlysy/TMBtools.git).
+
+## Summary
+
+`realPSD` provides three different spectral estimation methods as well as an automatic mechanism to help users supply their own model to TMB either on-the-fly or in their own package. The general design paradigm of such a mechanism can be summarized as follows:
+
+- User writes `my_model` class which defines two types of public members:
+
+  1.  Generic public members which have the same name and signature for each user defined class `my_model_A`, `my_model_B`, etc.
+
+  2.  A class constructor which has model-specific input parameters.
+
+- Our package `generic_pkg` contains generic code which can operate on an instantiated object `my_model` of type `my_model<Type>`.
+
+- Package automatically creates a **TMB** file out of user and our package code, i.e., which can be compiled on-the-fly or added to the user's R/**TMB** package created with **TMBtools**.
+
+The idea of defining an external class constructor is the key to give users the freedom to add their own input arguments, which overcomes the limitation of **TMB** in R. The generic code relies upon `whisker`, a {{Mustache}} implementation in R to realize logic-less templates.
+
+## Appendix
+
+Here is the source code of the user-defined model header file `fou.hpp`.
 
 ```{Rcpp, fou, eval = FALSE}
 /// @file fou.cpp
@@ -164,95 +396,3 @@ namespace fou {
   #define TMB_OBJECTIVE_PTR this
 } // end namespace fou
 ```
-
-
-
-We can compile our template class `fou.hpp` and supply it to TMB in an R session on-the-fly.
-
-```{r, fou_test_setup, eval = FALSE}
-# test generic fou model header created by make_psd_model
-require(realPSD)
-require(whisker)
-require(TMB)
-
-# standalone == TRUE, compile on-the-fly mode
-make_psd_model(
-  name = "fou",
-  header = "fou.hpp",
-  class = "fou::UFun",
-  ctor = "fou::make_Ufun",
-  include = "realPSD/FitMethods.hpp",
-  method = "realPSD::FitMethods",
-  standalone = TRUE,
-  path = "fou_Generics.cpp"
-)
-
-compile("fou_Generics.cpp", PKG_CXXFLAGS = paste0("-I", system.file("include", package = "realPSD")))
-dyn.load(dynlib("fou_Generics"))
-model <- "fou_Generics"
-```
-
-Then we can test the model by using the following unit tests:
-
-```{r, fou_test_on_the_fly, eval = FALSE}
-require(testthat)
-# helper function: calculate the psd in R
-fou_psd_r <- function(f, phi) {
- psd <- abs(f)^(1-2*phi[1]) / (f^2 + phi[2]^2)
-}
-
-context("Test: fractional OU model")
-
-test_that("The UFun returned by TMB (C++) is the same as that given by R", {
-  ntests <- 20
-  for(ii in 1:ntests) {
-    N <- sample(10:20, 1)
-    f <- matrix(runif(N, 0, 2*N))
-    phi <- matrix(c(runif(1), rexp(1))) # phi = c(H, gamma) where 0 < H < 1, gamma > 0
-    obj <- MakeADFun(data = list(f = f, method = "UFun"),
-                 parameters = list(phi = matrix(c(runif(1), rexp(1)))),
-                 DLL = model, silent = TRUE)
-    psd_tmb <- obj$simulate(c(phi))$U
-    psd_r <- fou_psd_r(f, phi)
-    expect_equal(psd_tmb, psd_r)
-  }
-})
-
-# helpfer function
-mle_tau_r <- function(f, Y, phi, ufun, fs) {
-  U <- fs * ufun(f, phi)
-  mean(Y/U)
-}
-sim_Y <- function(n) rchisq(n, df = 2)
-# normalized PSD
-# phi = c(H, gamma)
-fou_ufun <- function(f, phi) {
-  abs(f)^(1-2*phi[1]) / (f^2 + phi[2]^2)
-}
-# simulate the sampling freq
-sim_fs <- function() sample(10:1000, size = 1)
-
-test_that("sigma^2 returned by TMB (C++) is the same as that given by R", {
-  ntests <- 20
-  for(ii in 1:ntests) {
-    N <- sample(50:100, 1)
-    f <- matrix(runif(N, 0, 2*N))
-    fs <- sim_fs()
-    phi <- matrix(c(runif(1), rexp(1))) 
-    Y <- matrix(sim_Y(N))
-    # TMB obj
-    obj <- MakeADFun(
-      data = list(f = f, Y = Y, fs = fs, method = "MLE_tau"), 
-      parameters = list(phi = matrix(0.5, 2)), 
-      DLL = model, silent = TRUE
-    )
-    # define mle_tau from TMB
-    mle_tau_tmb <- function(phi) obj$fn(phi)
-    # comparison
-    tau_tmb <- mle_tau_tmb(phi)
-    tau_r <- mle_tau_r(f, Y, phi, ufun = fou_ufun, fs)
-    expect_equal(tau_tmb, tau_r)
-  }
-})
-```
-Please feel free to try to design your own model and fit its parameters by using the three different methods (MLE, NLS, LP) provided by **realPSD**. Have fun!
