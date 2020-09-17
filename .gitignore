@@ -17,6 +17,7 @@ vignettes/.build.timestamp
 
 # MATLAB
 *.mat
+*.csv
 
 # tex
 .aux
