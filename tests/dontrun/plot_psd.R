@@ -22,31 +22,41 @@ yPSD_b <- binning(yPSD, bin_size, "mean")
 xPSD_b <- xPSD_b / 1000
 # plot the full range PSD
 psd_data_b <- as_tibble(cbind(xPSD_b, yPSD_b))
-plot_psd <- function(plotdata) {
-  ggplot(plotdata, aes(x = xPSD_b, y = yPSD_b)) + 
-  geom_line(size = 0.18, color = "#29B6F6") + 
-  xlab(expression(Frequency (kHz))) +
-  ylab(expression(PSD (m^2/Hz))) + 
-  scale_x_log10(breaks = trans_breaks("log10", function(x) 10^x),
-    labels = trans_format("log10", math_format(10^.x))) +
-  scale_y_log10(breaks = trans_breaks("log10", function(x) 10^x),
-    labels = trans_format("log10", math_format(10^.x))) +
-  annotation_logticks() # display log ticks on bottom and left
+plot_psd <- function(plotdata, xlog_scale = TRUE, ylog_scale = TRUE, show_ticks = TRUE) {
+  ans <- ggplot(plotdata, aes(x = xPSD_b, y = yPSD_b)) + 
+    geom_line(size = 0.18, color = "#29B6F6") + 
+    xlab(expression(Frequency (kHz))) +
+    ylab(expression(PSD (m^2/Hz)))
+  if(xlog_scale) {
+    ans <- ans + scale_x_log10(breaks = trans_breaks("log10", function(x) 10^x),
+      labels = trans_format("log10", math_format(10^.x))) 
+  }
+  if(ylog_scale) {
+    ans <- ans + scale_y_log10(breaks = trans_breaks("log10", function(x) 10^x),
+      labels = trans_format("log10", math_format(10^.x))) 
+  }
+  if(show_ticks) ans <- ans + annotation_logticks() # display log ticks on bottom and left
+  ans
 }
 plot_full <- plot_psd(psd_data_b)
 plot_full
 # plot of first eigenmode
 # find the frequency range
-frange1 <- c(100:159)
+freq1 <- c(10,100) # in kHz, find the eigenmode by viewing the full range plot
+# find the indices corresponding to the freq range
+frange1 <- c(which.min(abs(freq1[1] - xPSD_b)) : which.min(abs(freq1[2] - xPSD_b)))
 plot_eigen1 <- plot_psd(psd_data_b %>% slice(frange1))
 plot_eigen1
 # plot of second eigenmode
-frange2 <- c(280, 320)
+freq2 <- c(1e2,300)
+frange2 <- c(which.min(abs(freq2[1] - xPSD_b)) : which.min(abs(freq2[2] - xPSD_b)))
 plot_eigen2 <- plot_psd(psd_data_b %>% slice(frange2))
+plot_eigen2
 # arrange them into one plot
-ggarrange(plot_full, 
+plot_group <- ggarrange(plot_full, 
   ggarrange(plot_eigen1, plot_eigen2, ncol = 2, 
     labels = c("(b) 1st Eigenmode", "2nd Eigenmode")),
   nrow = 2,
   labels = "(a) Periodogram"
 )
+ggsave("periodogram.pdf", plot_group)
