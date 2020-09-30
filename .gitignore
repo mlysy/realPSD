@@ -27,4 +27,4 @@ vignettes/.build.timestamp
 .synctex.gz
 
 # others
-.pdf
+*.pdf
