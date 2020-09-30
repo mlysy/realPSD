@@ -54,3 +54,48 @@ gr_fixed <- function(phi, obj, fixed, phi0) {
   x[!fixed] <- phi
   obj$gr(x)[!fixed]
 }
+
+#--- fitting helper functions --------------------------------------------------
+#' Get `theta` from SHOW parameters.
+#'
+#' The parameter vector `theta` is defined as
+#' ```
+#' theta = (f0, Q, Rw = Sw/tau, tau),
+#' ```
+#' where `tau = KbT/(pi k f0 Q)`.
+#'
+#' @param k Cantilever stiffness (N/m).
+#' @param f0 Resonance frequency (Hz).
+#' @param Q Quality factor (unitless).
+#' @param Sw White noise power (m^2/Hz).
+#' @param Temp Temperature (Kelvin).
+#'
+#' @return Numeric vector with named elements `(f0, Q, Rw, tau)`.
+get_theta <- function(k, f0, Q, Sw, Temp) {
+  Kb <- 1.381e-23             # Boltzmann's constant
+  tau <- Kb*Temp/(k*pi*f0*Q)
+  Rw <- Sw/tau
+  setNames(c(f0, Q, Rw, tau), nm = c("f0", "Q", "Rw", "tau"))
+}
+
+#' Recover the SHOW parameters from `theta`.
+#'
+#' @param theta Parameter vector as defined by `get_theta`.
+#' @param Temp Temperature (Kelvin).
+#'
+#' @return Numeric vector with named elements `(k, f0, Q, Sw)`.
+get_par <- function(theta, Temp) {
+  Kb <- 1.381e-23             # Boltzmann's constant
+  Sw <- theta[3] * theta[4]
+  k <- Kb*Temp/(theta[4]*pi*theta[1]*theta[2])
+  setNames(c(k, theta[1], theta[2], Sw),
+           nm = c("k", "f0", "Q", "Sw"))
+}
+
+# #' Calculate bin size correction factor for `LP` estimator.
+# #'
+# #' @param B Bin size (integer).
+# #'
+# #' @return The bin size correction factor `log(B) - digamma(B)`.
+# #' @note This doesn't give the correct value for median estimator...
+# bin_const <- function(B) log(B) - digamma(B)
