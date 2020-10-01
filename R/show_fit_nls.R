@@ -7,6 +7,7 @@
 #' @param bin_type Either "mean" or "median".  The former is more efficient, the latter is more robust, so better for preliminary SHOW fit to denoise against.
 #' @param phi0 Parameter value (transformed scale) to initialize optimization.
 #' @param fit_type If "direct", fit all parameters at once.  If "incremental", do one, then two, then three, etc.
+#' @param optimizer Either "optim" (in R) or "Adam" (supplied by realPSD). For now, Adam's hyperparameter tunning is not fully supported. Learning rate and nsteps are preset. `Adam` is only used for `direct` fitting.
 #' @param getHessian If TRUE, return the numerical Hessian matrix of the original SHOW parameter f0, Q, Rw
 #' @param ... Additional arguments to [stats::optim()].
 #' 
@@ -22,8 +23,10 @@
 show_fit_nls <- function(fseq, Ypsd, fs, Temp,
                          bin_size, bin_type, phi0,
                         fit_type = c("direct", "incremental"),
+                        optimizer = c("optim", "Adam"),
                         getHessian = FALSE, getJacobian = FALSE, ...) {
   fit_type <- match.arg(fit_type)
+  optimizer <- match.arg(optimizer)
   fbar <- binning(fseq, bin_size = bin_size, bin_type = bin_type)
   Ybar <- binning(Ypsd, bin_size = bin_size, bin_type = bin_type)
   constY <- mean(Ybar) # normalize to avoid numerical overflow
@@ -60,9 +63,13 @@ show_fit_nls <- function(fseq, Ypsd, fs, Temp,
   }
   if(all(exitflag == 0)) {
     # fit all three parameters at once
-    fit <- optim(par = phi,
+    if(optimizer == "optim") {
+      fit <- optim(par = phi,
                  fn = obj$fn, gr = obj$gr, method = "BFGS", ...)
-    # fit <- adam(theta0 = phi, fn = obj$fn, gr = obj$gr, nsteps = 200, alpha = 1e-4)
+    } else if(optimizer == "Adam") {
+      fit <- adam(theta0 = phi, fn = obj$fn, gr = obj$gr, nsteps = 300,
+                alpha = 1e-4, ...)
+    }
     phi <- fit$par
     exitflag <- c(exitflag, fit$convergence)
   }
@@ -71,7 +78,7 @@ show_fit_nls <- function(fseq, Ypsd, fs, Temp,
   # hessian
   he <- NULL
   if(getHessian) {    
-    obj_nll <- TMB::MakeADFun(data = list(model = "SHOW_log",
+    obj_nll <- TMB::MakeADFun(data = list(model = "SHOW_nat",
                                     method = "NLS_nll",
                                     fbar = as.matrix(fseq),
                                     Ybar = as.matrix(Ypsd/constY),
@@ -80,7 +87,6 @@ show_fit_nls <- function(fseq, Ypsd, fs, Temp,
                         silent = TRUE, DLL = "realPSD_TMBExports")
     phi_tau <- get_phi(par = get_par(theta, Temp), 
       method = "NLS", Temp = Temp, const = constY) 
-    # phi_tau[4] <- phi_tau[4] / fs
     he <- numDeriv::hessian(func = obj_nll$fn, x = phi_tau)
     he <- he[1:3, 1:3] # truncate the row and col wrt tau
     # cov <- solve(he)
@@ -88,7 +94,7 @@ show_fit_nls <- function(fseq, Ypsd, fs, Temp,
   # Jacobian
   jac <- NULL
   if(getJacobian) {
-    obj_res <- TMB::MakeADFun(data = list(model = "SHOW_log",
+    obj_res <- TMB::MakeADFun(data = list(model = "SHOW_nat",
                                     method = "NLS_res",
                                     fbar = as.matrix(fbar),
                                     Ybar = as.matrix(Ybar/constY),
@@ -97,10 +103,9 @@ show_fit_nls <- function(fseq, Ypsd, fs, Temp,
                         silent = TRUE,
                         ADreport = TRUE,
                         DLL = "realPSD_TMBExports")
-    nls_res2 <- function(phi) setNames((obj$fn(phi))^2, nm = NULL)
+    nls_res2 <- function(phi) setNames((obj_res$fn(phi))^2, nm = NULL)
     phi_tau <- get_phi(par = get_par(theta, Temp), 
       method = "NLS", Temp = Temp, const = constY)
-    # phi_tau[4] <- phi_tau[4] / fs
     jac <- numDeriv::jacobian(nls_res2, x = phi_tau[1:3])
     # jac <- numDeriv::jacobian(nls_res2, x = phi_tau)
   }

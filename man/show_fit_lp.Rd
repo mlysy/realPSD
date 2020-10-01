@@ -13,6 +13,7 @@ show_fit_lp(
   bin_type,
   phi0,
   fit_type = c("direct", "incremental"),
+  optimizer = c("optim", "Adam"),
   getHessian = FALSE,
   ...
 )
@@ -33,6 +34,8 @@ show_fit_lp(
 \item{phi0}{Parameter value (transformed scale) to initialize optimization.}
 
 \item{fit_type}{If "direct", fit all parameters at once.  If "incremental", do one, then two, then three, etc.}
+
+\item{optimizer}{Either "optim" (in R) or "Adam" (supplied by realPSD). For now, Adam's hyperparameter tunning is not fully supported. Learning rate and nsteps are preset. \code{Adam} is only used for \code{direct} fitting.}
 
 \item{getHessian}{If TRUE, return the numerical Hessian matrix of the original SHOW parameter f0, Q, Rw}
 
