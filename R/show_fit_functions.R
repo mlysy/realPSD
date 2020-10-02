@@ -92,6 +92,23 @@ get_par <- function(theta, Temp) {
            nm = c("k", "f0", "Q", "Sw"))
 }
 
+#' Recover the SHOWF parameters from `theta`.
+#'
+#' @param theta Parameter vector (f0, Q, Rw, Rf, alpha, tau).
+#' @param Temp Temperature (Kelvin).
+#'
+#' @return Numeric vector with named elements `(k, f0, Q, Sw)`.
+get_par_showf <- function(theta, Temp) {
+  Kb <- 1.381e-23             # Boltzmann's constant
+  Sw <- theta[3] * theta[6] # Rw * tau
+  k <- Kb*Temp/(theta[6]*pi*theta[1]*theta[2])
+  Af <- theta[4] * theta[6] # Rf * tau
+  alpha <- theta[5]
+  setNames(c(k, theta[1], theta[2], Sw, Af, alpha),
+           nm = c("k", "f0", "Q", "Sw", "Af", "alpha"))
+}
+
+
 # #' Calculate bin size correction factor for `LP` estimator.
 # #'
 # #' @param B Bin size (integer).
