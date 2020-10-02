@@ -47,7 +47,7 @@ test_that("The SHOWF UFun (with map) returned is the same in R and TMB", {
     fs <- sim_fs()
     phi0 <- sim_showf_phi(model) # phi = c(f0, Q, Rw, Rf, alpha)
     # create TMB model and functions
-    map <- list(c(1,2,NA,4,5)) # fix Rw at the initial value 0
+    map <- list(as.factor(c(1,2,NA,4,5)))
     phi0[3] <- 0
     tmod <- TMB::MakeADFun(data = list(model = model, 
                                       method = "UFun", 
@@ -55,7 +55,7 @@ test_that("The SHOWF UFun (with map) returned is the same in R and TMB", {
                                       Y = matrix(Y),
                                       fs = fs),
                            parameters = list(phi = matrix(phi0)),
-                           # map = map,
+                           map = map,
                            silent = TRUE, DLL = "realPSD_TMBExports")
     ufun_tmb <- function(phi) c(tmod$simulate(phi)$U)
     # check they are equal
