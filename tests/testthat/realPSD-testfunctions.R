@@ -124,7 +124,7 @@ showf_ufun <- function(f, phi) {
 }
 
 # pick model
-get_ufun <- function(model = c("SHOW_nat", "SHOW_log", "SHOW_comp", "SHOWF_log")) {
+get_ufun <- function(model = c("SHOW_nat", "SHOW_log", "SHOW_comp", "SHOWF_log", "SHOWF_nat")) {
   model <- match.arg(model)
   if(model == "SHOW_nat") {
     return(show_ufun)
@@ -134,6 +134,8 @@ get_ufun <- function(model = c("SHOW_nat", "SHOW_log", "SHOW_comp", "SHOWF_log")
     return(show_ufun_comp)
   } else if(model == "SHOWF_log") {
     return(function(f, phi) showf_ufun(f, exp(phi)))
+  } else if(model == "SHOWF_nat") {
+    return(showf_ufun)
   }
 }
 

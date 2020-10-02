@@ -1,13 +1,13 @@
 source("realPSD-testfunctions.R")
 
-context("SHOWF log parameterization")
+context("SHOWF UFun Tests")
 
 test_that("The SHOWF UFun returned is the same in R and TMB", {
-  ntest <- 20
+  ntest <- 50
   nphi <- sample(2:5,1)
   for(ii in 1:ntest) {
     # pick model
-    model <- "SHOWF_log"
+    model <- sample(c("SHOWF_log", "SHOWF_nat"), size = 1)
     ufun_r <- get_ufun(model)
     # simulate data
     N <- sample(10:20,1)
@@ -38,7 +38,7 @@ test_that("The SHOWF UFun (with map) returned is the same in R and TMB", {
   nphi <- sample(2:5,1)
   for(ii in 1:ntest) {
     # pick model
-    model <- "SHOWF_log"
+    model <- sample(c("SHOWF_log", "SHOWF_nat"), size = 1)
     ufun_r <- get_ufun(model)
     # simulate data
     N <- sample(10:20,1)

@@ -64,8 +64,7 @@ namespace realPSD {
       U = (f2_/(phi(0,0) * phi(0,0))).array() - Type(1.0);
       U = U.cwiseProduct(U);
       U += f2_/(phi(0,0) * phi(1,0) * phi(0,0) * phi(1,0));
-      U = 1.0/U.array() + phi(2,0);
-      U += phi(3,0)/f2_.array().pow(phi(4,0));
+      U = 1.0/U.array() + phi(2,0) + phi(3,0)/f2_.array().pow(phi(4,0)/2.0);
       return;
     }
 

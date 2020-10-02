@@ -7,6 +7,7 @@
 #include "SHOW_nat.hpp"
 #include "SHOW_test.hpp"
 #include "SHOWF_log.hpp"
+#include "SHOWF_nat.hpp"
 
 template<class Type>
 Type objective_function<Type>::operator() () {
@@ -21,6 +22,8 @@ Type objective_function<Type>::operator() () {
     return SHOW_test(this);
   } else if(model == "SHOWF_log") {
     return SHOWF_log(this);
+  } else if(model == "SHOWF_nat") {
+    return SHOWF_nat(this);
   } else {
     error("Unknown model.");
   }
