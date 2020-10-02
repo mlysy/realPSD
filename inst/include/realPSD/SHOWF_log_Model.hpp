@@ -64,7 +64,7 @@ namespace realPSD {
       U = (f2_/exp(Type(2.0) * phi(0,0))).array() - Type(1.0);
       U = U.cwiseProduct(U);
       U += f2_/exp(Type(2.0) * (phi(0,0) + phi(1,0)));
-      U = 1.0/U.array() + exp(phi(2,0)) + exp(phi(3,0))/f2_.array().pow(exp(phi(4,0)));
+      U = 1.0/U.array() + exp(phi(2,0)) + exp(phi(3,0))/f2_.array().pow(exp(phi(4,0))/2.0); // note we used f2_.array() so divide the power alpha by 2.0
       return;
     }
 
