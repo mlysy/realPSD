@@ -82,8 +82,7 @@ show_fit_mle <- function(fseq, Ypsd, fs, Temp, phi0,
                                     fs = fs),
                         parameters = list(phi = as.matrix(c(0,0,0)), tau = 0),
                         silent = TRUE, DLL = "realPSD_TMBExports")
-    phi_tau <- get_phi(par = get_par(theta, Temp), 
-      method = "MLE", Temp = Temp, const = constY)
+    phi_tau <- c(exp(phi), obj$simulate(phi)$tau)
     he <- numDeriv::hessian(func = obj_nll$fn, x = phi_tau)
     he <- he[1:3, 1:3] # truncate the row and col wrt tau
     # cov <- solve(he)

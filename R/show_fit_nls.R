@@ -85,8 +85,7 @@ show_fit_nls <- function(fseq, Ypsd, fs, Temp,
                                     fs = fs),
                         parameters = list(phi = as.matrix(c(0,0,0)), tau = 0),
                         silent = TRUE, DLL = "realPSD_TMBExports")
-    phi_tau <- get_phi(par = get_par(theta, Temp), 
-      method = "NLS", Temp = Temp, const = constY) 
+    phi_tau <- c(exp(phi), obj$simulate(phi)$tau)
     he <- numDeriv::hessian(func = obj_nll$fn, x = phi_tau)
     he <- he[1:3, 1:3] # truncate the row and col wrt tau
     # cov <- solve(he)
@@ -104,8 +103,7 @@ show_fit_nls <- function(fseq, Ypsd, fs, Temp,
                         ADreport = TRUE,
                         DLL = "realPSD_TMBExports")
     nls_res2 <- function(phi) setNames((obj_res$fn(phi))^2, nm = NULL)
-    phi_tau <- get_phi(par = get_par(theta, Temp), 
-      method = "NLS", Temp = Temp, const = constY)
+    phi_tau <- c(exp(phi), obj$simulate(phi)$tau)
     jac <- numDeriv::jacobian(nls_res2, x = phi_tau[1:3])
     # jac <- numDeriv::jacobian(nls_res2, x = phi_tau)
   }
