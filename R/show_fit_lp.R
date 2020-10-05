@@ -87,7 +87,7 @@ show_fit_lp <- function(fseq, Ypsd, fs, Temp,
                         silent = TRUE, DLL = "realPSD_TMBExports")
     phi_zeta <- get_phi(par = get_par(theta, Temp), 
       method = "LP", Temp = Temp, const = constZ)
-    he <- numDeriv::hessian(func = obj_nll$fn, x = phi_zeta)
+    he <- bin_size * numDeriv::hessian(func = obj_nll$fn, x = phi_zeta) # since the obj fn should be scaled up by bin_size/2
     he <- he[1:3, 1:3] # truncate the row and col wrt tau
     # cov <- solve(he)
   }
