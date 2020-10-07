@@ -31,7 +31,7 @@ showf_fit_nls <- function(fseq, Ypsd, fs, Temp,
   Ybar <- binning(Ypsd, bin_size = bin_size, bin_type = bin_type)
   constY <- mean(Ybar) # normalize to avoid numerical overflow
   map <- list(as.factor(c(1,2,NA,4,5)))
-  obj <- TMB::MakeADFun(data = list(model = "SHOW_log",
+  obj <- TMB::MakeADFun(data = list(model = "SHOWF_log",
                                     method = "NLS_nlp",
                                     fbar = as.matrix(fbar),
                                     Ybar = as.matrix(Ybar/constY),
@@ -73,6 +73,7 @@ showf_fit_nls <- function(fseq, Ypsd, fs, Temp,
     if(any(exitflag) != 0) break
   }
   if(all(exitflag == 0)) {
+    fixed <- c(FALSE, FALSE, TRUE, FALSE, TRUE)
     # fit all three parameters at once
     if(optimizer == "optim") {
       fit <- optim(par = phi,
@@ -89,7 +90,7 @@ showf_fit_nls <- function(fseq, Ypsd, fs, Temp,
   # hessian
   he <- NULL
   if(getHessian) {    
-    obj_nll <- TMB::MakeADFun(data = list(model = "SHOW_nat",
+    obj_nll <- TMB::MakeADFun(data = list(model = "SHOWF_nat",
                                     method = "NLS_nll",
                                     fbar = as.matrix(fseq),
                                     Ybar = as.matrix(Ypsd/constY),
@@ -105,7 +106,7 @@ showf_fit_nls <- function(fseq, Ypsd, fs, Temp,
   # Jacobian
   jac <- NULL
   if(getJacobian) {
-    obj_res <- TMB::MakeADFun(data = list(model = "SHOW_nat",
+    obj_res <- TMB::MakeADFun(data = list(model = "SHOWF_nat",
                                     method = "NLS_res",
                                     fbar = as.matrix(fbar),
                                     Ybar = as.matrix(Ybar/constY),

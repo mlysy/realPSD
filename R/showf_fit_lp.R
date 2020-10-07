@@ -31,7 +31,7 @@ showf_fit_lp <- function(fseq, Ypsd, fs, Temp,
   Zbar <- log(binning(Ypsd, bin_size = bin_size, bin_type = bin_type))
   constZ <- mean(Zbar) # normalize to avoid numerical overflow
   map <- list(as.factor(c(1,2,NA,4,5)))
-  obj <- TMB::MakeADFun(data = list(model = "SHOW_log",
+  obj <- TMB::MakeADFun(data = list(model = "SHOWF_log",
                                     method = "LP_nlp",
                                     fbar = as.matrix(fbar),
                                     Zbar = as.matrix(Zbar - constZ),
@@ -73,6 +73,7 @@ showf_fit_lp <- function(fseq, Ypsd, fs, Temp,
     if(any(exitflag) != 0) break
   }
   if(all(exitflag == 0)) {
+    fixed <- c(FALSE, FALSE, TRUE, FALSE, TRUE)
     # fit all three parameters at once
     if(optimizer == "optim") {
       fit <- optim(par = phi,
@@ -89,7 +90,7 @@ showf_fit_lp <- function(fseq, Ypsd, fs, Temp,
   # numerical hessian
   he <- NULL
   if(getHessian) {
-    obj_nll <- TMB::MakeADFun(data = list(model = "SHOW_nat",
+    obj_nll <- TMB::MakeADFun(data = list(model = "SHOWF_nat",
                                     method = "LP_nll",
                                     fbar = as.matrix(fbar),
                                     Zbar = as.matrix(Zbar - constZ),

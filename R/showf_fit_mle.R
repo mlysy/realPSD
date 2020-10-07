@@ -69,6 +69,7 @@ showf_fit_mle <- function(fseq, Ypsd, fs, Temp, phi0,
     if(any(exitflag) != 0) break
   }
   if(all(exitflag == 0)) {
+    fixed <- c(FALSE, FALSE, TRUE, FALSE, TRUE)
     # fit all three parameters at once
     if(optimizer == "optim") {
       fit <- optim(par = phi,
