@@ -102,8 +102,12 @@ showf_fit_lp <- function(fseq, Ypsd, fs, Temp,
                         map = map,
                         silent = TRUE, DLL = "realPSD_TMBExports")
     phi_zeta <- c(exp(phi), tau = obj$simulate(phi)$zeta)
-    he <- numDeriv::hessian(func = obj_nll$fn, x = phi_zeta)
-    he <- he[1:5, 1:5] # truncate the row and col wrt tau
+    he <- numDeriv::hessian(func = obj_nll$fn, x = phi_zeta) # with or without map = map gives the same output
+    # browser()
+    # ind <- c(1,2,4,5)
+    # tmp <- he[ind, ind]
+    # solve(tmp)
+    he <- he[c(1,2,5), c(1,2,5)] # truncate the row and col wrt Rw, alpha and tau, c(1,2,4,5) will give singular matrix
     # cov <- solve(he)
   }
   list(par = get_par_showf(theta, Temp = Temp),

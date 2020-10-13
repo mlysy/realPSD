@@ -102,7 +102,11 @@ showf_fit_mle <- function(fseq, Ypsd, fs, Temp, phi0,
                         silent = TRUE, DLL = "realPSD_TMBExports")
     phi_tau <- c(exp(phi), tau = obj$simulate(phi)$tau)
     he <- numDeriv::hessian(func = obj_nll$fn, x = phi_tau)
-    he <- he[1:5, 1:5] # truncate the row and col wrt tau
+    # browser()
+    # ind <- c(1,2,4,5)
+    # tmp <- he[ind, ind]
+    # solve(tmp)
+    he <- he[c(1,2,5), c(1,2,5)] # the hessian matrix will be singular if Rf and alpha are both present
     # cov <- solve(he)
   }
   list(par = get_par_showf(theta, Temp = Temp),

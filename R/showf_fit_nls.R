@@ -105,7 +105,11 @@ showf_fit_nls <- function(fseq, Ypsd, fs, Temp,
                         silent = TRUE, DLL = "realPSD_TMBExports")
     phi_tau <- c(exp(phi), tau = obj$simulate(phi)$tau)
     he <- numDeriv::hessian(func = obj_nll$fn, x = phi_tau)
-    he <- he[1:5, 1:5] # truncate the row and col wrt tau
+    # browser()
+    # ind <- c(1,2,4,5)
+    # tmp <- he[ind, ind]
+    # solve(tmp)
+    he <- he[c(1,2,5), c(1,2,5)] # truncate the row and col wrt tau
     # cov <- solve(he)
   }
   # Jacobian
@@ -123,7 +127,7 @@ showf_fit_nls <- function(fseq, Ypsd, fs, Temp,
                         DLL = "realPSD_TMBExports")
     nls_res2 <- function(phi) setNames((obj_res$fn(phi))^2, nm = NULL)
     phi_tau <- c(exp(phi), tau = obj$simulate(phi)$tau)
-    jac <- numDeriv::jacobian(nls_res2, x = phi_tau[1:5])
+    jac <- numDeriv::jacobian(nls_res2, x = phi_tau[1:5]) # return the full Jacobian for all params in phi
     # jac <- numDeriv::jacobian(nls_res2, x = phi_tau)
   }
   list(par = get_par_showf(theta, Temp = Temp),
