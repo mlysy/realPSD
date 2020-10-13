@@ -69,16 +69,21 @@ showf_fit_mle <- function(fseq, Ypsd, fs, Temp, phi0,
     if(any(exitflag) != 0) break
   }
   if(all(exitflag == 0)) {
-    fixed <- c(FALSE, FALSE, TRUE, FALSE, TRUE)
     # fit all three parameters at once
     if(optimizer == "optim") {
-      fit <- optim(par = phi,
-                 fn = obj$fn, gr = obj$gr, method = "BFGS", ...)
+      fixed <- c(FALSE, FALSE, TRUE, FALSE, FALSE)
+      # fit <- optim(par = phi,
+      #            fn = obj$fn, gr = obj$gr, method = "BFGS", ...)
+      fit <- optim(par = phi[!fixed],
+                 fn = fn_fixed, gr = gr_fixed,
+                 obj = obj, fixed = fixed, phi0 = phi,
+                 method = "BFGS", ...)
+      phi[!fixed] <- fit$par
     } else if(optimizer == "Adam") {
       fit <- adam(theta0 = phi, fn = obj$fn, gr = obj$gr, nsteps = 300,
                 alpha = 1e-3, ...)
+      phi <- fit$par
     }
-    phi <- fit$par
     exitflag <- c(exitflag, fit$convergence)
   }
   # construct final estimator

@@ -4,12 +4,20 @@
 \alias{get_phi}
 \title{Convert SHOW parameterization to natural parameterization.}
 \usage{
-get_phi(par, method = c("MLE", "NLS", "LP"), Temp, const)
+get_phi(
+  par,
+  method = c("MLE", "NLS", "LP"),
+  model = c("SHOW", "SHOWF"),
+  Temp,
+  const
+)
 }
 \arguments{
-\item{par}{SHOW parameters \verb{(k, f0, Q, Sw)}.}
+\item{par}{SHOW parameters \verb{(k, f0, Q, Sw)} or \verb{(k, f0, Q, Sw, Af, alpha)}.}
 
 \item{method}{Fitting method}
+
+\item{model}{either "SHOW" or "SHOWF", if model == "SHOW", par = c(k,f0,Q,Sw); if model == "SHOWF", par = c(k,f0,Q,Sw,Af,alpha)}
 
 \item{Temp}{Temperature constant}
 
