@@ -10,7 +10,7 @@
 #' @param fit_type If "direct", fit all parameters at once.  If "incremental", do one, then two, then three, etc.
 #' @param optimizer Either "optim" (in R) or "Adam" (supplied by realPSD). For now, Adam's hyperparameter tunning is not fully supported. Learning rate and nsteps are preset. `Adam` is only used for `direct` fitting.
 #' @param vcov If TRUE, return the numerical variance-covariance matrix for all the parameters (original scale)
-#' @param get_jac If TRUE, return the numerical Jacobian of the SHOW parameters f0, Q, Rw, only valid if method == "NLS".
+#' @param get_jac If TRUE, return the numerical Jacobian of the SHOW parameters k, f0, Q, only valid if method == "NLS".
 #' @param ... Additional arguments to [stats::optim()].
 #'
 #' @return A list with elements 
