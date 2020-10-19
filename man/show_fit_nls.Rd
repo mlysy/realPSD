@@ -14,8 +14,8 @@ show_fit_nls(
   phi0,
   fit_type = c("direct", "incremental"),
   optimizer = c("optim", "Adam"),
-  getHessian = FALSE,
-  getJacobian = FALSE,
+  vcov = FALSE,
+  get_jac = FALSE,
   ...
 )
 }
@@ -38,7 +38,9 @@ show_fit_nls(
 
 \item{optimizer}{Either "optim" (in R) or "Adam" (supplied by realPSD). For now, Adam's hyperparameter tunning is not fully supported. Learning rate and nsteps are preset. \code{Adam} is only used for \code{direct} fitting.}
 
-\item{getHessian}{If TRUE, return the numerical Hessian matrix of the original SHOW parameter f0, Q, Rw}
+\item{vcov}{If TRUE, return the numerical variance-covariance matrix for all the parameters (original scale)}
+
+\item{get_jac}{If TRUE, return the numerical Jacobian of the SHOW parameters f0, Q, Rw, only valid if method == "NLS".}
 
 \item{...}{Additional arguments to \code{\link[stats:optim]{stats::optim()}}.}
 }
@@ -48,7 +50,7 @@ A list with elements
 \item{\code{par}}{The fitted parameter value which is the minimizer of the objective function.}
 \item{\code{Temp}}{The temperature constant used in calculation, Kelvin.}
 \item{\code{value}}{The value of the objective function (negative loglikelihood) at the given \code{par}.}
-\item{\code{he}}{The numerical Hessian matrix of the SHOW model parameter f0, Q, Rw.}
+\item{\code{cov}}{The numerical variance-covariance matrix for all the parameters (original scale).}
 \item{\code{jac}}{The numerical Jacobian matrix of the SHOW model parameter f0, Q, Rw.}
 \item{\code{exitflag}}{The exit flag given by the optimizer, for debug purposes}
 }

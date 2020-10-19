@@ -8,7 +8,8 @@
 #' @param phi0 Parameter value (transformed scale) to initialize optimization.
 #' @param fit_type If "direct", fit all parameters at once.  If "incremental", do one, then two, then three, etc.
 #' @param optimizer Either "optim" (in R) or "Adam" (supplied by realPSD). For now, Adam's hyperparameter tunning is not fully supported. Learning rate and nsteps are preset. `Adam` is only used for `direct` fitting.
-#' @param getHessian If TRUE, return the numerical Hessian matrix of the original SHOW parameter f0, Q, Rw
+#' @param vcov If TRUE, return the numerical variance-covariance matrix for all the parameters (original scale)
+#' @param get_jac If TRUE, return the numerical Jacobian of the SHOW parameters f0, Q, Rw, only valid if method == "NLS".
 #' @param ... Additional arguments to [stats::optim()].
 #' 
 #' @return A list with elements 
@@ -16,7 +17,7 @@
 #'   \item{`par`}{The fitted parameter value which is the minimizer of the objective function.}
 #'   \item{`Temp`}{The temperature constant used in calculation, Kelvin.}
 #'   \item{`value`}{The value of the objective function (negative loglikelihood) at the given `par`.}
-#'   \item{`he`}{The numerical Hessian matrix of the SHOW model parameter f0, Q, Rw.}
+#'   \item{`cov`}{The numerical variance-covariance matrix for all the parameters (original scale).}
 #'   \item{`jac`}{The numerical Jacobian matrix of the SHOW model parameter f0, Q, Rw.}
 #'   \item{`exitflag`}{The exit flag given by the optimizer, for debug purposes}
 #' }
@@ -24,7 +25,7 @@ show_fit_nls <- function(fseq, Ypsd, fs, Temp,
                          bin_size, bin_type, phi0,
                         fit_type = c("direct", "incremental"),
                         optimizer = c("optim", "Adam"),
-                        getHessian = FALSE, getJacobian = FALSE, ...) {
+                        vcov = FALSE, get_jac = FALSE, ...) {
   fit_type <- match.arg(fit_type)
   optimizer <- match.arg(optimizer)
   fbar <- binning(fseq, bin_size = bin_size, bin_type = bin_type)
@@ -75,25 +76,34 @@ show_fit_nls <- function(fseq, Ypsd, fs, Temp,
   }
   # construct final estimator
   theta <- c(exp(phi), tau = obj$simulate(phi)$tau * constY)
+  theta <- setNames(theta, nm = c("f0", "Q", "Rw", "tau"))
+  par_opt <- get_par(theta, Temp = Temp)
   # hessian
-  he <- NULL
-  if(getHessian) {    
-    obj_nll <- TMB::MakeADFun(data = list(model = "SHOW_nat",
+  cov <- NULL
+  if(vcov) {    
+    obj_nll <- TMB::MakeADFun(data = list(model = "SHOW_log",
                                     method = "NLS_nll",
                                     fbar = as.matrix(fseq),
                                     Ybar = as.matrix(Ypsd/constY),
                                     fs = fs),
                         parameters = list(phi = as.matrix(c(0,0,0)), tau = 0),
                         silent = TRUE, DLL = "realPSD_TMBExports")
-    phi_tau <- c(exp(phi), obj$simulate(phi)$tau)
-    he <- numDeriv::hessian(func = obj_nll$fn, x = phi_tau)
-    he <- he[1:3, 1:3] # truncate the row and col wrt tau
-    # cov <- solve(he)
+    # phi_tau <- c(exp(phi), obj$simulate(phi)$tau)
+    # he <- numDeriv::hessian(func = obj_nll$fn, x = phi_tau)
+    # he <- he[1:3, 1:3] # truncate the row and col wrt tau
+    he <- numDeriv::hessian(func = function(par) {
+      # convert original scale (par) to computational scale (phi & zeta)
+      phi_zeta <- get_phi(par, Temp = Temp, method = "NLS", model = "SHOW", const = constY)
+      # feed these into the negative loglikelihood on the computational scale
+      obj_nll$fn(phi_zeta)
+    }, x = par_opt) 
+    he <- he[1:3, 1:3]
+    cov <- chol2inv(chol(he)) 
   }
   # Jacobian
   jac <- NULL
-  if(getJacobian) {
-    obj_res <- TMB::MakeADFun(data = list(model = "SHOW_nat",
+  if(get_jac) {
+    obj_res <- TMB::MakeADFun(data = list(model = "SHOW_log",
                                     method = "NLS_res",
                                     fbar = as.matrix(fbar),
                                     Ybar = as.matrix(Ybar/constY),
@@ -102,13 +112,15 @@ show_fit_nls <- function(fseq, Ypsd, fs, Temp,
                         silent = TRUE,
                         ADreport = TRUE,
                         DLL = "realPSD_TMBExports")
-    nls_res2 <- function(phi) setNames((obj_res$fn(phi))^2, nm = NULL)
-    phi_tau <- c(exp(phi), obj$simulate(phi)$tau)
-    jac <- numDeriv::jacobian(nls_res2, x = phi_tau[1:3])
-    # jac <- numDeriv::jacobian(nls_res2, x = phi_tau)
+    nls_res2 <- function(par) {
+      phi_tau <- get_phi(par, Temp = Temp, method = "NLS", model = "SHOW", const = constY)
+      setNames((obj_res$fn(phi_tau[1:3]))^2, nm = NULL)
+    }
+    jac <- numDeriv::jacobian(nls_res2, x = par_opt)
+    jac <- jac[,1:3] # exclude column wrt Sw (which is NA)
   }
   list(par = get_par(theta, Temp = Temp),
        value = obj$fn(phi),
-       he = he, jac = jac,
+       cov = cov, jac = jac,
        exitflag = exitflag)
 }

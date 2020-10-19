@@ -9,7 +9,7 @@
 #' @param phi0 Parameter value (transformed scale) to initialize optimization.
 #' @param fit_type If "direct", fit all parameters at once.  If "incremental", do one, then two, then three, etc.
 #' @param optimizer Either "optim" (in R) or "Adam" (supplied by realPSD). For now, Adam's hyperparameter tunning is not fully supported. Learning rate and nsteps are preset. `Adam` is only used for `direct` fitting.
-#' @param getHessian If TRUE, return the numerical Hessian matrix of the original SHOW parameter f0, Q, Rw
+#' @param vcov If TRUE, return the numerical variance-covariance matrix for all the parameters (original scale)
 #' @param ... Additional arguments to [stats::optim()].
 #' 
 #' @return A list with elements 
@@ -17,14 +17,14 @@
 #'   \item{`par`}{The fitted parameter value which is the minimizer of the objective function.}
 #'   \item{`Temp`}{The temperature constant used in calculation, Kelvin.}
 #'   \item{`value`}{The value of the objective function (negative loglikelihood) at the given `par`.}
-#'   \item{`he`}{The numerical Hessian matrix of the SHOW model parameter f0, Q, Rw.}
+#'   \item{`cov`}{The numerical variance-covariance matrix for all the parameters (original scale).}
 #'   \item{`exitflag`}{The exit flag given by the optimizer, for debug purposes}
 #' }
 show_fit_lp <- function(fseq, Ypsd, fs, Temp,
                         bin_size, bin_type, phi0,
                         fit_type = c("direct", "incremental"),
                         optimizer = c("optim", "Adam"),
-                        getHessian = FALSE, ...) {
+                        vcov = FALSE, ...) {
   fit_type <- match.arg(fit_type)
   optimizer <- match.arg(optimizer)
   fbar <- binning(fseq, bin_size = bin_size, bin_type = bin_type)
@@ -68,29 +68,38 @@ show_fit_lp <- function(fseq, Ypsd, fs, Temp,
                  fn = obj$fn, gr = obj$gr, method = "BFGS", ...)
     } else if(optimizer == "Adam") {
       fit <- adam(theta0 = phi, fn = obj$fn, gr = obj$gr, nsteps = 300,
-                alpha = 1e-4, ...)
+                alpha = 1e-3, ...)
     }
     phi <- fit$par
     exitflag <- c(exitflag, fit$convergence)
   }
   # construct final estimator
   theta <- c(exp(phi), tau = exp(obj$simulate(phi)$zeta + constZ))
-  # numerical hessian
-  he <- NULL
-  if(getHessian) {
-    obj_nll <- TMB::MakeADFun(data = list(model = "SHOW_nat",
+  theta <- setNames(theta, nm = c("f0", "Q", "Rw", "tau"))
+  # numerical variance-covariance matrix
+  cov <- NULL
+  if(vcov) {
+    obj_nll <- TMB::MakeADFun(data = list(model = "SHOW_log",
                                     method = "LP_nll",
                                     fbar = as.matrix(fbar),
                                     Zbar = as.matrix(Zbar - constZ),
                                     fs = fs/exp(bin_factor(bin_size))),
                         parameters = list(phi = as.matrix(c(0,0,0)), zeta = 0),
                         silent = TRUE, DLL = "realPSD_TMBExports")
-    phi_zeta <- c(exp(phi), obj$simulate(phi)$zeta)
-    he <- numDeriv::hessian(func = obj_nll$fn, x = phi_zeta) 
-    he <- he[1:3, 1:3] # truncate the row and col wrt tau
-    # cov <- solve(he)
+    # phi_zeta <- c(exp(phi), obj$simulate(phi)$zeta)
+    # he <- numDeriv::hessian(func = obj_nll$fn, x = phi_zeta) 
+    # he <- he[1:3, 1:3] # truncate the row and col wrt tau
+    par_opt <- get_par(theta, Temp = Temp)
+    he <- numDeriv::hessian(func = function(par) {
+      # convert original scale (par) to computational scale (phi & zeta)
+      phi_zeta <- get_phi(par, Temp = Temp, method = "LP", model = "SHOW", const = constZ)
+      # feed these into the negative loglikelihood on the computational scale
+      obj_nll$fn(phi_zeta)
+    }, x = par_opt) 
+    he <- he[1:3, 1:3] # the last row/column of Hessian is NA
+    cov <- chol2inv(chol(he)) 
   }
   list(par = get_par(theta, Temp = Temp),
-       value = obj$fn(phi), he = he,
+       value = obj$fn(phi), cov = cov,
        exitflag = exitflag)
 }

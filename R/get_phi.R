@@ -45,16 +45,16 @@ get_phi <- function(par, method = c("MLE", "NLS", "LP"), model = c("SHOW", "SHOW
     # normalized tau based on fitting method to avoid numerical overflow
     if(method == "MLE") {
       tau <- tau/const
-      phi_zeta <- setNames(c(log(f0), log(Q), log(Rw), tau), nm=c("f0", "Q", "Rw", "tau"))
+      phi_zeta <- setNames(c(log(f0), log(Q), log(Rw), tau), nm=c("log f0", "log Q", "log Rw", "tau"))
       # phi_zeta <- setNames(c(f0, Q, Rw, tau), nm=c("f0", "Q", "Rw", "tau"))
     } else if (method == "NLS") {
       tau <- tau/const
-      phi_zeta <- setNames(c(log(f0), log(Q), log(Rw), tau), nm=c("f0", "Q", "Rw", "tau"))
+      phi_zeta <- setNames(c(log(f0), log(Q), log(Rw), tau), nm=c("log f0", "log Q", "log Rw", "tau"))
       # phi_zeta <- setNames(c(f0, Q, Rw, tau), nm=c("f0", "Q", "Rw", "tau"))
     } else if (method == "LP") {
       zeta <- log(tau) - const
       # zeta <- tau/const
-      phi_zeta <- setNames(c(log(f0), log(Q), log(Rw), zeta), nm=c("f0", "Q", "Rw", "zeta"))
+      phi_zeta <- setNames(c(log(f0), log(Q), log(Rw), zeta), nm=c("log f0", "log Q", "log Rw", "zeta"))
       # phi_zeta <- setNames(c(f0, Q, Rw, zeta), nm=c("f0", "Q", "Rw", "zeta"))
     }
   } else if (model == "SHOWF") {
@@ -64,13 +64,13 @@ get_phi <- function(par, method = c("MLE", "NLS", "LP"), model = c("SHOW", "SHOW
     # normalized tau based on fitting method to avoid numerical overflow
     if(method == "MLE") {
       tau <- tau/const
-      phi_zeta <- setNames(c(log(f0), log(Q), log(Rw), log(Rf), log(alpha), tau), nm=c("f0", "Q", "Rw", "Rf", "alpha", "tau"))
+      phi_zeta <- setNames(c(log(f0), log(Q), log(Rw), log(Rf), log(alpha), tau), nm=c("log f0", "log Q", "log Rw", "log Rf", "log alpha", "tau"))
     } else if (method == "NLS") {
       tau <- tau/const
-      phi_zeta <- setNames(c(log(f0), log(Q), log(Rw), log(Rf), log(alpha), tau), nm=c("f0", "Q", "Rw", "Rf", "alpha", "tau"))
+      phi_zeta <- setNames(c(log(f0), log(Q), log(Rw), log(Rf), log(alpha), tau), nm=c("log f0", "log Q", "log Rw", "log Rf", "log alpha", "tau"))
     } else if (method == "LP") {
       zeta <- log(tau) - const
-      phi_zeta <- setNames(c(log(f0), log(Q), log(Rw), log(Rf), log(alpha), zeta), nm=c("f0", "Q", "Rw", "Rf", "alpha", "tau"))
+      phi_zeta <- setNames(c(log(f0), log(Q), log(Rw), log(Rf), log(alpha), zeta), nm=c("log f0", "log Q", "log Rw", "log Rf", "log alpha", "zeta"))
     }
   }
   return(phi_zeta)
