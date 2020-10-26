@@ -7,13 +7,13 @@
 get_phi(
   par,
   method = c("MLE", "NLS", "LP"),
-  model = c("SHOW", "SHOWF"),
+  model = c("SHOW", "SHOWF", "SHOF"),
   Temp,
   const
 )
 }
 \arguments{
-\item{par}{SHOW parameters \verb{(k, f0, Q, Sw)} or \verb{(k, f0, Q, Sw, Af, alpha)}.}
+\item{par}{SHOW parameters \verb{(k, f0, Q, Sw)} or \verb{(k, f0, Q, Sw, Af, alpha)} or \verb{(k, f0, Q, Af, alpha)}.}
 
 \item{method}{Fitting method}
 

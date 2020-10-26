@@ -91,6 +91,7 @@ shof_fit_nls <- function(fseq, Ypsd, fs, Temp,
   theta <- setNames(theta, nm = c("f0", "Q", "Rf", "alpha", "tau"))
   par_opt <- get_par_shof(theta, Temp = Temp)
   # hessian and cov
+  cov <- NULL
   if(vcov) {    
     map <- list(phi = as.factor(c(1,2,NA,4,5)), tau = as.factor(6))
     obj_nll <- TMB::MakeADFun(data = list(model = "SHOWF_log",
@@ -107,10 +108,11 @@ shof_fit_nls <- function(fseq, Ypsd, fs, Temp,
       # feed these into the negative loglikelihood on the computational scale
       obj_nll$fn(phi_tau)
     }, x = par_opt) 
-    he <- he[c(1:3,6), c(1:3,6)]
+    he <- he[c(1:3,5), c(1:3,5)]
     cov <- chol2inv(chol(he)) 
   }
   # Jacobian
+  jac <- NULL
   if(get_jac) {
     map <- list(phi = as.factor(c(1,2,NA,4,5)))
     obj_res <- TMB::MakeADFun(data = list(model = "SHOWF_log",
@@ -129,7 +131,7 @@ shof_fit_nls <- function(fseq, Ypsd, fs, Temp,
     }
     jac <- numDeriv::jacobian(nls_res2, x = par_opt)
   }
-  list(par = get_par_shof(theta, Temp = Temp),
+  list(par = append(get_par_shof(theta, Temp = Temp), Sw0, after = 3),
        value = obj$fn(phi),
        cov = cov, jac = jac,
        exitflag = exitflag)

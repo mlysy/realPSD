@@ -86,6 +86,7 @@ shof_fit_mle <- function(fseq, Ypsd, fs, Temp,
   theta <- c(exp(phi), tau = obj$simulate(phi)$tau * constY)
   theta <- setNames(theta, nm = c("f0", "Q", "Rf", "alpha", "tau"))
   # numerical cov
+  cov <- NULL
   if(vcov) {    
     map <- list(phi = as.factor(c(1,2,NA,4,5)), tau = as.factor(6))
     obj_nll <- TMB::MakeADFun(data = list(model = "SHOWF_log",
@@ -101,10 +102,10 @@ shof_fit_mle <- function(fseq, Ypsd, fs, Temp,
       phi_zeta <- get_phi(par, Temp = Temp, method = "MLE", model = "SHOF", const = constY)
       obj_nll$fn(phi_zeta)
     }, x = par_opt)
-    he <- he[c(1:3,6), c(1:3,6)] # similar to LP method
+    he <- he[c(1:3,5), c(1:3,5)] # similar to LP method
     cov <- chol2inv(chol(he))
   }
-  list(par = get_par_shof(theta, Temp = Temp),
+  list(par = append(get_par_shof(theta, Temp = Temp), Sw0, after = 3),
        value = obj$fn(phi), cov = cov,
        exitflag = exitflag)
 }
