@@ -9,7 +9,7 @@
 #' @param phi0 Parameter value (transformed scale) to initialize optimization.
 #' @param fit_type If "direct", fit all parameters at once.  If "incremental", do one, then two, then three, etc.
 #' @param optimizer Either "optim" (in R) or "Adam" (supplied by realPSD). For now, Adam's hyperparameter tunning is not fully supported. Learning rate and nsteps are preset. `Adam` is only used for `direct` fitting.
-#' @param getHessian If TRUE, return the numerical Hessian matrix of the original SHOW parameter f0, Q, Rw
+#' @param vcov If TRUE, return the numerical Hessian matrix of the original SHOW parameter k, f0, Q, Af
 #' @param ... Additional arguments to [stats::optim()].
 #' 
 #' @return A list with elements 
@@ -17,14 +17,14 @@
 #'   \item{`par`}{The fitted parameter value which is the minimizer of the objective function.}
 #'   \item{`Temp`}{The temperature constant used in calculation, Kelvin.}
 #'   \item{`value`}{The value of the objective function (negative loglikelihood) at the given `par`.}
-#'   \item{`he`}{The numerical Hessian matrix of the SHOW model parameter f0, Q, Rw.}
+#'   \item{`cov`}{The numerical variance-covariance matrix for all the parameters (original scale).}
 #'   \item{`exitflag`}{The exit flag given by the optimizer, for debug purposes}
 #' }
 showf_fit_lp <- function(fseq, Ypsd, fs, Temp,
                         bin_size, bin_type, phi0,
                         fit_type = c("direct", "incremental"),
                         optimizer = c("optim", "Adam"),
-                        getHessian = FALSE, ...) {
+                        vcov = FALSE, ...) {
   fit_type <- match.arg(fit_type)
   optimizer <- match.arg(optimizer)
   fbar <- binning(fseq, bin_size = bin_size, bin_type = bin_type)
@@ -36,7 +36,7 @@ showf_fit_lp <- function(fseq, Ypsd, fs, Temp,
                                     fbar = as.matrix(fbar),
                                     Zbar = as.matrix(Zbar - constZ),
                                     fs = fs/exp(bin_factor(bin_size))),
-                        parameters = list(phi = as.matrix(rep(0,5))),
+                        parameters = list(phi = as.matrix(phi0)),
                         map = map,
                         silent = TRUE, DLL = "realPSD_TMBExports")
   exitflag <- NULL
@@ -90,27 +90,29 @@ showf_fit_lp <- function(fseq, Ypsd, fs, Temp,
   }
   # construct final estimator
   theta <- c(exp(phi), tau = exp(obj$simulate(phi)$zeta + constZ))
+  theta <- setNames(theta, nm = c("f0", "Q", "Rw", "Rf", "alpha", "tau"))
   # numerical hessian
   he <- NULL
-  if(getHessian) {
-    obj_nll <- TMB::MakeADFun(data = list(model = "SHOWF_nat",
+  if(vcov) {
+    obj_nll <- TMB::MakeADFun(data = list(model = "SHOWF_log",
                                     method = "LP_nll",
                                     fbar = as.matrix(fbar),
                                     Zbar = as.matrix(Zbar - constZ),
                                     fs = fs/exp(bin_factor(bin_size))),
-                        parameters = list(phi = as.matrix(rep(0,5)), zeta = 0),
+                        parameters = list(phi = as.matrix(phi0), zeta = obj$simulate(phi0)$zeta),
                         map = map,
                         silent = TRUE, DLL = "realPSD_TMBExports")
-    phi_zeta <- c(exp(phi), tau = obj$simulate(phi)$zeta)
-    he <- numDeriv::hessian(func = obj_nll$fn, x = phi_zeta) # with or without map = map gives the same output
-    # browser()
-    # ind <- c(1,2,4,5)
-    # tmp <- he[ind, ind]
-    # solve(tmp)
-    he <- he[c(1,2,5), c(1,2,5)] # truncate the row and col wrt Rw, alpha and tau, c(1,2,4,5) will give singular matrix
-    # cov <- solve(he)
+    par_opt <- get_par_showf(theta, Temp)
+    he <- numDeriv::hessian(func = function(par) {
+      # convert original scale (par) to computational scale (phi & zeta)
+      phi_zeta <- get_phi(par, Temp = Temp, method = "LP", model = "SHOWF", const = constZ)
+      # feed these into the negative loglikelihood on the computational scale
+      obj_nll$fn(phi_zeta)
+    }, x = par_opt) 
+    he <- he[c(1:3,6), c(1:3,6)] # columns wrt Sw and Af are NA, identifiablility issue
+    cov <- chol2inv(chol(he))
   }
   list(par = get_par_showf(theta, Temp = Temp),
-       value = obj$fn(phi), he = he,
+       value = obj$fn(phi), cov = cov,
        exitflag = exitflag)
 }

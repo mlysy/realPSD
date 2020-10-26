@@ -9,8 +9,8 @@
 #' @param phi0 Parameter value (transformed scale) to initialize optimization.
 #' @param fit_type If "direct", fit all parameters at once.  If "incremental", do one, then two, then three, etc.
 #' @param optimizer Either "optim" (in R) or "Adam" (supplied by realPSD). For now, Adam's hyperparameter tunning is not fully supported. Learning rate and nsteps are preset. `Adam` is only used for `direct` fitting.
-#' @param getHessian If TRUE, return the numerical Hessian matrix of the original SHOW parameters f0, Q, Rw
-#' @param getJacobian If TRUE, return the numerical Jacobian of the SHOW parameters f0, Q, Rw, only valid if method == "NLS".
+#' @param vcov If TRUE, return the numerical variance-covariance matrix for all the parameters (original scale)
+#' @param get_jac If TRUE, return the numerical Jacobian of the SHOW parameters k, f0, Q, Af, only valid if method == "NLS".
 #' @param ... Additional arguments to [stats::optim()].
 #'
 #' @return A list with elements 
@@ -31,24 +31,24 @@ showf_fit <- function(fseq, Ypsd, fs, Temp,
                      bin_size, bin_type, phi0,
                      fit_type = c("direct", "incremental"),
                      optimizer = c("optim", "Adam"),
-                     getHessian = FALSE,
-                     getJacobian = FALSE, ...) {
+                     vcov = FALSE,
+                     get_jac = FALSE, ...) {
   Ypsd <- Ypsd * fs # since Ypsd is returned by periodogram which has been scaled by 1/fs.
   method <- match.arg(method)
   if(method == "lp") {
     out <- showf_fit_lp(fseq = fseq, Ypsd = Ypsd, fs = fs, Temp = Temp,
                        bin_size = bin_size, bin_type = bin_type,
                        phi0 = phi0, fit_type = fit_type, optimizer = optimizer,
-                       getHessian = getHessian, ...)
+                       vcov = vcov, ...)
   } else if(method == "nls") {
     out <- showf_fit_nls(fseq = fseq, Ypsd = Ypsd, fs = fs, Temp = Temp,
                         bin_size = bin_size, bin_type = bin_type,
                         phi0 = phi0, fit_type = fit_type, optimizer = optimizer,
-                        getHessian = getHessian, getJacobian = getJacobian, ...)
+                        vcov = vcov, get_jac = get_jac, ...)
   } else if(method == "mle") {
     out <- showf_fit_mle(fseq = fseq, Ypsd = Ypsd, fs = fs, Temp = Temp,
                         phi0 = phi0, fit_type = fit_type, optimizer = optimizer,
-                        getHessian = getHessian, ...)
+                        vcov = vcov, ...)
   }
   out
 }

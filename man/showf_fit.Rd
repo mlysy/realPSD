@@ -15,8 +15,8 @@ showf_fit(
   phi0,
   fit_type = c("direct", "incremental"),
   optimizer = c("optim", "Adam"),
-  getHessian = FALSE,
-  getJacobian = FALSE,
+  vcov = FALSE,
+  get_jac = FALSE,
   ...
 )
 }
@@ -41,9 +41,9 @@ showf_fit(
 
 \item{optimizer}{Either "optim" (in R) or "Adam" (supplied by realPSD). For now, Adam's hyperparameter tunning is not fully supported. Learning rate and nsteps are preset. \code{Adam} is only used for \code{direct} fitting.}
 
-\item{getHessian}{If TRUE, return the numerical Hessian matrix of the original SHOW parameters f0, Q, Rw}
+\item{vcov}{If TRUE, return the numerical variance-covariance matrix for all the parameters (original scale)}
 
-\item{getJacobian}{If TRUE, return the numerical Jacobian of the SHOW parameters f0, Q, Rw, only valid if method == "NLS".}
+\item{get_jac}{If TRUE, return the numerical Jacobian of the SHOW parameters k, f0, Q, Af, only valid if method == "NLS".}
 
 \item{...}{Additional arguments to \code{\link[stats:optim]{stats::optim()}}.}
 }

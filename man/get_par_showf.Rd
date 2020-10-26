@@ -12,7 +12,7 @@ get_par_showf(theta, Temp)
 \item{Temp}{Temperature (Kelvin).}
 }
 \value{
-Numeric vector with named elements \verb{(k, f0, Q, Sw)}.
+Numeric vector with named elements \verb{(k, f0, Q, Sw, Af, alpha)}.
 }
 \description{
 Recover the SHOWF parameters from \code{theta}.
