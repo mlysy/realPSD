@@ -31,13 +31,14 @@ shof_fit_nls <- function(fseq, Ypsd, fs, Temp,
   fbar <- binning(fseq, bin_size = bin_size, bin_type = bin_type)
   Ybar <- binning(Ypsd, bin_size = bin_size, bin_type = bin_type)
   constY <- mean(Ybar) # normalize to avoid numerical overflow
-  map <- list(as.factor(c(1,2,NA,4,5)))
+  map <- list(phi = as.factor(c(1,2,NA,4,5)))
+  log_Rw0 <- log(Sw0/tau0)
   obj <- TMB::MakeADFun(data = list(model = "SHOWF_log",
                                     method = "NLS_nlp",
                                     fbar = as.matrix(fbar),
                                     Ybar = as.matrix(Ybar/constY),
                                     fs = fs),
-                        parameters = list(phi = as.matrix(rep(0,5))),
+                        parameters = list(phi = as.matrix(append(phi0, log_Rw0, after = 2))),
                         map = map,
                         silent = TRUE, DLL = "realPSD_TMBExports")
   exitflag <- NULL
@@ -45,7 +46,7 @@ shof_fit_nls <- function(fseq, Ypsd, fs, Temp,
   if(fit_type == "incremental") {
     # fit f0 conditioned on everything else
     # don't use Brent because fn is unreliable far from mode...
-    fixed <- c(FALSE, TRUE, TRUE, TRUE, TRUE)
+    fixed <- c(FALSE, TRUE, TRUE, TRUE)
     fit <- optim(par = phi[!fixed],
                  fn = fn_fixed, gr = gr_fixed,
                  obj = obj, fixed = fixed, phi0 = phi,
@@ -55,7 +56,7 @@ shof_fit_nls <- function(fseq, Ypsd, fs, Temp,
     exitflag <- c(exitflag, fit$convergence)
     if(any(exitflag) != 0) break
     # fit f0 and Q conditioned on everything else
-    fixed <- c(FALSE, FALSE, TRUE, TRUE, TRUE)
+    fixed <- c(FALSE, FALSE, TRUE, TRUE)
     fit <- optim(par = phi[!fixed],
                  fn = fn_fixed, gr = gr_fixed,
                  obj = obj, fixed = fixed, phi0 = phi,
@@ -64,7 +65,7 @@ shof_fit_nls <- function(fseq, Ypsd, fs, Temp,
     exitflag <- c(exitflag, fit$convergence)
     if(any(exitflag) != 0) break
     # fit f0, Q, Rf conditioned on alpha
-    fixed <- c(FALSE, FALSE, TRUE, FALSE, TRUE)
+    fixed <- c(FALSE, FALSE, FALSE, TRUE)
     fit <- optim(par = phi[!fixed],
                  fn = fn_fixed, gr = gr_fixed,
                  obj = obj, fixed = fixed, phi0 = phi,
@@ -76,39 +77,33 @@ shof_fit_nls <- function(fseq, Ypsd, fs, Temp,
   if(all(exitflag == 0)) {
     # fit all three parameters at once
     if(optimizer == "optim") {
-      fixed <- c(FALSE, FALSE, TRUE, FALSE, FALSE)
-      # fit <- optim(par = phi,
-      #            fn = obj$fn, gr = obj$gr, method = "BFGS", ...)
-      fit <- optim(par = phi[!fixed],
-                 fn = fn_fixed, gr = gr_fixed,
-                 obj = obj, fixed = fixed, phi0 = phi,
-                 method = "BFGS", ...)
-      phi[!fixed] <- fit$par
+      fit <- optim(par = phi,
+                 fn = obj$fn, gr = obj$gr, method = "BFGS", ...)
     } else if(optimizer == "Adam") {
       fit <- adam(theta0 = phi, fn = obj$fn, gr = obj$gr, nsteps = 300,
-                alpha = 1e-4, ...)
-      phi <- fit$par
+                alpha = 1e-3, ...)
     }
+    phi <- fit$par
     exitflag <- c(exitflag, fit$convergence)
   }
   # construct final estimator
   theta <- c(exp(phi), tau = obj$simulate(phi)$tau * constY)
-  theta <- setNames(theta, nm = c("f0", "Q", "Rw", "Rf", "alpha", "tau"))
-  par_opt <- get_par_showf(theta, Temp = Temp)
-  # hessian
-  he <- NULL
+  theta <- setNames(theta, nm = c("f0", "Q", "Rf", "alpha", "tau"))
+  par_opt <- get_par_shof(theta, Temp = Temp)
+  # hessian and cov
   if(vcov) {    
+    map <- list(phi = as.factor(c(1,2,NA,4,5)), tau = as.factor(6))
     obj_nll <- TMB::MakeADFun(data = list(model = "SHOWF_log",
                                     method = "NLS_nll",
                                     fbar = as.matrix(fseq),
                                     Ybar = as.matrix(Ypsd/constY),
                                     fs = fs),
-                        parameters = list(phi = as.matrix(rep(0,5)), tau = 0),
+                        parameters = list(phi = as.matrix(append(phi0, log_Rw0, after = 2)), tau = 0),
                         map = map,
                         silent = TRUE, DLL = "realPSD_TMBExports")
     he <- numDeriv::hessian(func = function(par) {
       # convert original scale (par) to computational scale (phi & zeta)
-      phi_tau <- get_phi(par, Temp = Temp, method = "NLS", model = "SHOWF", const = constY)
+      phi_tau <- get_phi(par, Temp = Temp, method = "NLS", model = "SHOF", const = constY)
       # feed these into the negative loglikelihood on the computational scale
       obj_nll$fn(phi_tau)
     }, x = par_opt) 
@@ -116,25 +111,25 @@ shof_fit_nls <- function(fseq, Ypsd, fs, Temp,
     cov <- chol2inv(chol(he)) 
   }
   # Jacobian
-  jac <- NULL
   if(get_jac) {
+    map <- list(phi = as.factor(c(1,2,NA,4,5)))
     obj_res <- TMB::MakeADFun(data = list(model = "SHOWF_log",
                                     method = "NLS_res",
                                     fbar = as.matrix(fbar),
                                     Ybar = as.matrix(Ybar/constY),
                                     fs = fs),
-                        parameters = list(phi = as.matrix(rep(0,5))),
+                        parameters = list(phi = as.matrix(append(phi0, log_Rw0, after = 2))),
                         map = map,
                         silent = TRUE,
                         ADreport = TRUE,
                         DLL = "realPSD_TMBExports")
     nls_res2 <- function(par) {
-      phi_tau <- get_phi(par, Temp = Temp, method = "NLS", model = "SHOWF", const = constY)
-      (obj_res$fn(phi_tau[1:5]))^2
+      phi_tau <- get_phi(par, Temp = Temp, method = "NLS", model = "SHOF", const = constY)
+      (obj_res$fn(phi_tau[1:4]))^2
     }
     jac <- numDeriv::jacobian(nls_res2, x = par_opt)
   }
-  list(par = get_par_showf(theta, Temp = Temp),
+  list(par = get_par_shof(theta, Temp = Temp),
        value = obj$fn(phi),
        cov = cov, jac = jac,
        exitflag = exitflag)
