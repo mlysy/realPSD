@@ -108,6 +108,20 @@ get_par_showf <- function(theta, Temp) {
            nm = c("k", "f0", "Q", "Sw", "Af", "alpha"))
 }
 
+#' Recover the SHOF parameters from `theta`.
+#'
+#' @param theta Parameter vector (f0, Q, Rf, alpha, tau).
+#' @param Temp Temperature (Kelvin).
+#'
+#' @return Numeric vector with named elements `(k, f0, Q, Af, alpha)`.
+get_par_shof <- function(theta, Temp) {
+  Kb <- 1.381e-23             # Boltzmann's constant
+  k <- Kb*Temp/(theta[5]*pi*theta[1]*theta[2])
+  Af <- theta[3] * theta[5] # Rf * tau
+  alpha <- theta[4]
+  setNames(c(k, theta[1], theta[2], Af, alpha),
+           nm = c("k", "f0", "Q", "Af", "alpha"))
+}
 
 # #' Calculate bin size correction factor for `LP` estimator.
 # #'
