@@ -1,5 +1,5 @@
 #' Convert SHOW parameterization to natural parameterization.
-#' @param par SHOW parameters `(k, f0, Q, Sw)` or `(k, f0, Q, Sw, Af, alpha)`.
+#' @param par SHOW parameters `(k, f0, Q, Sw)` or `(k, f0, Q, Sw, Af, alpha)` or `(k, f0, Q, Af, alpha)`.
 #' @param method Fitting method
 #' @param model either "SHOW" or "SHOWF", if model == "SHOW", par = c(k,f0,Q,Sw); if model == "SHOWF", par = c(k,f0,Q,Sw,Af,alpha)
 #' @param Temp Temperature constant
@@ -33,7 +33,7 @@
 #' - [show_fit_mle()] and [show_fit_nls()] normalize the inputs to avoid numerical overflow.  This should be done here as well, which means there's a conversion factor to apply to `tau`.  My suggestion is to add the standard error calculation directly to the `show_fit_*` functions.
 #' - `show_fit_*` have something called `constZ` or `constY` which is used to rescale the PSD inputs to avoid numerical overflow.  The scale factor `tau` gets corrected accordingly, and the same thing should be done here as well with the parameter `const`.
 #' @export
-get_phi <- function(par, method = c("MLE", "NLS", "LP"), model = c("SHOW", "SHOWF"), Temp, const) {
+get_phi <- function(par, method = c("MLE", "NLS", "LP"), model = c("SHOW", "SHOWF", "SHOF"), Temp, const) {
   Kb <- 1.381e-23
   k <- par[1]
   f0 <- par[2]
@@ -71,6 +71,21 @@ get_phi <- function(par, method = c("MLE", "NLS", "LP"), model = c("SHOW", "SHOW
     } else if (method == "LP") {
       zeta <- log(tau) - const
       phi_zeta <- setNames(c(log(f0), log(Q), log(Rw), log(Rf), log(alpha), zeta), nm=c("log f0", "log Q", "log Rw", "log Rf", "log alpha", "zeta"))
+    }
+  } else if (model == "SHOF") {
+    # par = c(k,f0,Q,Af,alpha)
+    Af <- par[4]
+    alpha <- par[5]
+    Rf <- Af/tau
+    if(method == "MLE") {
+      tau <- tau/const
+      phi_zeta <- setNames(c(log(f0), log(Q), log(Rf), log(alpha), tau), nm=c("log f0", "log Q", "log Rf", "log alpha", "tau"))
+    } else if (method == "NLS") {
+      tau <- tau/const
+      phi_zeta <- setNames(c(log(f0), log(Q), log(Rf), log(alpha), tau), nm=c("log f0", "log Q", "log Rf", "log alpha", "tau"))
+    } else if (method == "LP") {
+      zeta <- log(tau) - const
+      phi_zeta <- setNames(c(log(f0), log(Q), log(Rf), log(alpha), zeta), nm=c("log f0", "log Q", "log Rf", "log alpha", "zeta"))
     }
   }
   return(phi_zeta)
