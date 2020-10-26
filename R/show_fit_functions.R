@@ -97,7 +97,7 @@ get_par <- function(theta, Temp) {
 #' @param theta Parameter vector (f0, Q, Rw, Rf, alpha, tau).
 #' @param Temp Temperature (Kelvin).
 #'
-#' @return Numeric vector with named elements `(k, f0, Q, Sw)`.
+#' @return Numeric vector with named elements `(k, f0, Q, Sw, Af, alpha)`.
 get_par_showf <- function(theta, Temp) {
   Kb <- 1.381e-23             # Boltzmann's constant
   Sw <- theta[3] * theta[6] # Rw * tau

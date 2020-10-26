@@ -93,9 +93,9 @@ show_fit_nls <- function(fseq, Ypsd, fs, Temp,
     # he <- he[1:3, 1:3] # truncate the row and col wrt tau
     he <- numDeriv::hessian(func = function(par) {
       # convert original scale (par) to computational scale (phi & zeta)
-      phi_zeta <- get_phi(par, Temp = Temp, method = "NLS", model = "SHOW", const = constY)
+      phi_tau <- get_phi(par, Temp = Temp, method = "NLS", model = "SHOW", const = constY)
       # feed these into the negative loglikelihood on the computational scale
-      obj_nll$fn(phi_zeta)
+      obj_nll$fn(phi_tau)
     }, x = par_opt) 
     he <- he[1:3, 1:3]
     cov <- chol2inv(chol(he)) 

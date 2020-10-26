@@ -31,7 +31,8 @@ show_fit_mle <- function(fseq, Ypsd, fs, Temp, phi0,
                                     f = as.matrix(fseq),
                                     Y = as.matrix(Ypsd/constY),
                                     fs = fs),
-                        parameters = list(phi = as.matrix(c(0,0,0))),
+                        # parameters = list(phi = as.matrix(c(0,0,0))),
+                        parameters = list(phi = as.matrix(phi0)), 
                         silent = TRUE, DLL = "realPSD_TMBExports")
   exitflag <- NULL
   phi <- phi0
@@ -80,7 +81,7 @@ show_fit_mle <- function(fseq, Ypsd, fs, Temp, phi0,
                                     f = as.matrix(fseq),
                                     Y = as.matrix(Ypsd/constY),
                                     fs = fs),
-                        parameters = list(phi = as.matrix(c(0,0,0)), tau = 0),
+                        parameters = list(phi = as.matrix(phi0), tau = 0),
                         silent = TRUE, DLL = "realPSD_TMBExports")
     # phi_tau <- c(exp(phi), obj$simulate(phi)$tau)
     # he <- numDeriv::hessian(func = obj_nll$fn, x = phi_tau)
@@ -92,7 +93,7 @@ show_fit_mle <- function(fseq, Ypsd, fs, Temp, phi0,
       # feed these into the negative loglikelihood on the computational scale
       obj_nll$fn(phi_tau)
     }, x = par_opt)
-    he <- he[1:3, 1:3] 
+    he <- he[1:3, 1:3] # Given 1/f noise and SHOW model, MLE cannot estimate Sw (i.e. log Rw) correctly which leads to NA in the 4th col/row of Hessian
     cov <- chol2inv(chol(he)) 
   }
   list(par = get_par(theta, Temp = Temp),

@@ -43,7 +43,7 @@ show_fit(
 
 \item{vcov}{If TRUE, return the numerical variance-covariance matrix for all the parameters (original scale)}
 
-\item{get_jac}{If TRUE, return the numerical Jacobian of the SHOW parameters f0, Q, Rw, only valid if method == "NLS".}
+\item{get_jac}{If TRUE, return the numerical Jacobian of the SHOW parameters k, f0, Q, only valid if method == "NLS".}
 
 \item{...}{Additional arguments to \code{\link[stats:optim]{stats::optim()}}.}
 }
