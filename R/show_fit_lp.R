@@ -95,8 +95,7 @@ show_fit_lp <- function(fseq, Ypsd, fs, Temp,
       phi_zeta <- get_phi(par, Temp = Temp, method = "LP", model = "SHOW", const = constZ)
       # feed these into the negative loglikelihood on the computational scale
       obj_nll$fn(phi_zeta)
-    }, x = par_opt) 
-    he <- he[1:3, 1:3] # the last row/column of Hessian is NA
+    }, x = par_opt, method.args = list(zero.tol = .Machine$double.eps, r=6)) # we need to set a smaller zero.tol otherwise NaN will be produced
     cov <- chol2inv(chol(he)) 
   }
   list(par = get_par(theta, Temp = Temp),

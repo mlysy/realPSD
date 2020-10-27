@@ -92,8 +92,7 @@ show_fit_mle <- function(fseq, Ypsd, fs, Temp, phi0,
       phi_tau <- get_phi(par, Temp = Temp, method = "MLE", model = "SHOW", const = constY)
       # feed these into the negative loglikelihood on the computational scale
       obj_nll$fn(phi_tau)
-    }, x = par_opt)
-    he <- he[1:3, 1:3] # Given 1/f noise and SHOW model, MLE cannot estimate Sw (i.e. log Rw) correctly which leads to NA in the 4th col/row of Hessian
+    }, x = par_opt, method.args = list(zero.tol = .Machine$double.eps, r=6)) # we need to set a smaller zero.tol otherwise NaN will be produced
     cov <- chol2inv(chol(he)) 
   }
   list(par = get_par(theta, Temp = Temp),

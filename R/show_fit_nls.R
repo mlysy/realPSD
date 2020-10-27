@@ -96,8 +96,7 @@ show_fit_nls <- function(fseq, Ypsd, fs, Temp,
       phi_tau <- get_phi(par, Temp = Temp, method = "NLS", model = "SHOW", const = constY)
       # feed these into the negative loglikelihood on the computational scale
       obj_nll$fn(phi_tau)
-    }, x = par_opt) 
-    he <- he[1:3, 1:3]
+    }, x = par_opt, method.args = list(zero.tol = .Machine$double.eps, r=6)) # we need to set a smaller zero.tol otherwise NaN will be produced
     cov <- chol2inv(chol(he)) 
   }
   # Jacobian
@@ -116,8 +115,7 @@ show_fit_nls <- function(fseq, Ypsd, fs, Temp,
       phi_tau <- get_phi(par, Temp = Temp, method = "NLS", model = "SHOW", const = constY)
       setNames((obj_res$fn(phi_tau[1:3]))^2, nm = NULL)
     }
-    jac <- numDeriv::jacobian(nls_res2, x = par_opt)
-    jac <- jac[,1:3] # exclude column wrt Sw (which is NA)
+    jac <- numDeriv::jacobian(nls_res2, x = par_opt, method.args = list(zero.tol = .Machine$double.eps, r=6))
   }
   list(par = get_par(theta, Temp = Temp),
        value = obj$fn(phi),
