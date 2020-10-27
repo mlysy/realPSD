@@ -3,6 +3,7 @@
 export(bin_factor)
 export(binning)
 export(fft_fseq)
+export(fft_sin)
 export(fisherG)
 export(get_phi)
 export(logSHOW)
