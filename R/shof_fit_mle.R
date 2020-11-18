@@ -101,7 +101,7 @@ shof_fit_mle <- function(fseq, Ypsd, fs, Temp,
     he <- numDeriv::hessian(func = function(par) {
       phi_zeta <- get_phi(par, Temp = Temp, method = "MLE", model = "SHOF", const = constY)
       obj_nll$fn(phi_zeta)
-    }, x = par_opt, method.args = list(zero.tol = .Machine$double.eps, r=6)) # we need to set a smaller zero.tol otherwise NaN will be produced
+    }, x = par_opt, method.args = list(zero.tol = .Machine$double.eps/1e5, r=6)) # we need to set a smaller zero.tol otherwise NaN will be produced
     cov <- chol2inv(chol(he))
   }
   list(par = append(get_par_shof(theta, Temp = Temp), Sw0, after = 3),
