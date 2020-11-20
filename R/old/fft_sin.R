@@ -21,7 +21,7 @@ fft_sin <- function(fseq, f0, Q, fs, unit_conversion) {
   dT <- 1/fs
   xi <- rnorm(1, f0, 10)
   phi <- runif(1, 0, 2*pi)
-  sin_fft <- D/(2*1i * sqrt(N)) * (
+  sin_fft <- D/(2*1i*sqrt(N)) * (
     exp(phi*1i) * (exp(2*pi*1i*(xi-fseq)*dT*N)-1)/(exp(2*pi*1i*(xi-fseq)*dT)-1) -
     exp(-phi*1i) * (exp(-2*pi*1i*(xi+fseq)*dT*N)-1)/(exp(-2*pi*1i*(xi+fseq)*dT)-1)
   )
