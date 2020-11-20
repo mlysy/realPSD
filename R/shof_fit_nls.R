@@ -81,7 +81,7 @@ shof_fit_nls <- function(fseq, Ypsd, fs, Temp,
                  fn = obj$fn, gr = obj$gr, method = "BFGS", ...)
     } else if(optimizer == "Adam") {
       fit <- adam(theta0 = phi, fn = obj$fn, gr = obj$gr, nsteps = 300,
-                alpha = 1e-3, ...)
+                alpha = 1e-4, ...)
     }
     phi <- fit$par
     exitflag <- c(exitflag, fit$convergence)
@@ -107,7 +107,7 @@ shof_fit_nls <- function(fseq, Ypsd, fs, Temp,
       phi_tau <- get_phi(par, Temp = Temp, method = "NLS", model = "SHOF", const = constY)
       # feed these into the negative loglikelihood on the computational scale
       obj_nll$fn(phi_tau)
-    }, x = par_opt, method.args = list(zero.tol = .Machine$double.eps/1e5, r=6)) # we need to set a smaller zero.tol otherwise NaN will be produced
+    }, x = par_opt, method.args = list(eps = .Machine$double.eps, zero.tol = .Machine$double.eps, r=6)) # we need to set a smaller zero.tol otherwise NaN will be produced
     cov <- chol2inv(chol(he)) 
   }
   # Jacobian
@@ -128,7 +128,7 @@ shof_fit_nls <- function(fseq, Ypsd, fs, Temp,
       phi_tau <- get_phi(par, Temp = Temp, method = "NLS", model = "SHOF", const = constY)
       (obj_res$fn(phi_tau[1:4]))^2
     }
-    jac <- numDeriv::jacobian(nls_res2, x = par_opt, method.args = list(zero.tol = .Machine$double.eps/1e5, r=6))
+    jac <- numDeriv::jacobian(nls_res2, x = par_opt, method.args = list(eps = .Machine$double.eps, zero.tol = .Machine$double.eps, r=6))
   }
   list(par = append(get_par_shof(theta, Temp = Temp), Sw0, after = 3),
        value = obj$fn(phi),
