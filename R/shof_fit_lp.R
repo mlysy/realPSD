@@ -107,8 +107,11 @@ shof_fit_lp <- function(fseq, Ypsd, fs, Temp,
       phi_zeta <- get_phi(par, Temp = Temp, method = "LP", model = "SHOF", const = constZ)
       # feed these into the negative loglikelihood on the computational scale
       obj_nll$fn(phi_zeta)
-    }, x = par_opt, method.args = list(eps = .Machine$double.eps, zero.tol = .Machine$double.eps, r=6)) # we need to set a smaller zero.tol otherwise NaN will be produced
-    cov <- chol2inv(chol(he))
+    }, x = par_opt, method.args = list(eps = 1e-16, zero.tol = 1e-32, r=6)) # we need to set a smaller zero.tol otherwise NaN will be produced
+    cov <- tryCatch(
+      chol2inv(chol(he)), 
+      error = function(err) return(NA)
+    )
   }
   list(par = append(get_par_shof(theta, Temp = Temp), Sw0, after = 3),
        value = obj$fn(phi), cov = cov,

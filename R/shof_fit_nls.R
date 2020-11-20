@@ -55,6 +55,9 @@ shof_fit_nls <- function(fseq, Ypsd, fs, Temp,
     phi[!fixed] <- fit$par
     exitflag <- c(exitflag, fit$convergence)
     if(any(exitflag) != 0) break
+    # fit <- pracma::lsqnonlin(fun = fn_fixed, x0 = phi[!fixed], 
+    #   obj = obj, fixed = fixed, phi0 = phi)
+    # phi[!fixed] <- fit$x
     # fit f0 and Q conditioned on everything else
     fixed <- c(FALSE, FALSE, TRUE, TRUE)
     fit <- optim(par = phi[!fixed],
@@ -64,6 +67,9 @@ shof_fit_nls <- function(fseq, Ypsd, fs, Temp,
     phi[!fixed] <- fit$par
     exitflag <- c(exitflag, fit$convergence)
     if(any(exitflag) != 0) break
+    # fit <- pracma::lsqnonlin(fun = fn_fixed, x0 = phi[!fixed], 
+    #   obj = obj, fixed = fixed, phi0 = phi)
+    # phi[!fixed] <- fit$x
     # fit f0, Q, Rf conditioned on alpha
     fixed <- c(FALSE, FALSE, FALSE, TRUE)
     fit <- optim(par = phi[!fixed],
@@ -73,15 +79,21 @@ shof_fit_nls <- function(fseq, Ypsd, fs, Temp,
     phi[!fixed] <- fit$par
     exitflag <- c(exitflag, fit$convergence)
     if(any(exitflag) != 0) break
+    # fit <- pracma::lsqnonlin(fun = fn_fixed, x0 = phi[!fixed], 
+    #   obj = obj, fixed = fixed, phi0 = phi)
+    # phi[!fixed] <- fit$x
   }
   if(all(exitflag == 0)) {
     # fit all three parameters at once
     if(optimizer == "optim") {
       fit <- optim(par = phi,
                  fn = obj$fn, gr = obj$gr, method = "BFGS", ...)
+      # fit <- pracma::lsqnonlin(fun = obj$fn, x0 = phi0, obj = obj, phi0 = phi)
+      # phi <- fit$x
     } else if(optimizer == "Adam") {
       fit <- adam(theta0 = phi, fn = obj$fn, gr = obj$gr, nsteps = 300,
                 alpha = 1e-4, ...)
+      # phi <- fit$par
     }
     phi <- fit$par
     exitflag <- c(exitflag, fit$convergence)
@@ -107,8 +119,11 @@ shof_fit_nls <- function(fseq, Ypsd, fs, Temp,
       phi_tau <- get_phi(par, Temp = Temp, method = "NLS", model = "SHOF", const = constY)
       # feed these into the negative loglikelihood on the computational scale
       obj_nll$fn(phi_tau)
-    }, x = par_opt, method.args = list(eps = .Machine$double.eps, zero.tol = .Machine$double.eps, r=6)) # we need to set a smaller zero.tol otherwise NaN will be produced
-    cov <- chol2inv(chol(he)) 
+    }, x = par_opt, method.args = list(eps = 1e-16, zero.tol = 1e-32, r=6)) # we need to set a smaller zero.tol otherwise NaN will be produced
+    cov <- tryCatch(
+      chol2inv(chol(he)), 
+      error = function(err) return(NA)
+    )
   }
   # Jacobian
   jac <- NULL
@@ -128,7 +143,10 @@ shof_fit_nls <- function(fseq, Ypsd, fs, Temp,
       phi_tau <- get_phi(par, Temp = Temp, method = "NLS", model = "SHOF", const = constY)
       (obj_res$fn(phi_tau[1:4]))^2
     }
-    jac <- numDeriv::jacobian(nls_res2, x = par_opt, method.args = list(eps = .Machine$double.eps, zero.tol = .Machine$double.eps, r=6))
+    jac <- tryCatch(
+      numDeriv::jacobian(nls_res2, x = par_opt, method.args = list(eps = 1e-16, zero.tol = 1e-32, r=6)),
+      error = function(err) return(NA)
+    )
   }
   list(par = append(get_par_shof(theta, Temp = Temp), Sw0, after = 3),
        value = obj$fn(phi),
