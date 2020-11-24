@@ -129,19 +129,32 @@ shof_fit_nls <- function(fseq, Ypsd, fs, Temp,
   jac <- NULL
   if(get_jac) {
     map <- list(phi = as.factor(c(1,2,NA,4,5)))
-    obj_res <- TMB::MakeADFun(data = list(model = "SHOWF_log",
-                                    method = "NLS_res",
-                                    fbar = as.matrix(fbar),
-                                    Ybar = as.matrix(Ybar/constY),
-                                    fs = fs),
-                        parameters = list(phi = as.matrix(append(phi0, log_Rw0, after = 2))),
-                        map = map,
-                        silent = TRUE,
-                        ADreport = TRUE,
-                        DLL = "realPSD_TMBExports")
+    # obj_res <- TMB::MakeADFun(data = list(model = "SHOWF_log",
+    #                                 method = "NLS_res",
+    #                                 fbar = as.matrix(fbar),
+    #                                 Ybar = as.matrix(Ybar/constY),
+    #                                 fs = fs),
+    #                     parameters = list(phi = as.matrix(append(phi0, log_Rw0, after = 2))),
+    #                     map = map,
+    #                     silent = TRUE,
+    #                     ADreport = TRUE,
+    #                     DLL = "realPSD_TMBExports")
+    # nls_res2 <- function(par) {
+    #   phi_tau <- get_phi(par, Temp = Temp, method = "NLS", model = "SHOF", const = constY)
+    #   (obj_res$fn(phi_tau[1:4]))^2
+    # }
+    # calculate jacobian directly in R
+    obj_ufun <- TMB::MakeADFun(data = list(model = "SHOWF_log", 
+                                      method = "UFun", 
+                                      f = matrix(fbar), # since the NLS method uses binning
+                                      fs = fs),
+                           parameters = list(phi = as.matrix(append(phi0, log_Rw0, after = 2))),
+                           map = map,
+                           silent = TRUE, DLL = "realPSD_TMBExports")
     nls_res2 <- function(par) {
       phi_tau <- get_phi(par, Temp = Temp, method = "NLS", model = "SHOF", const = constY)
-      (obj_res$fn(phi_tau[1:4]))^2
+      ufun_vec <- obj_ufun$simulate(phi)$U
+      (Ybar/constY - phi_tau[5] * ufun_vec)^2 # tau in phi_tau (returned by get_phi) has already been normalized by constY
     }
     jac <- tryCatch(
       numDeriv::jacobian(nls_res2, x = par_opt, method.args = list(eps = 1e-16, zero.tol = 1e-32, r=6)),

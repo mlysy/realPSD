@@ -84,7 +84,7 @@ show_fit_nls <- function(fseq, Ypsd, fs, Temp,
     obj_nll <- TMB::MakeADFun(data = list(model = "SHOW_log",
                                     method = "NLS_nll",
                                     fbar = as.matrix(fseq),
-                                    Ybar = as.matrix(Ypsd/constY),
+                                    Ybar = as.matrix(Ybar/constY),
                                     fs = fs),
                         parameters = list(phi = as.matrix(c(0,0,0)), tau = 0),
                         silent = TRUE, DLL = "realPSD_TMBExports")
@@ -102,18 +102,29 @@ show_fit_nls <- function(fseq, Ypsd, fs, Temp,
   # Jacobian
   jac <- NULL
   if(get_jac) {
-    obj_res <- TMB::MakeADFun(data = list(model = "SHOW_log",
-                                    method = "NLS_res",
-                                    fbar = as.matrix(fbar),
-                                    Ybar = as.matrix(Ybar/constY),
-                                    fs = fs),
-                        parameters = list(phi = as.matrix(c(0,0,0))),
-                        silent = TRUE,
-                        ADreport = TRUE,
-                        DLL = "realPSD_TMBExports")
+    # obj_res <- TMB::MakeADFun(data = list(model = "SHOW_log",
+    #                                 method = "NLS_res",
+    #                                 fbar = as.matrix(fbar),
+    #                                 Ybar = as.matrix(Ybar/constY),
+    #                                 fs = fs),
+    #                     parameters = list(phi = as.matrix(c(0,0,0))),
+    #                     silent = TRUE,
+    #                     ADreport = TRUE,
+    #                     DLL = "realPSD_TMBExports")
+    # nls_res2 <- function(par) {
+    #   phi_tau <- get_phi(par, Temp = Temp, method = "NLS", model = "SHOW", const = constY)
+    #   setNames((obj_res$fn(phi_tau[1:3]))^2, nm = NULL)
+    # }
+    obj_ufun <- TMB::MakeADFun(data = list(model = "SHOW_log", 
+                                      method = "UFun", 
+                                      f = matrix(fbar),
+                                      fs = fs),
+                           parameters = list(phi = matrix(phi0)),
+                           silent = TRUE, DLL = "realPSD_TMBExports")
     nls_res2 <- function(par) {
       phi_tau <- get_phi(par, Temp = Temp, method = "NLS", model = "SHOW", const = constY)
-      setNames((obj_res$fn(phi_tau[1:3]))^2, nm = NULL)
+      ufun_vec <- obj_ufun$simulate(phi)$U
+      (Ybar/constY - phi_tau[5] * ufun_vec)^2
     }
     jac <- numDeriv::jacobian(nls_res2, x = par_opt, method.args = list(zero.tol = .Machine$double.eps, r=6))
   }
