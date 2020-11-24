@@ -83,7 +83,7 @@ show_fit_nls <- function(fseq, Ypsd, fs, Temp,
   if(vcov) {    
     obj_nll <- TMB::MakeADFun(data = list(model = "SHOW_log",
                                     method = "NLS_nll",
-                                    fbar = as.matrix(fseq),
+                                    fbar = as.matrix(fbar),
                                     Ybar = as.matrix(Ybar/constY),
                                     fs = fs),
                         parameters = list(phi = as.matrix(c(0,0,0)), tau = 0),

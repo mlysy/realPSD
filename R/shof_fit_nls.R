@@ -108,7 +108,7 @@ shof_fit_nls <- function(fseq, Ypsd, fs, Temp,
     map <- list(phi = as.factor(c(1,2,NA,4,5)), tau = as.factor(6))
     obj_nll <- TMB::MakeADFun(data = list(model = "SHOWF_log",
                                     method = "NLS_nll",
-                                    fbar = as.matrix(fseq),
+                                    fbar = as.matrix(fbar),
                                     Ybar = as.matrix(Ybar/constY),
                                     fs = fs),
                         parameters = list(phi = as.matrix(append(phi0, log_Rw0, after = 2)), tau = 0),
