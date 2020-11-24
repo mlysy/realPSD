@@ -153,9 +153,9 @@ shof_fit_nls <- function(fseq, Ypsd, fs, Temp,
                            silent = TRUE, DLL = "realPSD_TMBExports")
     nls_res2 <- function(par) {
       phi_tau <- get_phi(par, Temp = Temp, method = "NLS", model = "SHOF", const = constY)
-      ufun_vec <- obj_ufun$simulate(phi)$U
+      ufun_vec <- fs * obj_ufun$simulate(phi)$U
       (Ybar/constY - phi_tau[5] * ufun_vec)^2 # tau in phi_tau (returned by get_phi) has already been normalized by constY
-    }
+    } # I've already tested that nls_res2(par_opt) is equal to the origianl nls_res(par_opt) by using all.equal with tolerance = 1e-10
     jac <- tryCatch(
       numDeriv::jacobian(nls_res2, x = par_opt, method.args = list(eps = 1e-16, zero.tol = 1e-32, r=6)),
       error = function(err) return(NA)

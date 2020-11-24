@@ -123,7 +123,7 @@ show_fit_nls <- function(fseq, Ypsd, fs, Temp,
                            silent = TRUE, DLL = "realPSD_TMBExports")
     nls_res2 <- function(par) {
       phi_tau <- get_phi(par, Temp = Temp, method = "NLS", model = "SHOW", const = constY)
-      ufun_vec <- obj_ufun$simulate(phi)$U
+      ufun_vec <- fs * obj_ufun$simulate(phi)$U
       (Ybar/constY - phi_tau[5] * ufun_vec)^2
     }
     jac <- numDeriv::jacobian(nls_res2, x = par_opt, method.args = list(zero.tol = .Machine$double.eps, r=6))
