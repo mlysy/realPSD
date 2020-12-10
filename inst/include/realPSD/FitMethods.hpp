@@ -63,8 +63,9 @@ namespace realPSD {
       	}
       	return nlp;
       } else if(method == "LP_res") {
+      	PARAMETER(zeta);
       	matrix<Type> res(N,1); // output variable
-      	lp.res(res, Ubar); // calculate residuals
+      	lp.res(res, Ubar, zeta); // calculate residuals
       	ADREPORT(res); // set them to be differentiable
       	return Type(0.0);
       } else if(method == "LP_nll") {
@@ -135,9 +136,10 @@ namespace realPSD {
       	}
       	return nlp;
       } else if(method == "NLS_res") {
+      	PARAMETER(tau);
       	// calculate residuals
       	matrix<Type> res(N,1);
-      	nls.res(res, Ubar);
+      	nls.res(res, Ubar, tau);
       	ADREPORT(res); // make residuals differentiable
       	return Type(0.0);
       } else if(method == "NLS_nll") {

@@ -1,7 +1,9 @@
-/// @file fou.hpp 
-/// @brief User defined model class, fractional OU model
+/// @file fou.cpp
+///
+/// @brief fractional OU model, passing data to TMB
 
-// #include <TMB.hpp>
+#include <TMB.hpp>
+#include "realPSD/FitMethods.hpp"
 
 namespace fou {
   /// create `matrix<Type>` of zeros.
@@ -68,12 +70,41 @@ namespace fou {
 
   #undef TMB_OBJECTIVE_PTR
   #define TMB_OBJECTIVE_PTR obj
-
-  template<class Type>
-  UFun<Type> make_Ufun(int N, objective_function<Type>* obj) {
-    return UFun<Type>(N);
-  }
-
+    template<class Type>
+    UFun<Type> make_Ufun(int N, objective_function<Type>* obj) {
+      UFun<Type> Ufun(N);
+      return Ufun;
+    }
   #undef TMB_OBJECTIVE_PTR
   #define TMB_OBJECTIVE_PTR this
 } // end namespace fou
+
+// #undef TMB_OBJECTIVE_PTR
+// #define TMB_OBJECTIVE_PTR obj
+// template<class Type, class UFun>
+// Type FitMethods(objective_function<Type>* obj,
+//     UFun (*make_Ufun)(int, objective_function<Type>*)) {
+//   // data
+//   DATA_MATRIX(f);
+//   // parameters
+//   PARAMETER_MATRIX(phi);
+//   // calculate U
+//   int N = f.size();
+//   UFun Ufun = make_Ufun(N, obj);
+//   Ufun.set_f(f);
+//   SIMULATE {
+//     matrix<Type> U(N,1);
+//     Ufun.eval(U, phi, f);
+//     REPORT(U);
+//   }
+//   return Type(0.0);
+// }
+// #undef TMB_OBJECTIVE_PTR
+// #define TMB_OBJECTIVE_PTR this
+
+template<class Type>
+Type objective_function<Type>::operator() () {
+  using namespace fou;
+  return realPSD::FitMethods<Type, UFun<Type> >(this, make_Ufun<Type>);
+}
+

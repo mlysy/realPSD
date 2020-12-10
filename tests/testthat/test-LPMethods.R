@@ -196,16 +196,21 @@ test_that("LP_res is the same in R and TMB", {
                                        fbar = matrix(fbar),
                                        Zbar = matrix(Zbar),
                                        fs = fs),
-                           parameters = list(phi = matrix(rep(0, 3))),
+                           parameters = list(phi = matrix(rep(0, 3)), zeta = 0),
                            silent = TRUE,
                            ADreport = TRUE,
                            DLL = "realPSD_TMBExports")
-    lp_res_tmb <- function(phi) setNames(tmod$fn(phi), nm = NULL)
+    lp_res_tmb <- function(phi, zeta) setNames(tmod$fn(c(phi, zeta)), nm = NULL)
     # check they are equal
     Phi <- replicate(nphi, sim_phi())
-    res_r <- apply(Phi, 2, lp_res_r, fbar = fbar, Zbar = Zbar,
-                    ufun = ufun_r, fs = fs)
-    res_tmb <- apply(Phi, 2, lp_res_tmb)
+    zeta <- replicate(nphi, sim_zeta())
+    res_r <- sapply(1:nphi, function(ii) {
+      lp_res_r(phi = Phi[,ii], zeta = zeta[ii], fbar = fbar, Zbar = Zbar,
+               ufun = ufun_r, fs = fs)
+    })
+    res_tmb <- sapply(1:nphi, function(ii) {
+      lp_res_tmb(phi = Phi[,ii], zeta = zeta[ii])
+    })
     expect_equal(res_r, res_tmb)
   }
 })

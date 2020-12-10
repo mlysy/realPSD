@@ -44,7 +44,7 @@ namespace realPSD {
     /// Profiled objective function for the LP method.
     Type nlp(cRefMatrix_t& Ubar);
     /// Residual vector for the LP method.
-    void res(RefMatrix_t R, cRefMatrix_t& Ubar);
+    void res(RefMatrix_t R, cRefMatrix_t& Ubar, const Type zeta);
   };
 
   /// @param[in] N Length of `Zbar`.
@@ -95,7 +95,7 @@ namespace realPSD {
   /// The LP objective function is given by
   ///
   /// \f[
-  /// Q(\bar{\boldsymbol{U}}, \zeta) = \sum_{m=1}^{N_B} (\bar Z_m - \zeta - \bar U_m)^2.
+  /// Q(\bar{\boldsymbol{U}}, \zeta) = \sum_{m=1}^{N_B} (\bar Z_m - \zeta - \log \bar U_m)^2.
   /// \f]
   ///
   /// It is the negative loglikelihood of a delta-method approximation of the distribution of logs of binned periodogram values, up to a factor of `B/2`, where `B` is the bin size.
@@ -133,17 +133,18 @@ namespace realPSD {
   /// Calculates the LP residual vector
   ///
   /// \f[
-  /// R = \bar Z - \hat \zeta - \log \bar U,
+  /// R = \bar Z - \zeta - \log \bar U.
   /// \f]
-  ///
-  /// where \f$\hat \zeta\f$ is the conditional MLE of \f$\zeta\f$ calculated by `zeta(Ubar)`.
   ///
   /// @param[out] R Vector of residuals.
   /// @param[in] Ubar Vector of bin-averaged normalized PSDs.
+  /// @param[in] zeta Log of the PSD scale factor, `zeta = log(sigma^2)`.
   template <class Type>
-  inline void LP<Type>::res(RefMatrix_t R, cRefMatrix_t& Ubar) {
-    zeta_ = zeta(Ubar);
-    R = ZLU_.array() - zeta_;
+  inline void LP<Type>::res(RefMatrix_t R, cRefMatrix_t& Ubar,
+			    const Type zeta) {
+    // zeta_ = zeta(Ubar);
+    set_ZLU(Ubar);
+    R = ZLU_.array() - zeta;
     // logUbar_ = Ubar.array().log();
     // R = Zbar_ - logUbar_;
     return;

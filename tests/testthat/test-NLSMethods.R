@@ -145,20 +145,21 @@ test_that("NLS_res is the same in R and TMB", {
                                        fbar = matrix(fbar),
                                        Ybar = matrix(Ybar),
                                        fs = fs),
-                           parameters = list(phi = matrix(rep(0, 3))),
+                           parameters = list(phi = matrix(rep(0, 3)), tau = 0),
                            silent = TRUE, ADreport = TRUE,
                            DLL = "realPSD_TMBExports")
-    nls_res_tmb <- function(phi) setNames(tmod$fn(phi), nm = NULL)
+    nls_res_tmb <- function(phi, tau) setNames(tmod$fn(c(phi, tau)), nm = NULL)
     # check they are equal
     Phi <- replicate(nphi, sim_phi())
-    res_r <- apply(Phi, 2, nls_res_r, fbar = fbar, Ybar = Ybar,
-                    ufun = ufun_r, fs = fs)
-    res_tmb <- apply(Phi, 2, nls_res_tmb)
-    ## res_r <- sapply(1:nphi, function(ii) {
-    ##   nls_res_r(phi = Phi[,ii], Ybar = Ybar,
-    ##     fbar = fbar, ufun = ufun_r, fs = fs)
-    ## })
-    ## res_tmb <- sapply(1:nphi, function(ii) nls_res_tmb(Phi[,ii]))
+    tau <- replicate(nphi, sim_tau())
+    ## res_r <- sapply(Phi, 2, nls_res_r, fbar = fbar, Ybar = Ybar,
+    ##                 ufun = ufun_r, fs = fs)
+    ## res_tmb <- apply(Phi, 2, nls_res_tmb)
+    res_r <- sapply(1:nphi, function(ii) {
+      nls_res_r(phi = Phi[,ii], tau = tau[ii], Ybar = Ybar,
+        fbar = fbar, ufun = ufun_r, fs = fs)
+    })
+    res_tmb <- sapply(1:nphi, function(ii) nls_res_tmb(Phi[,ii], tau[ii]))
     expect_equal(res_r, res_tmb)
   }
 })

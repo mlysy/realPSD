@@ -40,7 +40,7 @@ namespace realPSD {
     /// Profiled objective function for the NLS method.
     Type nlp(cRefMatrix_t& Ubar);
     /// Residual vector for the NLS method.
-    void res(RefMatrix_t R, cRefMatrix_t& Ubar);
+    void res(RefMatrix_t R, cRefMatrix_t& Ubar, const Type tau);
   };
 
   /// @param[in] N Length of `Ybar`.
@@ -111,18 +111,18 @@ namespace realPSD {
   /// Calculates the NLS residual vector
   ///
   /// \f[
-  /// R = \bar Y - \hat \tau \cdot \bar U,
+  /// R = \bar Y - \tau \cdot \bar U,
   /// \f]
-  ///
-  /// where \f$\hat \tau\f$ is the conditional optimizer of \f$\tau\f$ calculated by `tau(Ubar)`.
   ///
   /// @param[out] R Vector of residuals.
   /// @param[in] Ubar Vector of normalized PSD values at the bin-average frequencies.
   /// @param[in] tau PSD scale factor `tau = sigma^2`.
   template <class Type>
-  inline void NLS<Type>::res(RefMatrix_t R, cRefMatrix_t& Ubar) {
-    tau_ = tau(Ubar);
-    R = Ybar_ - tau_ * Ubar;
+  inline void NLS<Type>::res(RefMatrix_t R, cRefMatrix_t& Ubar,
+			     const Type tau) {
+    // tau_ = tau(Ubar);
+    // YU_ = Ybar_ - tau * Ubar;
+    R = Ybar_ - tau * Ubar;
     return;
     // tau_ = tau(Ubar);
     // YU_ = Ybar_ - tau_ * Ubar;
