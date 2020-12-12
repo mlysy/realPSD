@@ -1,12 +1,12 @@
 ---
-title: "**realPSD**: How to define your own model in C++"
+title: "Custom PSD models"
 author: "Martin Lysy, Feiyu Zhu"
 date: "`r Sys.Date()`"
 output:
   rmarkdown::html_vignette:
     toc: yes
 vignette: >
-  %\VignetteIndexEntry{realPSD How to define your own model}
+  %\VignetteIndexEntry{Custom PSD models}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
