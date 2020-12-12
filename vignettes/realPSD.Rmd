@@ -6,7 +6,7 @@ output:
   rmarkdown::html_vignette:
     toc: yes
 vignette: >
-  %\VignetteIndexEntry{realPSD Development Notes}
+  %\VignetteIndexEntry{realPSD: Development Notes}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -58,7 +58,7 @@ cran_link <- function(pkg) pkg_link(pkg, "cran")
 github_link <- function(pkg) pkg_link(pkg, "github")
 ```
 
-## Overview
+# Overview
 
 Let $X(t)$ denote a continuous time mean-zero stationary process with autocorrelation $\acf(t) = \cov(X_s, X_{s+t})$. with power spectral density (PSD) defined via the inverse Fourier transform relation
 $$
@@ -77,14 +77,14 @@ This package is essentially a port of `r github_link("realSHO")`, but with the o
 
 <!-- ~~Currently the interface is through the R `r cran_link("TMB")` package, which makes the underlying C++ code difficult to interface from a different language (e.g., Python, Matlab).  A later step is to create a self-contained C++ library relying only on `r pkg_link("CppAD", "https://coin-or.github.io/CppAD/doc/cppad.htm")`, the C++ automated differentiation (AD) library on top of which **TMB** is built.~~ -->
 
-## Methods
+# Methods
 
 **realPSD** provides three different methods for parameter estimation outlined below.  For each method, estimation is via optimization over a function of $\pph$, with the fitted value of $\s$ being profiled out.  In all cases the estimators are built on the discrete Fourier transform of the data, $\YY = (\rv 1 Y K)$, where $N = 2K + 1$ and
 $$
 Y_k = \frac 1 N \left\vert \sum_{n=0}^{N-1} e^{-2\pi i k n} X_n\right\vert^2.
 $$
 
-### Maximum Likelihood
+## Maximum Likelihood
 
 The maximum likelihood estimator is obtained by maximizing the so-called Whittle loglikelihood function,
 \begin{equation}
@@ -99,12 +99,12 @@ where $U_k(\pph) = \fs \cdot U(\f_k, \pph)$.  Therefore, upon maximizing the pro
 $$
 \begin{aligned}
 \ell_{W,\tx{prof}}(\pph \mid \YY) & = \ell_W(\pph, \hat \s(\pph) \mid \YY) \\
-& = - K (1 + \log \sigma^2(\pph)) - \sum_{k=1}^K \log U_k(\pph),
+& = - K (1 + \log \hat \sigma^2(\pph)) - \sum_{k=1}^K \log U_k(\pph),
 \end{aligned}
 $$
 we obtain the MLE $\hat \tth = (\hat \pph, \hat \s(\hat \pph))$.
 
-### Nonlinear Least-Squares
+## Nonlinear Least-Squares
 
 In many situations with high-throughput (HTP) data, $K$ is very large, such that calculating the MLE becomes very computationally intensive.  An approximation to the MLE involves binning the periodogram ordinates.  That is, let $K = B \cdot N_B$, and
 $$
@@ -125,7 +125,7 @@ Q_{\tx{NLS},\tx{prof}}(\pph) = -\sum_{m=1}^{N_B} \big(\bar Y_m - \hat \sigma^2(\
 $$
 we obtain the maximum of \\eqref{eq:nls} via $\hat \tth = (\hat \pph, \hat \sigma(\hat \pph))$.
 
-### Variance-Stabilized Least-Squares
+## Variance-Stabilized Least-Squares
 
 Let $Z_m = \log(\bar Y_m)$.  Then the log-periodogram (LP) estimator maximizes the approximate loglikelihood
 \begin{equation}
@@ -142,7 +142,7 @@ $$
 $$
 we obtain the maximum of \\eqref{eq:lp} via $\hat \tth = (\hat \pph, \hat \sigma(\hat \pph))$.
 
-### Variance Estimators
+## Variance Estimators
 
 Both the MLE and LP loglikelihoods \\eqref{eq:mle} and \\eqref{eq:lp} can be used to calculate the observed Fisher information, which in turn can be used to produce the variance estimates
 $$
@@ -163,7 +163,7 @@ $$
 \end{aligned}
 $$
 
-### Model Residuals
+## Model Residuals
 
 Both the NLS and LP (profile) optimization problems can be rewritten as minimizing a sum-of-squares objective function
 $$
@@ -171,9 +171,39 @@ S(\pph) = \sum_{m=1}^{N_B} r_m(\pph)^2,
 $$
 for which specialized optimization algorithms such as [Gauss-Newton](https://en.wikipedia.org/wiki/Gauss%E2%80%93Newton_algorithm) or [Levenberg-Marquardt](https://en.wikipedia.org/wiki/Levenberg%E2%80%93Marquardt_algorithm) can be used.
 
-## Examples
+## Scaling
 
-### Simple Harmonic Oscillator with Noise Floor
+**TODO:** Better explain why we do this.
+
+For numerical stability, we have found that it is often preferable to express the Whittle likelihood \\eqref{eq:mle} as
+$$
+\ell_W(\tth \mid \YY) = - \sum_{k=1}^K\left(\frac{Y_k^{(s)}}{\psd_k(\tth)/C_S} + \log \psd_k(\tth)\right),
+$$
+where $Y_k^{(s)} = Y_k/C_S$ and $C_S > 0$ is a scaling factor (e.g., $C_S = K^{-1} \sum_{k=1}^K Y_k$).  In this case, the value of $\sigma^2$ maximing \\eqref{eq:mle} for given $\pph$ is
+$$
+\hat \s^2(\pph) = C_S \cdot \hat \s^2_{(s)}(\pph), \qquad \hat \s^2_{(s)}(\pph) = \frac {1} K \sum_{k=1}^K \frac{Y_k^{(s)}}{U_k(\pph)},
+$$
+and the profile loglikelihood may be expressed as
+$$
+\ell_{W,\tx{prof}}(\pph \mid \YY) = - K (1 + \log \hat \sigma_{(s)}^2(\pph)) - \sum_{k=1}^K \log U_k(\pph).
+$$
+
+Similarly, for the NLS estimator we may maximize the objective function
+$$
+Q_{\tx{NLS}}^{(s)}(\tth) = - \sum_{m=1}^{N_B} \big(\bar Y_m^{(s)} - \bar{\psd}_m(\tth)/C_S\big)^2,
+$$
+where $\bar Y_m^{(s)} = \bar Y_m / C_S$.  The corresponding profiled function is
+$$
+Q_{\tx{NLS},\tx{prof}}^{(s)}(\pph) = -\sum_{m=1}^{N_B} \big(\bar Y_m^{(s)} - \hat \sigma_{(s)}^2(\pph) \cdot \bar{U}_m(\pph)\big)^2,
+$$
+where
+$$
+\hat \s_{(s)}^2(\pph) = \frac{\sum_{m=1}^{N_B} \bar{U}_m(\pph) \bar Y_m^{(s)} }{\sum_{m=1}^{N_B} \bar{U}_m(\pph)^2} = \hat \s^2(\pph)/C_S.
+$$
+
+# Examples
+
+## Simple Harmonic Oscillator with Noise Floor
 
 The SHOW model is given by
 \begin{equation}
@@ -185,7 +215,7 @@ The SHOW model is given by
 \end{equation}
 where $\sigma^2 = \kbt/(k\cdot \pi \f_0Q)$, $\Rw = \Aw/\sigma^2$, $\gamma = \f_0Q$, and $\pph = (\f_0, \gamma, \Rw)$.
 
-### Fractional Ornstein-Uhlenbeck Model
+## Fractional Ornstein-Uhlenbeck Model
 
 The fOU model is expressed as
 $$
@@ -198,7 +228,7 @@ where $\gamma, \tau > 0$ and $B_t^H$ is fractional Brownian motion with Hurst pa
 \end{equation}
 where $\pph = (H, \gamma)$ and $\sigma^2 = \tau^2 \cdot \Gamma(2H+1)\sin(\pi H)/(2\pi)$.
 
-### CARFIMA Models
+## CARFIMA Models
 
 More generally, a $\carfima(p,q)$ process is defined by the differential equation
 $$

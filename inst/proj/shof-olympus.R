@@ -118,7 +118,7 @@ sqrt(diag(J %*% vcov %*% J))
 #' These changes can be done in `FitMethods.hpp` to avoid making changes all over the place.
 #'
 #' - rename `phi` to `psi`.
-#' - `nlp`, `nll`, and `resid` functions should have a scale factor which allows them to compute the actual functions (to avoid confusion).
+#' - `nlp`, `nll`, `resid`, `zeta` functions should have a scale factor which allows them to compute the actual functions (to avoid confusion).
 #' - `resid` and `nll` methods should always take `zeta` as the normalizing constant.
 #' - conditional optimum should always be `zeta(psi)`.
 #' - add residual function for MLE.  Let's say its `log(Ypsd/(tau * Ufun(psi)))`.
