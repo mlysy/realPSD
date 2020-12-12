@@ -13,12 +13,19 @@ test_that("The UFun returned is the same in R and TMB", {
     alpha <- rexp(1) # multiplicative factor
     phi <- matrix(rexp(3))
     # create TMB model and functions
-    tmod <- TMB::MakeADFun(data = list(model = model, method = "UFun", f = f),
-                           parameters = list(phi = matrix(rep(0, 3)), alpha = 0),
-                           silent = TRUE, DLL = "realPSD_TMBExports")
+    tmod1 <- TMB::MakeADFun(data = list(model = model, method = "UFun",
+                                        f = f, alpha = alpha),
+                            parameters = list(phi = matrix(rep(0, 3))),
+                            ADreport = TRUE,
+                            silent = TRUE, DLL = "realPSD_TMBExports")
+    tmod2 <- TMB::MakeADFun(data = list(model = model, method = "UFun",
+                                        f = f, alpha = 1),
+                            parameters = list(phi = matrix(rep(0, 3))),
+                            ADreport = TRUE,
+                            silent = TRUE, DLL = "realPSD_TMBExports")
     expect_equal(
-      tmod$simulate(c(phi, alpha))$U/tmod$simulate(c(phi, 1))$U, 
-      matrix(rep(alpha, N), ncol = 1)
+      setNames(tmod1$fn(phi)/tmod2$fn(phi), NULL),
+      rep(alpha, N)
     )
   }
 })

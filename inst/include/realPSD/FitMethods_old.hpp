@@ -29,9 +29,11 @@ namespace realPSD {
       // UFun Ufun(N, obj);
       UFun Ufun = make_Ufun(N, obj);
       Ufun.set_f(f);
-      matrix<Type> U(N,1);
-      Ufun.eval(U, phi);
-      ADREPORT(U);
+      SIMULATE {
+        matrix<Type> U(N,1);
+        Ufun.eval(U, phi);
+        REPORT(U);
+      }
       return Type(0);
     } else if(method.find("LP_") == 0) {
       // data

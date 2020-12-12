@@ -16,15 +16,16 @@ test_that("The SHOWF UFun returned is the same in R and TMB", {
     fs <- sim_fs()
     phi0 <- sim_showf_phi(model) # phi = c(f0, Q, Rw, Rf, alpha)
     # create TMB model and functions
-    tmod <- TMB::MakeADFun(data = list(model = model, 
-                                      method = "UFun", 
+    tmod <- TMB::MakeADFun(data = list(model = model,
+                                      method = "UFun",
                                       f = matrix(f),
                                       # Y = matrix(Y),
                                       fs = fs),
                            parameters = list(phi = matrix(phi0)),
                            # map = map,
+                           ADreport = TRUE,
                            silent = TRUE, DLL = "realPSD_TMBExports")
-    ufun_tmb <- function(phi) c(tmod$simulate(phi)$U)
+    ufun_tmb <- function(phi) setNames(tmod$fn(phi), NULL)
     # check they are equal
     Phi <- replicate(nphi, sim_showf_phi(model = model))
     U_r <- apply(Phi, 2, ufun_r, f = f)
@@ -49,15 +50,16 @@ test_that("The SHOWF UFun (with map) returned is the same in R and TMB", {
     # create TMB model and functions
     map <- list(as.factor(c(1,2,NA,4,5)))
     phi0[3] <- 0
-    tmod <- TMB::MakeADFun(data = list(model = model, 
-                                      method = "UFun", 
+    tmod <- TMB::MakeADFun(data = list(model = model,
+                                      method = "UFun",
                                       f = matrix(f),
                                       # Y = matrix(Y),
                                       fs = fs),
                            parameters = list(phi = matrix(phi0)),
                            map = map,
+                           ADreport = TRUE,
                            silent = TRUE, DLL = "realPSD_TMBExports")
-    ufun_tmb <- function(phi) c(tmod$simulate(phi)$U)
+    ufun_tmb <- function(phi) setNames(tmod$fn(phi), NULL)
     # check they are equal
     Phi <- replicate(nphi, sim_showf_phi(model = model))
     Phi["Rw", ] <- rep(0, nphi)

@@ -17,8 +17,9 @@ test_that("UFun is the same in R and TMB", {
                                        method = "UFun",
                                        f = matrix(f)),
                            parameters = list(phi = matrix(rep(0, 3))),
+                           ADreport = TRUE,
                            silent = TRUE, DLL = "realPSD_TMBExports")
-    ufun_tmb <- function(phi) c(tmod$simulate(phi)$U)
+    ufun_tmb <- function(phi) setNames(tmod$fn(phi), NULL)
     # check they are equal
     Phi <- replicate(nphi, sim_phi(model = model))
     U_r <- apply(Phi, 2, ufun_r, f = f)
