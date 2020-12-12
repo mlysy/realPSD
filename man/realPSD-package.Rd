@@ -8,4 +8,13 @@
 \description{
 More about what it does (maybe more than one line).
 }
+\author{
+\strong{Maintainer}: Martin Lysy \email{mlysy@uwaterloo.ca}
+
+Authors:
+\itemize{
+  \item Feiyu Zhu
+}
+
+}
 \keyword{internal}

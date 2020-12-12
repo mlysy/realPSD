@@ -11,13 +11,13 @@ namespace realPSD {
   template <class Type>
   class MLE {
   private:
-    // Typedefs
-    /// Typedef equivalent to `MatrixXd<Type>`.
-    typedef Eigen::Matrix<Type, Eigen::Dynamic, Eigen::Dynamic> MatrixXd_t;
-    /// Typedef equivalent to `Ref <MatrixXd<Type> >`
-    typedef Eigen::Ref <MatrixXd_t> RefMatrix_t;
-    /// Typedef equivalent to `const Ref <const MatrixXd<Type> >`
-    typedef const Eigen::Ref <const MatrixXd_t> cRefMatrix_t;
+    // // Typedefs
+    // /// Typedef equivalent to `MatrixXd<Type>`.
+    // typedef Eigen::Matrix<Type, Eigen::Dynamic, Eigen::Dynamic> MatrixXd_t;
+    // /// Typedef equivalent to `Ref <MatrixXd<Type> >`
+    // typedef Eigen::Ref <MatrixXd_t> RefMatrix_t;
+    // /// Typedef equivalent to `const Ref <const MatrixXd<Type> >`
+    // typedef const Eigen::Ref <const MatrixXd_t> cRefMatrix_t;
     // internal variables
     int N_;
     matrix<Type> Y_;
@@ -32,15 +32,15 @@ namespace realPSD {
     /// Constructor.
     MLE(int N);
     /// Setter for internal `Y`.
-    void set_Y(cRefMatrix_t& Y);
+    void set_Y(cRefMatrix<Type>& Y);
     /// Getter for internal `tau`.
     Type get_tau();
     /// Optimal value of `tau = sigma^2` given `U`.
-    Type tau(cRefMatrix_t& U);
+    Type tau(cRefMatrix<Type>& U);
     /// Objective function for the MLE method.
-    Type nll(cRefMatrix_t& U, const Type tau);
+    Type nll(cRefMatrix<Type>& U, const Type tau);
     /// Profiled objective function for the MLE method.
-    Type nlp(cRefMatrix_t& U);
+    Type nlp(cRefMatrix<Type>& U);
   };
 
   /// @param[in] N Length of `Y`.
@@ -65,7 +65,7 @@ namespace realPSD {
   ///
   /// @param[in] Y Vector of periodogram values.
   template <class Type>
-  inline void MLE<Type>::set_Y(cRefMatrix_t& Y) {
+  inline void MLE<Type>::set_Y(cRefMatrix<Type>& Y) {
     if(Y.size() != N_) init(Y.size());
     Y_ = Y;
     return;
@@ -75,7 +75,7 @@ namespace realPSD {
   ///
   /// @return Scalar estimate of `tau`.
   template <class Type>
-  inline Type MLE<Type>::tau(cRefMatrix_t& U) {
+  inline Type MLE<Type>::tau(cRefMatrix<Type>& U) {
     YU_ = Y_.array() / U.array();
     return YU_.sum() / N_;
   }
@@ -101,7 +101,7 @@ namespace realPSD {
   ///
   /// @return Value of the objective function (scalar).
   template <class Type>
-  inline Type MLE<Type>::nll(cRefMatrix_t& U, const Type tau) {
+  inline Type MLE<Type>::nll(cRefMatrix<Type>& U, const Type tau) {
     YU_ = Y_.array() / U.array();
     logU_ = U.array().log();
     return nll(tau);
@@ -121,7 +121,7 @@ namespace realPSD {
   ///
   /// @return Value of the objective function (scalar).
   template <class Type>
-  inline Type MLE<Type>::nlp(cRefMatrix_t& U) {
+  inline Type MLE<Type>::nlp(cRefMatrix<Type>& U) {
     tau_ = tau(U);
     logU_ = U.array().log();
     return N_ * (1.0 + log(tau_)) + logU_.sum();

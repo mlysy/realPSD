@@ -22,13 +22,13 @@ namespace realPSD {
     template <class Type>
     class UFun {
     private:
-      //typedefs
-      /// Typedef equivalent to `matrix<Type>`.
-      typedef Eigen::Matrix<Type, Eigen::Dynamic, Eigen::Dynamic> MatrixXd_t;
-      /// Typedef equivalent to `Ref <matrix<Type> >`.
-      typedef Eigen::Ref <MatrixXd_t> RefMatrix_t;
-      /// Typedef equivalent to `const Ref <const matrix<Type> >`.
-      typedef const Eigen::Ref <const MatrixXd_t> cRefMatrix_t;
+      // //typedefs
+      // /// Typedef equivalent to `matrix<Type>`.
+      // typedef Eigen::Matrix<Type, Eigen::Dynamic, Eigen::Dynamic> MatrixXd_t;
+      // /// Typedef equivalent to `Ref <matrix<Type> >`.
+      // typedef Eigen::Ref <MatrixXd_t> RefMatrix_t;
+      // /// Typedef equivalent to `const Ref <const matrix<Type> >`.
+      // typedef const Eigen::Ref <const MatrixXd_t> cRefMatrix_t;
       // internal variables
       int N_; ///> problem dimensions
       matrix<Type> f2_; ///> Vector of squared frequencies.
@@ -38,9 +38,9 @@ namespace realPSD {
       // /// TMB-specific constructor.
       // UFun(int N, objective_function<Type>* obj);
       /// Set frequency vector.
-      void set_f(cRefMatrix_t& f);
+      void set_f(cRefMatrix<Type>& f);
       /// Evaluate the normalized PSD.
-      void eval(RefMatrix_t U, cRefMatrix_t& phi);
+      void eval(RefMatrix<Type> U, cRefMatrix<Type>& phi);
     };
 
     template<class Type>
@@ -50,7 +50,7 @@ namespace realPSD {
     }
 
     template<class Type>
-    inline void UFun<Type>::set_f(cRefMatrix_t& f) {
+    inline void UFun<Type>::set_f(cRefMatrix<Type>& f) {
       N_ = f.size();
       f2_ = zero_matrix<Type>(N_,1);
       f2_ = f.cwiseProduct(f);
@@ -60,7 +60,7 @@ namespace realPSD {
     /// Parameters are: `phi = (f0, Q, Rw, Rf, alpha)`.
     // psd = 1/((f^2 / f0^2 - 1)^2 + f^2/(f0*Q)^2) + Rw + Rf/f^alpha
     template <class Type>
-    inline void UFun<Type>::eval(RefMatrix_t U, cRefMatrix_t& phi) {
+    inline void UFun<Type>::eval(RefMatrix<Type> U, cRefMatrix<Type>& phi) {
       U = (f2_/(phi(0,0) * phi(0,0))).array() - Type(1.0);
       U = U.cwiseProduct(U);
       U += f2_/(phi(0,0) * phi(1,0) * phi(0,0) * phi(1,0));

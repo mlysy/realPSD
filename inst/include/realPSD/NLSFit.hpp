@@ -11,13 +11,13 @@ namespace realPSD {
   template <class Type>
   class NLS {
   private:
-    // Typedefs
-    /// Typedef equivalent to `MatrixXd<Type>`.
-    typedef Eigen::Matrix<Type, Eigen::Dynamic, Eigen::Dynamic> MatrixXd_t;
-    /// Typedef equivalent to `Ref <MatrixXd<Type> >`
-    typedef Eigen::Ref <MatrixXd_t> RefMatrix_t;
-    /// Typedef equivalent to `const Ref <const MatrixXd<Type> >`
-    typedef const Eigen::Ref <const MatrixXd_t> cRefMatrix_t;
+    // // Typedefs
+    // /// Typedef equivalent to `MatrixXd<Type>`.
+    // typedef Eigen::Matrix<Type, Eigen::Dynamic, Eigen::Dynamic> MatrixXd_t;
+    // /// Typedef equivalent to `Ref <MatrixXd<Type> >`
+    // typedef Eigen::Ref <MatrixXd_t> RefMatrix_t;
+    // /// Typedef equivalent to `const Ref <const MatrixXd<Type> >`
+    // typedef const Eigen::Ref <const MatrixXd_t> cRefMatrix_t;
     // internal variables
     int N_;
     matrix<Type> Ybar_;
@@ -30,17 +30,17 @@ namespace realPSD {
     /// Constructor
     NLS(int N);
     /// Setter for internal `Ybar`.
-    void set_Ybar(cRefMatrix_t& Ybar);
+    void set_Ybar(cRefMatrix<Type>& Ybar);
     /// Getter for internal `tau`.
     Type get_tau();
     /// Optimal value of `tau = sigma^2` given `Ubar`.
-    Type tau(cRefMatrix_t& Ubar);
+    Type tau(cRefMatrix<Type>& Ubar);
     /// Objective function for the NLS method.
-    Type nll(cRefMatrix_t& Ubar, const Type tau);
+    Type nll(cRefMatrix<Type>& Ubar, const Type tau);
     /// Profiled objective function for the NLS method.
-    Type nlp(cRefMatrix_t& Ubar);
+    Type nlp(cRefMatrix<Type>& Ubar);
     /// Residual vector for the NLS method.
-    void res(RefMatrix_t R, cRefMatrix_t& Ubar, const Type tau);
+    void res(RefMatrix<Type> R, cRefMatrix<Type>& Ubar, const Type tau);
   };
 
   /// @param[in] N Length of `Ybar`.
@@ -64,7 +64,7 @@ namespace realPSD {
   ///
   /// @param[in] Ybar Vector of bin-averaged periodogram values.
   template <class Type>
-  inline void NLS<Type>::set_Ybar(cRefMatrix_t& Ybar) {
+  inline void NLS<Type>::set_Ybar(cRefMatrix<Type>& Ybar) {
     if(Ybar.size() != N_) init(Ybar.size());
     Ybar_ = Ybar;
     return;
@@ -77,7 +77,7 @@ namespace realPSD {
   ///
   /// @return Scalar estimate of `tau`.
   template <class Type>
-  inline Type NLS<Type>::tau(cRefMatrix_t& Ubar) {
+  inline Type NLS<Type>::tau(cRefMatrix<Type>& Ubar) {
     wgt_ = Ybar_.cwiseProduct(Ubar).sum();
     return wgt_ / Ubar.cwiseProduct(Ubar).sum();
   }
@@ -102,7 +102,7 @@ namespace realPSD {
   ///
   /// @return Value of the objective function (scalar).
   template <class Type>
-  inline Type NLS<Type>::nll(cRefMatrix_t& Ubar, const Type tau) {
+  inline Type NLS<Type>::nll(cRefMatrix<Type>& Ubar, const Type tau) {
     // res(YU_, Ubar, tau);
     YU_ = Ybar_ - tau * Ubar;
     return YU_.squaredNorm();
@@ -118,7 +118,7 @@ namespace realPSD {
   /// @param[in] Ubar Vector of normalized PSD values at the bin-average frequencies.
   /// @param[in] tau PSD scale factor `tau = sigma^2`.
   template <class Type>
-  inline void NLS<Type>::res(RefMatrix_t R, cRefMatrix_t& Ubar,
+  inline void NLS<Type>::res(RefMatrix<Type> R, cRefMatrix<Type>& Ubar,
 			     const Type tau) {
     // tau_ = tau(Ubar);
     // YU_ = Ybar_ - tau * Ubar;
@@ -136,7 +136,7 @@ namespace realPSD {
   ///
   /// @return Value of the objective function (scalar).
   template <class Type>
-  inline Type NLS<Type>::nlp(cRefMatrix_t& Ubar) {
+  inline Type NLS<Type>::nlp(cRefMatrix<Type>& Ubar) {
     tau_ = tau(Ubar);
     return nll(Ubar, tau_);
   }
