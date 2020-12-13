@@ -23,51 +23,55 @@ sim_showf_phi <- function(model = c("SHOWF_log", "SHOWF_nat")) {
   if(model == "SHOWF_log") phi <- log(phi)
   phi
 }
-sim_zeta <- function() rexp(1)
+sim_zeta <- function() log(rexp(1))
 sim_tau <- function() rexp(1)
 sim_fs <- function() sample(10:1000, size = 1)
 sim_model <- function() sample(c("SHOW_nat", "SHOW_log", "SHOW_comp"), size = 1)
 ## sim_model <- function() {"SHOW_comp"} # force the unit test to test SHOW_comp only
 
 # lp functions
-lp_zeta_r <- function(fbar, Zbar, phi, ufun, fs) {
+lp_zeta_r <- function(fbar, Zbar, phi, ufun, fs, B) {
+  bin_const <- digamma(B) - log(B)
   logUbar <- log(fs * ufun(fbar, phi))
-  mean(Zbar - logUbar)
+  mean(Zbar - logUbar) - bin_const
 }
-lp_res_r <- function(fbar, Zbar, phi, zeta, ufun, fs) {
+lp_res_r <- function(fbar, Zbar, phi, zeta, ufun, fs, B) {
+  bin_const <- digamma(B) - log(B)
   logUbar <- log(fs * ufun(fbar, phi))
   ## zeta <- lp_zeta_r(fbar, Zbar, phi, ufun, fs)
-  Zbar - zeta - logUbar
+  (Zbar - bin_const) - zeta - logUbar
 }
-lp_nll_r <- function(phi, zeta, Zbar, fbar, ufun, fs) {
+lp_nll_r <- function(phi, zeta, Zbar, fbar, ufun, fs, B) {
+  bin_const <- digamma(B) - log(B)
+  var_const <- B/2 # / (B * trigamma(B))
   logUbar <- log(fs * ufun(fbar, phi))
-  sum((Zbar - zeta - logUbar)^2)
+  var_const * sum(((Zbar - bin_const) - zeta - logUbar)^2)
 }
-lp_nlp_r <- function(phi, Zbar, fbar, ufun, fs) {
-  zeta <- lp_zeta_r(fbar, Zbar, phi, ufun, fs)
-  lp_nll_r(phi, zeta, Zbar, fbar, ufun, fs)
+lp_nlp_r <- function(phi, Zbar, fbar, ufun, fs, B) {
+  zeta <- lp_zeta_r(fbar, Zbar, phi, ufun, fs, B)
+  lp_nll_r(phi, zeta, Zbar, fbar, ufun, fs, B)
 }
 # lp function, gradient and hessian
-lp_zeta_gr_r <- function(phi, fbar, Zbar, ufun, fs) {
+lp_zeta_gr_r <- function(phi, fbar, Zbar, ufun, fs, B) {
   numDeriv::grad(func = lp_zeta_r, x = phi,
                   fbar = fbar, Zbar = Zbar,
-                  ufun = ufun, fs = fs)
+                  ufun = ufun, fs = fs, B = B)
 }
-lp_zeta_he_r <- function(phi, fbar, Zbar, ufun, fs) {
+lp_zeta_he_r <- function(phi, fbar, Zbar, ufun, fs, B) {
   numDeriv::hessian(func = lp_zeta_r, x = phi,
                     fbar = fbar, Zbar = Zbar,
-                    ufun = ufun, fs = fs)
+                    ufun = ufun, fs = fs, B = B)
 }
 
-lp_nll_gr_r <- function(phi, zeta, fbar, Zbar, ufun, fs) {
+lp_nll_gr_r <- function(phi, zeta, fbar, Zbar, ufun, fs, B) {
   numDeriv::grad(func = lp_nll_r, x = phi,
                   zeta = zeta, fbar = fbar, Zbar = Zbar,
-                  ufun = ufun, fs = fs)
+                  ufun = ufun, fs = fs, B = B)
 }
-lp_nll_he_r <- function(phi, zeta, fbar, Zbar, ufun, fs) {
+lp_nll_he_r <- function(phi, zeta, fbar, Zbar, ufun, fs, B) {
   numDeriv::hessian(func = lp_nll_r, x = phi,
                     zeta = zeta, fbar = fbar, Zbar = Zbar,
-                    ufun = ufun, fs = fs)
+                    ufun = ufun, fs = fs, B = B)
 }
 
 # mle functions
@@ -141,8 +145,14 @@ get_ufun <- function(model = c("SHOW_nat", "SHOW_log", "SHOW_comp", "SHOWF_log",
 
 # recompile TMB models, install package, and quit
 tmb_recompile <- function() {
-  RcppTMBTest::export_models()
+  TMBtools::export_models()
   pkgbuild::compile_dll()
+  devtools::document()
   devtools::install(quick = TRUE)
   q()
+}
+
+tmb_restart <- function() {
+  require(realPSD)
+  require(testthat)
 }

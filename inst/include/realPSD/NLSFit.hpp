@@ -111,7 +111,7 @@ namespace realPSD {
   /// Calculates the NLS residual vector
   ///
   /// \f[
-  /// R = \bar Y - \tau \cdot \bar U,
+  /// R = \bar Y - \tau \cdot \bar U.
   /// \f]
   ///
   /// @param[out] R Vector of residuals.

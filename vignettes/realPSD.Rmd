@@ -144,17 +144,29 @@ we obtain the maximum of \\eqref{eq:lp} via $\hat \tth = (\hat \pph, \hat \sigma
 
 ## Variance Estimators
 
-Both the MLE and LP loglikelihoods \\eqref{eq:mle} and \\eqref{eq:lp} can be used to calculate the observed Fisher information, which in turn can be used to produce the variance estimates
+The MLE loglikelihood \\eqref{eq:mle} can be used to calculate the observed Fisher information, which in turn can be used to produce the variance estimates
 $$
-\begin{aligned}
-\widehat{\var}(\hat \tth_{\tx{MLE}}) & = -\left[\frac{\partial^2}{\partial \tth^2} \ell_W(\hat\tth_{\tx{MLE}} \mid \YY)\right]^{-1} \\
-\widehat{\var}(\hat \tth_{\tx{LP}}) & = -\left[\frac{\partial^2}{\partial \tth^2} \ell_{\tx{LP}}(\hat\tth_{\tx{LP}} \mid \YY)\right]^{-1}.
-\end{aligned}
+\widehat{\var}(\hat \tth_{\tx{MLE}}) = -\left[\frac{\partial^2}{\partial \tth^2} \ell_W(\hat\tth_{\tx{MLE}} \mid \YY)\right]^{-1}.
 $$
-The variance of the NLS estimator is defined by the sandwich formula
+It turns out that the same holds for the LP loglikelihood \\eqref{eq:lp} up to a small inflation factor:
 $$
+\widehat{\var}(\hat \tth_{\tx{LP}}) = D_B \times -\left[\frac{\partial^2}{\partial \tth^2} \ell_{\tx{LP}}(\hat\tth_{\tx{LP}} \mid \YY)\right]^{-1},
+$$
+where $D_B = B \psi'(B)$.  Note that $D_{10} = `r round(10 * trigamma(10), 2)`$ and $D_{100} = `r round(100 * trigamma(100), 4)`$, such that correcting by $D_B$ has little impact in practice.
+
+<!-- Both the MLE and LP loglikelihoods \\eqref{eq:mle} and \\eqref{eq:lp} can be used to calculate the observed Fisher information, which in turn can be used to produce the variance estimates -->
+<!-- $$ -->
+<!-- \begin{aligned} -->
+<!-- \widehat{\var}(\hat \tth_{\tx{MLE}}) & = -\left[\frac{\partial^2}{\partial \tth^2} \ell_W(\hat\tth_{\tx{MLE}} \mid \YY)\right]^{-1} \\ -->
+<!-- \widehat{\var}(\hat \tth_{\tx{LP}}) & = -\left[\frac{\partial^2}{\partial \tth^2} \ell_{\tx{LP}}(\hat\tth_{\tx{LP}} \mid \YY)\right]^{-1}. -->
+<!-- \end{aligned} -->
+<!-- $$ -->
+
+In contrast to the likelihood-based estimators, the variance of the NLS estimator is defined by the sandwich formula
+\begin{equation}
+\label{eq:sand}
 \widehat{\var}(\hat \tth_{\tx{NLS}}) = - \bm A^{-1} \bm B \bm A^{-1},
-$$
+\end{equation}
 where for $g_m(\tth) = (\bar Y_m - \bar{\psd}_m(\tth))^2$, we have
 $$
 \begin{aligned}
@@ -177,29 +189,55 @@ for which specialized optimization algorithms such as [Gauss-Newton](https://en.
 
 For numerical stability, we have found that it is often preferable to express the Whittle likelihood \\eqref{eq:mle} as
 $$
-\ell_W(\tth \mid \YY) = - \sum_{k=1}^K\left(\frac{Y_k^{(s)}}{\psd_k(\tth)/C_S} + \log \psd_k(\tth)\right),
+\ell_W(\tth \mid \YY) = - \sum_{k=1}^K\left(\frac{Y_k^{(s)}}{\psd_k(\tth)/C_s} + \log \psd_k(\tth)\right),
 $$
-where $Y_k^{(s)} = Y_k/C_S$ and $C_S > 0$ is a scaling factor (e.g., $C_S = K^{-1} \sum_{k=1}^K Y_k$).  In this case, the value of $\sigma^2$ maximing \\eqref{eq:mle} for given $\pph$ is
+where $Y_k^{(s)} = Y_k/C_s$ and $C_s > 0$ is a scaling factor (e.g., $C_s = K^{-1} \sum_{k=1}^K Y_k$).  In this case, the value of $\sigma^2$ maximing \\eqref{eq:mle} for given $\pph$ is
 $$
-\hat \s^2(\pph) = C_S \cdot \hat \s^2_{(s)}(\pph), \qquad \hat \s^2_{(s)}(\pph) = \frac {1} K \sum_{k=1}^K \frac{Y_k^{(s)}}{U_k(\pph)},
+\hat \s^2(\pph) = C_s \cdot \hat \s^2_{(s)}(\pph), \qquad \hat \s^2_{(s)}(\pph) = \frac {1} K \sum_{k=1}^K \frac{Y_k^{(s)}}{U_k(\pph)},
 $$
 and the profile loglikelihood may be expressed as
 $$
-\ell_{W,\tx{prof}}(\pph \mid \YY) = - K (1 + \log \hat \sigma_{(s)}^2(\pph)) - \sum_{k=1}^K \log U_k(\pph).
+\ell_{W,\tx{prof}}(\pph \mid \YY) = - K (1 + \log C_s + \log \hat \sigma_{(s)}^2(\pph)) - \sum_{k=1}^K \log U_k(\pph).
 $$
 
 Similarly, for the NLS estimator we may maximize the objective function
 $$
-Q_{\tx{NLS}}^{(s)}(\tth) = - \sum_{m=1}^{N_B} \big(\bar Y_m^{(s)} - \bar{\psd}_m(\tth)/C_S\big)^2,
+Q_{\tx{NLS}}^{(s)}(\tth) = - \sum_{m=1}^{N_B} \big(\bar Y_m^{(s)} - \bar{\psd}_m(\tth)/C_s\big)^2,
 $$
-where $\bar Y_m^{(s)} = \bar Y_m / C_S$.  The corresponding profiled function is
+where $\bar Y_m^{(s)} = \bar Y_m / C_s$.  The corresponding profiled function is
 $$
 Q_{\tx{NLS},\tx{prof}}^{(s)}(\pph) = -\sum_{m=1}^{N_B} \big(\bar Y_m^{(s)} - \hat \sigma_{(s)}^2(\pph) \cdot \bar{U}_m(\pph)\big)^2,
 $$
 where
 $$
-\hat \s_{(s)}^2(\pph) = \frac{\sum_{m=1}^{N_B} \bar{U}_m(\pph) \bar Y_m^{(s)} }{\sum_{m=1}^{N_B} \bar{U}_m(\pph)^2} = \hat \s^2(\pph)/C_S.
+\hat \s_{(s)}^2(\pph) = \frac{\sum_{m=1}^{N_B} \bar{U}_m(\pph) \bar Y_m^{(s)} }{\sum_{m=1}^{N_B} \bar{U}_m(\pph)^2} = \hat \s^2(\pph)/C_s.
 $$
+
+Scaling is typically not needed for the LP estimator, but for completeness we provide the calculations here.  That is, for $Z_m^{(s)} = Z_m - C_s$, we have
+$$
+\ell_{\tx{LP}}(\tth \mid \YY) = - \frac B 2 \big(Z_m^{(s)} + C_s + C_B - \log \bar{\psd}_m(\tth) \big)^2
+$$
+and
+$$
+\hat \s^2(\pph) = \exp\left\{\hat \zeta_{(s)}(\pph) + C_s + C_B\right\}, \qquad \hat \zeta_{(s)}(\pph) = \frac{1}{N_B} \sum_{m=1}^{N_B} Z_m^{(s)} - \log \bar{U}_m(\pph).
+$$
+
+## Median Binning
+
+The NLS and LP estimators are defined in terms of the bin mean $\bar Y_m$.  To decrease sensitivity to outliers, one might consider the bin median $\tilde Y_m = \operatorname{median}\{Y_k: k \in I_m\}$.  In this case, we have
+$$
+\begin{aligned}
+\lim_{B\to\infty} E[\tilde Y_m] & = \bar{\psd}_m(\tth) \cdot \log 2, \\ \lim_{B\to\infty} E[\log \tilde Y_m] & = \log \bar{\psd}_m(\tth) + \log \log 2,
+\end{aligned}
+$$
+such that we may try to maximize the objective functions
+$$
+\begin{aligned}
+\tilde Q^{(s)}_{\tx{NLS}}(\tth) & = - \sum_{m=1}^{N_B}\big(\tilde Y_m^{(s)} - (\log 2/C_s) \cdot \bar{\psd}_m(\tth)\big)^2 \\
+\tilde Q^{(s)}_{\tx{LP}}(\tth) & = - \sum_{m=1}^{N_B} \big(\tilde Z_m^{(s)} + C_s - \log \log 2 - \log \bar{\psd}_m(\tth)\big)^2.
+\end{aligned}
+$$
+Note here that neither the LP nor NLS estimators are asympotically loglikelihoods, such that variance estimators should use the sandwich formula \\eqref{eq:sand}.
 
 # Examples
 

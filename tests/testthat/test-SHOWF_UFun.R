@@ -12,15 +12,13 @@ test_that("The SHOWF UFun returned is the same in R and TMB", {
     # simulate data
     N <- sample(10:20,1)
     f <- sim_f(N)
-    Y <- sim_Y(N)
-    fs <- sim_fs()
+    ## Y <- sim_Y(N)
+    ## fs <- sim_fs()
     phi0 <- sim_showf_phi(model) # phi = c(f0, Q, Rw, Rf, alpha)
     # create TMB model and functions
     tmod <- TMB::MakeADFun(data = list(model = model,
-                                      method = "UFun",
-                                      f = matrix(f),
-                                      # Y = matrix(Y),
-                                      fs = fs),
+                                       method = "UFun",
+                                       f = matrix(f)),
                            parameters = list(phi = matrix(phi0)),
                            # map = map,
                            ADreport = TRUE,
@@ -44,17 +42,15 @@ test_that("The SHOWF UFun (with map) returned is the same in R and TMB", {
     # simulate data
     N <- sample(10:20,1)
     f <- sim_f(N)
-    Y <- sim_Y(N)
-    fs <- sim_fs()
+    ## Y <- sim_Y(N)
+    ## fs <- sim_fs()
     phi0 <- sim_showf_phi(model) # phi = c(f0, Q, Rw, Rf, alpha)
     # create TMB model and functions
     map <- list(as.factor(c(1,2,NA,4,5)))
     phi0[3] <- 0
     tmod <- TMB::MakeADFun(data = list(model = model,
-                                      method = "UFun",
-                                      f = matrix(f),
-                                      # Y = matrix(Y),
-                                      fs = fs),
+                                       method = "UFun",
+                                       f = matrix(f)),
                            parameters = list(phi = matrix(phi0)),
                            map = map,
                            ADreport = TRUE,

@@ -41,6 +41,8 @@ namespace realPSD {
     Type nll(cRefMatrix<Type>& U, const Type tau);
     /// Profiled objective function for the MLE method.
     Type nlp(cRefMatrix<Type>& U);
+    /// Residual vector for the MLE method.
+    void res(RefMatrix<Type> R, cRefMatrix<Type>& U, const Type tau);
   };
 
   /// @param[in] N Length of `Y`.
@@ -127,6 +129,25 @@ namespace realPSD {
     return N_ * (1.0 + log(tau_)) + logU_.sum();
   }  
 
-}
+  /// Calculates the MLE residual vector, which is defined as
+  ///
+  /// \f[
+  /// R = log Y - \log(\tau \cdot U).
+  /// \f]
+  ///
+  /// @param[out] R Vector of residuals.
+  /// @param[in] U Vector of normalized PSD values at the periodogram frequencies.
+  /// @param[in] tau PSD scale factor `tau = sigma^2`.
+  template <class Type>
+  inline void MLE<Type>::res(RefMatrix<Type> R, cRefMatrix<Type>& U,
+			     const Type tau) {
+    R = (Y_.array() / U.array()).log();
+    R.array() -= log(tau);
+    return;
+  }
+  
+} // end namespace realPSD
+
+
 
 #endif
