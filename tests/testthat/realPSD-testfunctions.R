@@ -1,4 +1,59 @@
 # simulation functions
+sim_setup <- function(nphi, est_type = c("lp", "nls", "mle"),
+                    bin_type = c("mean", "median")) {
+  est_type <- match.arg(est_type)
+  bin_type <- match.arg(bin_type)
+  # pick model
+  model <- sim_model()
+  ufun_r <- get_ufun(model)
+  # simulate data
+  N <- sample(10:20,1)
+  B <- sample(2:5, 1)
+  freq <- sort(sim_f(N))
+  Ypsd <- sim_Y(N)
+  fbar <- realPSD::binning(freq, bin_size = B, bin_type = bin_type)
+  Ybar <- realPSD::binning(Ypsd, bin_size = B, bin_type = bin_type)
+  Zbar <- log(Ybar)
+  # simulate parameters
+  Phi <- replicate(nphi, sim_phi())
+  zeta <- replicate(nphi, sim_zeta())
+  # create TMB model class
+  test_model <-
+    R6::R6Class(
+          classname = "test_model",
+          inherit = realPSD::psd_model,
+          private = list(
+            Temp_ = NULL, # temperature
+            n_phi_ = 3,
+            tmb_DLL_ = "realPSD_TMBExports",
+            tmb_model_ = model
+          ),
+          active = list(
+            #' @field Temp Temperature of the system.
+            Temp = function() private$Temp_
+          )
+        )
+  # calculate bin constants
+  if(est_type == "mle") {
+    bin_loc <- 1
+  } else if(est_type == "lp") {
+    bin_loc <- switch(bin_type,
+                       mean = digamma(B) - log(B),
+                       median = log(log(2)))
+  } else if(est_type == "nls") {
+    bin_loc <- switch(bin_type,
+                       mean = 1,
+                       median = log(2))
+  }
+  if(est_type == "lp" && bin_type == "mean") {
+    bin_scale <- B/2 / (B * trigamma(B))
+  } else bin_scale <- 1
+  list(model = model, ufun_r = ufun_r, N = N, B = B,
+       freq = freq, Ypsd = Ypsd, fbar = fbar, Ybar = Ybar, Zbar = Zbar,
+       Phi = Phi, zeta = zeta,
+       bin_loc = bin_loc, bin_scale = bin_scale,
+       test_model = test_model)
+}
 sim_f <- function(n) runif(n, 0, 2*n)
 sim_Zbar <- function(n) rnorm(n)
 sim_Y <- function(n) rchisq(n, df = 2)
@@ -30,26 +85,34 @@ sim_model <- function() sample(c("SHOW_nat", "SHOW_log", "SHOW_comp"), size = 1)
 ## sim_model <- function() {"SHOW_comp"} # force the unit test to test SHOW_comp only
 
 # lp functions
-lp_zeta_r <- function(fbar, Zbar, phi, ufun, fs, B) {
-  bin_const <- digamma(B) - log(B)
+lp_zeta_r <- function(fbar, Zbar, phi, ufun, fs, B, bin_type) {
+  bin_loc <- switch(bin_type,
+                    mean = digamma(B) - log(B),
+                    median = log(log(2)))
   logUbar <- log(fs * ufun(fbar, phi))
-  mean(Zbar - logUbar) - bin_const
+  mean(Zbar - logUbar) - bin_loc
 }
-lp_res_r <- function(fbar, Zbar, phi, zeta, ufun, fs, B) {
-  bin_const <- digamma(B) - log(B)
+lp_res_r <- function(fbar, Zbar, phi, zeta, ufun, fs, B, bin_type) {
+  bin_loc <- switch(bin_type,
+                    mean = digamma(B) - log(B),
+                    median = log(log(2)))
   logUbar <- log(fs * ufun(fbar, phi))
   ## zeta <- lp_zeta_r(fbar, Zbar, phi, ufun, fs)
-  (Zbar - bin_const) - zeta - logUbar
+  (Zbar - bin_loc) - zeta - logUbar
 }
-lp_nll_r <- function(phi, zeta, Zbar, fbar, ufun, fs, B) {
-  bin_const <- digamma(B) - log(B)
-  var_const <- B/2 # / (B * trigamma(B))
+lp_nll_r <- function(phi, zeta, Zbar, fbar, ufun, fs, B, bin_type) {
+  bin_loc <- switch(bin_type,
+                    mean = digamma(B) - log(B),
+                    median = log(log(2)))
+  bin_scale <- switch(bin_type,
+                      mean = B/2 / (B * trigamma(B)),
+                      median = 1)
   logUbar <- log(fs * ufun(fbar, phi))
-  var_const * sum(((Zbar - bin_const) - zeta - logUbar)^2)
+  bin_scale * sum(((Zbar - bin_loc) - zeta - logUbar)^2)
 }
-lp_nlp_r <- function(phi, Zbar, fbar, ufun, fs, B) {
-  zeta <- lp_zeta_r(fbar, Zbar, phi, ufun, fs, B)
-  lp_nll_r(phi, zeta, Zbar, fbar, ufun, fs, B)
+lp_nlp_r <- function(phi, Zbar, fbar, ufun, fs, B, bin_type) {
+  zeta <- lp_zeta_r(fbar, Zbar, phi, ufun, fs, B, bin_type)
+  lp_nll_r(phi, zeta, Zbar, fbar, ufun, fs, B, bin_type)
 }
 # lp function, gradient and hessian
 lp_zeta_gr_r <- function(phi, fbar, Zbar, ufun, fs, B) {
@@ -91,22 +154,31 @@ mle_nlp_r <- function(phi, Y, f, ufun, fs) {
 }
 
 # nls functions
-nls_nll_r <- function(phi, tau, Ybar, fbar, ufun, fs) {
+nls_nll_r <- function(phi, tau, Ybar, fbar, ufun, fs, bin_type) {
+  bin_loc <- switch(bin_type,
+                    mean = 1,
+                    median = log(2))
   Ubar <- fs * ufun(fbar, phi)
-  sum((Ybar - tau * Ubar)^2)
+  sum((Ybar - bin_loc * tau * Ubar)^2)
 }
-nls_res_r <- function(phi, tau, Ybar, fbar, ufun, fs) {
+nls_res_r <- function(phi, tau, Ybar, fbar, ufun, fs, bin_type) {
+  bin_loc <- switch(bin_type,
+                    mean = 1,
+                    median = log(2))
   Ubar <- fs * ufun(fbar, phi)
   ## tau <- nls_tau_r(fbar, Ybar, phi, ufun, fs)
-  Ybar - tau * Ubar
+  Ybar - bin_loc * tau * Ubar
 }
-nls_tau_r <- function(fbar, Ybar, phi, ufun, fs) {
-  Ubar <- fs * ufun(fbar, phi)
+nls_tau_r <- function(fbar, Ybar, phi, ufun, fs, bin_type) {
+  bin_loc <- switch(bin_type,
+                    mean = 1,
+                    median = log(2))
+  Ubar <- bin_loc * fs * ufun(fbar, phi)
   sum(Ybar * Ubar) / sum(Ubar * Ubar)
 }
-nls_nlp_r <- function(phi, Ybar, fbar, ufun, fs) {
-  tau <- nls_tau_r(fbar, Ybar, phi, ufun, fs)
-  nls_nll_r(phi, tau, Ybar, fbar, ufun, fs)
+nls_nlp_r <- function(phi, Ybar, fbar, ufun, fs, bin_type) {
+  tau <- nls_tau_r(fbar, Ybar, phi, ufun, fs, bin_type)
+  nls_nll_r(phi, tau, Ybar, fbar, ufun, fs, bin_type)
 }
 
 # show model normalized PSD

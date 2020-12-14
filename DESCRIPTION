@@ -8,7 +8,7 @@ Authors@R: c(person("Feiyu", "Zhu", role = "aut"),
                     email = "mlysy@uwaterloo.ca"))
 Description: More about what it does (maybe more than one line).
 License: GPL-3
-Imports: TMB, Rcpp (>= 1.0.1), fftw, whisker
+Imports: TMB, Rcpp (>= 1.0.1), fftw, whisker, R6
 LinkingTo: TMB, Rcpp
 Suggests: 
     knitr,
