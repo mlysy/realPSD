@@ -2,39 +2,24 @@
 % Please edit documentation in R/make_psd_model.R
 \name{make_psd_model}
 \alias{make_psd_model}
-\title{Create a generic TMB file from user's model definition.}
+\title{Create the \pkg{TMB} wrapper file for parameter estimation with user-defined models.}
 \usage{
-make_psd_model(
-  name,
-  header,
-  class,
-  ctor,
-  include,
-  method,
-  standalone = TRUE,
-  path
-)
+make_psd_model(model, header, class, ctor, standalone = TRUE, path = NULL)
 }
 \arguments{
-\item{header}{Name of model header file including extension.  If missing defaults to \verb{\{model\}.hpp}.}
-
-\item{class}{Name of class definition, with enclosing namespace if it exists.  If missing defaults to \code{{model}}.}
-
-\item{ctor}{Name of external constructor, with enclosing namespace if it exists.  If missing defaults to \verb{make_\{model\}}.}
-
-\item{include}{Name of additional include directive (path of the additional header file), usually package specific, e.g. #include"realPSD/FitMethods.hpp" .}
-
-\item{method}{Name of generic method class with enclosing namespace if it exists. To use realPSD, method = "realPSD::FitMethods" is mandatory.}
-
-\item{standalone}{If \code{TRUE} creates a standalone \code{cpp} file to pass to \code{\link[TMB:compile]{TMB::compile()}}.  Otherwise, creates an \code{hpp} header file to be placed in a package created with \strong{TMBtools}.}
-
-\item{path}{Name of output file.  If missing defaults to \verb{\{model\}_Generics.\{cpp/hpp\}} depending on the value of \code{standalone}.  If \code{NULL} doesn't create file but prints contents to console.  Generates an error if \code{path} file already exists.}
-
 \item{model}{Name of model.}
+
+\item{header}{Name of model header file including extension.  If missing defaults to \verb{\{model\}.hpp}.  (See 'Details').}
+
+\item{class}{Name of class definition, with enclosing namespace if it exists.  If missing defaults to \code{{model}}.  (See 'Details').}
+
+\item{ctor}{Name of external class constructor, with enclosing namespace if it exists.  If missing defaults to \verb{make_\{model\}}.  (See 'Details').}
+
+\item{standalone}{If \code{TRUE} creates a standalone \code{cpp} file to pass to \code{\link[TMB:compile]{TMB::compile()}}.  Otherwise, creates an \code{hpp} header file to be placed in a package created with \pkg{TMBtools}. (See 'Details').}
 }
 \value{
-The name of the file (invisibly), or nothing but prints the output to the console.
+Vector of strings each containing one line of the \pkg{TMB} wrapper file.
 }
 \description{
-Create a generic TMB file from user's model definition.
+Create the \pkg{TMB} wrapper file for parameter estimation with user-defined models.
 }

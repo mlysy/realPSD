@@ -1,27 +1,25 @@
-#' @title Calculates the one-sided periodogram from given time series and sampling frequency SF.
-#' 
-#' @param yTime Time series to transform.
-#' @param SF_s Sampling frequecy (Hz).
-#' @param T_s Total time (seconds).
-#' @return List of xFreq: One-sided periodogram frequencies and yFreq: One-sidede periodogram ordinates.
+#' Calculate the one-sided periodogram of a time series.
+#'
+#' @param Xt Vector of time series observations.
+#' @param fs Sampling frequecy (Hz).
+#' @return Data frame with columns `freq` and `Ypsd`.
+#'
+#' @details For `length(Xt) = N = 2*K`, we have
+#' ```
+#' freq = 1:(K-1)/N * fs,     Ypsd = 1/(N*fs) * abs(fft(Xt)[2:K])^2.
+#' ```
 #' @export
-periodogram <- function(yTime, SF_s, T_s) {
-  # fft(yTime)
-  N <- length(yTime) - (length(yTime) %% 2) # use even PSD's only
-  FR <- SF_s/N
-  yTime <- yTime[1:N]
-  yFreq <- fftw::FFT(yTime)/(sqrt(FR)*N)
-  # Remove DC component, select first frequency up to the Nyquist frequency.
-  # Drop negative frequencies. For a real signal, negative frequencies are redundant.
-  yFreq <- yFreq[2:(N/2+1)]
-  xFreq <- seq(from = 1/T_s, to = SF_s/2, length.out = length(yFreq))
-
-  yFreq[length(yFreq)] <- Re(yFreq[length(yFreq)]) # Nyquist freq should be real for real signal
-  yFreq <- abs(yFreq)^2 # Take the squared magnitude at each frequency
-  # Make the PSD single-sided by doubling everything except the Nyquist frequency.
-  # This corrects for the loss in amplitude caused by dropping negative frequencies
-  # the Nyquist frequency at N/2 doesn't undergo folding, and therefore is NOT doubled.
-  yFreq[1: (N/2-1)] <- 2 * yFreq[1: (N/2-1)]
-
-  return(list(xFreq = xFreq, yFreq = yFreq))
+periodogram <- function(Xt, fs) {
+  # fft(Xt)
+  N <- length(Xt) - (length(Xt) %% 2) # use even PSD's only
+  K <- N/2
+  ## FR <- fs/N
+  Xt <- Xt[1:N]
+  ## Ypsd <- fftw::FFT(Xt)/(sqrt(FR)*N)
+  Xf <- fftw::FFT(Xt)/sqrt(fs * N)
+  # Remove DC component, Nyquist frequency, and negative frequencies.
+  Xf <- Xf[2:K]
+  freq <- 1:(K-1) * fs/N
+  Ypsd <- abs(Xf)^2 # periodogram is square magnitude of FFT
+  data.frame(freq = freq, Ypsd = Ypsd)
 }

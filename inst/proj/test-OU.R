@@ -1,0 +1,233 @@
+#' ---
+#' title: "Testing the New Interface with the OU Model"
+#' author: "Martin Lysy"
+#' date: "`r Sys.Date()`"
+#' output:
+#'   rmarkdown::html_document:
+#'     toc: yes
+#'     theme: journal
+#' ---
+#' \newcommand{\ud}{\mathop{}\!\mathrm{d}}
+#' \newcommand{\cov}{\operatorname{cov}}
+#' \newcommand{\psd}{\mathcal{S}}
+#' \newcommand{\f}{f}
+#'
+#' # Model
+#'
+#' The OU model is given by the stochastic differential equation
+#' $$
+#' \ud X_t = -\alpha X_t \ud t + \beta \ud B_t.
+#' $$
+#' The autocorrelation function is $\cov(X_s, X_{s+t}) = \beta^2/(2\alpha) \cdot e^{-\alpha|t|}$, and the PSD is
+#' $$
+#' \psd_X(\f) = \frac{\beta^2}{(2\pi \f)^2 + \alpha^2}.
+#' $$
+#'
+#' # Simulate Data
+
+#+ setup
+require(realPSD)
+require(TMB)
+require(R6)
+require(tidyverse)
+source("ou_sim.R")
+
+#+ sim
+
+#` PSD for the OU model.
+#`
+#` @param freq Vector of frequencies
+#` @param alpha Mean reversion parameter.
+#` @param beta Scale parameter.
+#` @return PSD vector at the frequencies in `freq`.
+ou_psd <- function(freq, alpha, beta) {
+  beta^2/((2*pi*freq)^2 + alpha^2)
+}
+
+# true parameter values
+theta0 <- c(alpha = 3.1, beta = 2.2)
+
+# timescale for simulation
+frange <- c(1e-4, 1e2) # frequency range
+fs <- frange[2]*2 # sampling frequency
+dt <- 1/fs # interobservation time
+N <- floor(fs/frange[1]) # number of observations
+
+# time domain simulation
+Xt <- ou_sim(gamma = theta0[1], mu = 0, sigma = theta0[2], dt = dt, n_obs = N)
+
+#' ## Empirical vs Theoretical PSD Estimate
+
+#+ psd_emp
+psd_emp <- periodogram(Xt, fs = fs)
+psd_emp <- psd_emp %>% filter(freq < 20)
+bin_size <- 100 # for estimation and plotting
+psd_bin <- as.data.frame(lapply(psd_emp, binning,
+                                bin_size = bin_size, bin_type = "mean"))
+
+plot(psd_bin$freq, psd_bin$Ypsd, type = "l", log = "xy",
+     xlab = "Frequency (Hz)", ylab = "PSD")
+curve(ou_psd(freq = x, alpha = theta0[1], beta = theta0[2]),
+      col = "red", add = TRUE)
+
+
+#' # Create the `ou_model` Object
+#'
+#' The first step is to create a standalone version of the model.  Here is the definition of the `ou::UFun` class:
+
+#+ ou_ufun, echo = FALSE, results = "asis"
+cat("```cpp", readLines("OU_Model.hpp"), "```", sep = "\n")
+
+#' Now let's compile it and create the `ou_model` object as follows:
+
+#+ ou_cpp_def
+# create c++ file
+ou_cpp <- make_psd_model(model = "OU",
+                         header = "OU_Model.hpp",
+                         class = "ou::UFun",
+                         ctor = "ou::make_Ufun",
+                         standalone = TRUE)
+# this avoid compiling if file hasn't changed
+if(!file.exists("OU_FitMethods.cpp") ||
+   !identical(ou_cpp, paste0(readLines("OU_FitMethods.cpp"), collapse = "\n"))) {
+  cat(ou_cpp, sep = "\n", file = "OU_FitMethods.cpp")
+}
+
+# compile it
+model <- "OU_FitMethods"
+TMB::compile(paste0(model, ".cpp"),
+             PKG_CXXFLAGS = paste0("-I", system.file("include", package = "realPSD"),
+                                   " -std=c++11"))
+dyn.load(TMB::dynlib(model))
+
+# create the ou_model class
+ou_model <- R6::R6Class(
+  classname = "ou_model",
+  inherit = realPSD::psd_model,
+  private = list(
+    n_phi_ = 1,
+    tmb_model_ = "OU",
+    tmb_DLL_ = "OU_FitMethods"
+  )
+)
+
+#' ## Testing
+#'
+#' To check whether the implementation is correct, we'll compare the **TMB** implementation of the $U(\f, \phi)$ method of `ou_model` to a pure R functional implementation.
+
+#+ tmb_test
+# construct the model object
+ou_obj <- ou_model$new(freq = psd_emp$freq, Ypsd = psd_emp$Ypsd,
+                       bin_size = 100, est_type = "lp")
+
+ou_ufun <- ou_obj$ufun() # TMB method corresponding to UFun.eval()
+U_tmb <- ou_ufun$fn(log(theta0[1])) # evaluate at frequencies for lp estimator
+# same calculation in R
+U_r <- ou_psd(freq = psd_bin$freq, alpha = theta0[1], beta = 1)
+range(U_tmb - U_r)
+
+#' # Parameter Estimation
+#'
+#' ## MLE Method
+
+#+ mle_fit
+
+#` Helper function to convert a value of `phi_est` into `eta_coef` and `eta_vcov`.
+#` @param phi Value of `phi`.
+#` @param obj Model object created by `ou_model`.
+#` @return List with elements `coef` and `vcov` of parameters on the computational basis, `eta = (phi, zeta)`.
+to_fit <- function(phi, obj) {
+  fit <- list(phi = phi, zeta = obj$nlp()$simulate(phi)$zeta)
+  fit <- list(coef = c(phi = fit$phi, zeta = fit$zeta),
+              vcov = obj$vcov(phi = fit$phi, zeta = fit$zeta))
+  rownames(fit$vcov) <- colnames(fit$vcov) <- names(fit$coef)
+  fit
+}
+
+# instantiate TMB object for profile likelihood
+ou_obj$set_est(est_type = "mle")
+ou_nlp <- ou_obj$nlp()
+
+opt <- optimize(f = ou_nlp$fn, lower = log(.1), upper = log(10))
+mle_fit <- to_fit(opt$min, ou_obj)
+
+plot(psd_bin$freq, psd_bin$Ypsd, type = "l", log = "xy",
+     xlab = "Frequency (Hz)", ylab = "PSD")
+curve(ou_psd(freq = x, alpha = exp(mle_fit$coef[1]), beta = exp(mle_fit$coef[2]/2)),
+      col = "red", add = TRUE)
+
+#' ## LP Method
+
+#+ lp_fit
+# instantiate TMB object for profile likelihood
+ou_obj$set_est(est_type = "lp", bin_size = bin_size)
+ou_nlp <- ou_obj$nlp()
+
+opt <- optimize(f = ou_nlp$fn, lower = log(.1), upper = log(10))
+lp_fit <- to_fit(opt$min, ou_obj)
+
+plot(psd_bin$freq, psd_bin$Ypsd, type = "l", log = "xy",
+     xlab = "Frequency (Hz)", ylab = "PSD")
+curve(ou_psd(freq = x, alpha = exp(lp_fit$coef[1]), beta = exp(lp_fit$coef[2]/2)),
+      col = "red", add = TRUE)
+
+#' ## NLS Method
+
+#+ nls_fit
+# instantiate TMB object for profile likelihood
+ou_obj$set_est(est_type = "nls", bin_size = bin_size)
+ou_nlp <- ou_obj$nlp()
+
+opt <- optimize(f = ou_nlp$fn, lower = log(.1), upper = log(10))
+nls_fit <- to_fit(opt$min, ou_obj)
+
+plot(psd_bin$freq, psd_bin$Ypsd, type = "l", log = "xy",
+     xlab = "Frequency (Hz)", ylab = "PSD")
+curve(ou_psd(freq = x, alpha = exp(lp_fit$coef[1]), beta = exp(lp_fit$coef[2]/2)),
+      col = "red", add = TRUE)
+
+#' ## Table of Parameter Estimates
+
+#+ disp
+disp <- sapply(list(mle = mle_fit, lp = lp_fit, nls = nls_fit),
+               function(fit) c(fit$coef[1], sqrt(fit$vcov[1,1]),
+                               fit$coef[2], sqrt(fit$vcov[2,2])))
+disp <- cbind(true = c(log(theta0[1]), NA, 2 * log(theta0[2]), NA),
+              disp)
+disp <- t(disp)
+colnames(disp) <- c("phi_est", "phi_se", "zeta_est", "zeta_se")
+signif(disp, 3)
+
+#' # Scratch
+#'
+#' The code below was executed during the debugging of this file.  It is not run here, only kept for reference.
+
+#+ scratch, eval = FALSE
+
+curve(sapply(x, function(phi) ou_nlp$fn(phi)), from = log(.1), to = log(10))
+
+# ok check whether we get the same thing with pure R
+source(system.file("tests", "testthat", "realPSD-testfunctions.R",
+                   package = "realPSD"))
+
+ou_ufun_r <- function(f, phi) {
+  alpha <- exp(phi)
+  1/((2*pi*f)^2 + alpha^2)
+}
+ou_nlp_r <- function(phi) {
+  mle_nlp_r(phi, Y = psd_bin$Ypsd, f = psd_bin$freq,
+            ufun = ou_ufun_r, fs = 1)
+}
+ou_nll_r <- function(eta) {
+  lp_nll_r(phi = eta[1], zeta = eta[2], Zbar = log(psd_bin$Ypsd), fbar = psd_bin$freq,
+           ufun = ou_ufun_r, fs = 1, B = bin_size, bin_type = "mean")
+}
+
+ou_nlp_r(log(theta0[1]))
+ou_nlp$fn(log(theta0[1]))
+
+curve(sapply(x, function(phi) ou_nlp_r(phi)), from = log(.1), to = log(10))
+
+ou_nll_tmb <- ou_obj$nll()
+ou_nll_tmb$fn(lp_fit$coef)
+ou_nll_r(lp_fit$coef)

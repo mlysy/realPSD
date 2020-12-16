@@ -2,20 +2,22 @@
 % Please edit documentation in R/periodogram.R
 \name{periodogram}
 \alias{periodogram}
-\title{Calculates the one-sided periodogram from given time series and sampling frequency SF.}
+\title{Calculate the one-sided periodogram of a time series.}
 \usage{
-periodogram(yTime, SF_s, T_s)
+periodogram(Xt, fs)
 }
 \arguments{
-\item{yTime}{Time series to transform.}
+\item{Xt}{Vector of time series observations.}
 
-\item{SF_s}{Sampling frequecy (Hz).}
-
-\item{T_s}{Total time (seconds).}
+\item{fs}{Sampling frequecy (Hz).}
 }
 \value{
-List of xFreq: One-sided periodogram frequencies and yFreq: One-sidede periodogram ordinates.
+Data frame with columns \code{freq} and \code{Ypsd}.
 }
 \description{
-Calculates the one-sided periodogram from given time series and sampling frequency SF.
+Calculate the one-sided periodogram of a time series.
+}
+\details{
+For \code{length(Xt) = N = 2*K}, we have\preformatted{freq = 1:(K-1)/N * fs,     Ypsd = 1/(N*fs) * abs(fft(Xt)[2:K])^2.
+}
 }

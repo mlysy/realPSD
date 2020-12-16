@@ -292,7 +292,7 @@ psd_model <- R6::R6Class(
                      parameters = parameters,
                      ADreport = TRUE,
                      silent = TRUE,
-                     DLL = private$tmb_DLL_)
+                     DLL = "OU_FitMethods")
     },
 
     #' @description Calculate the optimal value of the log normalizing constant.
@@ -321,7 +321,7 @@ psd_model <- R6::R6Class(
       if(private$est_type_ == "lp") {
         nll <- self$nll()
         he <- nll$he(c(phi, zeta))
-        out <- 2/private$bin_size_ * chol2inv(chol(he))
+        out <- chol2inv(chol(he))
       } else if(private$est_type_ == "mle") {
         nll <- self$nll()
         he <- nll$he(c(phi, zeta))
@@ -331,7 +331,7 @@ psd_model <- R6::R6Class(
         resid <- self$resid()
         he <- nll$he(c(phi, zeta))
         ihe <- chol2inv(chol(he))
-        jac <- resid$fn(c(phi, zeta)) * resid$grad(c(phi, zeta))
+        jac <- 2 * resid$fn(c(phi, zeta)) * resid$gr(c(phi, zeta))
         out <- ihe %*% crossprod(jac) %*% ihe
       }
       if(to_theta) {
