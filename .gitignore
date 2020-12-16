@@ -25,6 +25,3 @@ vignettes/.build.timestamp
 .fls 
 .log
 .synctex.gz
-
-# others
-*.pdf
