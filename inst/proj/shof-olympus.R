@@ -30,7 +30,6 @@ source(file.path(proj_path, "shof-olympus_setup.R"))
 calc_psd <- FALSE
 fs <- 5e6 # sampling frequency (Hz)
 Temp <- 298 # temperature (Kelvin)
-add_sine <- TRUE
 frng_eig1 <- c(20, 60)*1000
 if(!calc_psd) {
   ## stop("haven't done this yet")
@@ -38,22 +37,7 @@ if(!calc_psd) {
   psd_bin <- readRDS(file = "olympus-psd_bin.rds")
   psd_data <- readRDS(file = "olympus-psd_data.rds")
 } else {
-  Xt <- readRDS("olympus-time_series.rds")
-  if(add_sine) {
-    ## sine_par <- c(A = 5e-4, xi = 33500.1, phi = 1/2*pi)
-    ## sine_par <- c(A = 5e-4, xi = 33450.1, phi = 1/2*pi)
-    ## sine_par2 <- c(A = 4.1e-5, xi = 37103.2, phi = -.3694)
-    sine_par <- rbind(c(A = 5e-4, xi = 33450.1, phi = 1/2*pi),
-                      c(A = 4.1e-5, xi = 37103.2, phi = -.3694),
-                      c(A = 2.1e-5, xi = 23447.6, phi = 2.66))
-    time <- (1:length(Xt))/fs
-    for(ii in 1:nrow(sine_par)) {
-      Xt <- Xt + sine_par[ii,"A"] * sin(2*pi*sine_par[ii,"xi"]*time +
-                                        sine_par[ii,"phi"])
-    }
-    ## Xt <- Xt + sine_par2["A"] * sin(2*pi*sine_par2["xi"]*time +
-    ##                                 sine_par2["phi"])
-  }
+  Xt <- readRDS("olympus-time_series_noisy.rds")
   ## scale_factor <- 1
   psd_emp <- as_tibble(periodogram(Xt, fs = fs))
   ## %>% mutate(Ypsd = Ypsd/(2*pi * freq * 20)^2)
@@ -471,10 +455,11 @@ est_clrs <- brewer.pal(3, "Set1")
 lgd_pos <- c(.14, .80)
 ## scale_breaks <- waiver()
 scale_breaks <- pretty
+ylab_size <- 10
 plt <- se_plot(sho_fit = sho_fit,
                par_labels = par_labels, est_labels = est_labels,
                col = est_clrs, lgd_pos = lgd_pos,
-               scale_breaks = scale_breaks)
+               scale_breaks = scale_breaks, ylab_size = ylab_size)
 grid::grid.newpage()
 grid::grid.draw(rbind(ggplotGrob(plt$est),
                       ggplotGrob(plt$se),

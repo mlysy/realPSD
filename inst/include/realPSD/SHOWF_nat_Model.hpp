@@ -76,8 +76,9 @@ namespace realPSD {
     /// only regular functions.  Therefore, the following "external" constructor is used.
     template<class Type>
     UFun<Type> make_Ufun(int N, objective_function<Type>* obj) {
-      UFun<Type> Ufun(N);
-      return Ufun;
+      return UFun<Type>(N);
+      // UFun<Type> Ufun(N);
+      // return Ufun;
     }
 
     #undef TMB_OBJECTIVE_PTR

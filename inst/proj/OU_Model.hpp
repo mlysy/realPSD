@@ -71,10 +71,9 @@ namespace ou {
   /// @return An `ou::UFun` object.
   template<class Type>
   UFun<Type> make_Ufun(int N, objective_function<Type>* obj) {
-    UFun<Type> Ufun(N);
-    return Ufun;
+    return UFun<Type>(N);
   }
 #undef TMB_OBJECTIVE_PTR
 #define TMB_OBJECTIVE_PTR this
   
-}
+} // end namespace ou
