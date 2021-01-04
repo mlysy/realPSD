@@ -9,12 +9,12 @@ fisherG(a, q, log_sort = TRUE)
 \arguments{
 \item{a}{Probability threshold (scalar between 0 and 1).}
 
-\item{q}{Number of variables from which Fisher's G is computed (see \strong{Details}).}
+\item{q}{Number of variables from which Fisher's G is computed (see 'Details').}
 
 \item{log_sort}{If \code{TRUE}, reorders the terms of the alternating series to minimize numerical overflow.}
 }
 \value{
-Tail probability of Fisher's G statistic: \code{Pr(G > a)}.
+Tail probability of Fisher's G statistic: \code{Pr(G > a)}.  Attempts to fail with \code{NA} when numerical underflow (\code{prob < 0}) is detected.
 }
 \description{
 Calculate the tail probability of Fisher's G statistic.

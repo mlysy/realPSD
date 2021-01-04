@@ -1,15 +1,15 @@
-#' SHOW model class.
+#' SHOF model class.
 #'
 #' @export
-show_model <- R6::R6Class(
-  classname = "show_model",
+shof_model <- R6::R6Class(
+  classname = "shof_model",
   inherit = psd_model,
 
   private = list(
     Temp_ = NULL, # temperature
-    n_phi_ = 3,
+    n_phi_ = 4,
     tmb_DLL_ = "realPSD_TMBExports",
-    tmb_model_ = "SHOW_log"
+    tmb_model_ = "SHOF_log"
   ),
 
   active = list(
@@ -27,24 +27,26 @@ show_model <- R6::R6Class(
     #' @details The original basis parameters are
     #'
     #' ```
-    #' theta = (k, f0, Q, Sw).
+    #' theta = (k, f0, Q, Sf, alpha).
     #' ```
     #' The transformed parameters are
     #' ```
-    #' phi = (log(f0), log(Q), log(Rw)),   zeta = log(tau),
+    #' phi = (log(f0), log(Q), log(Rf), alpha),   zeta = log(tau),
     #' ```
     #' where
     #' ```
-    #' tau = Kb*Temp / (k*pi*f0*Q),    Rw = Sw/tau.
+    #' tau = Kb*Temp / (k*pi*f0*Q),    Rf = Sf/tau.
     #' ```
     to_theta = function(phi, zeta) {
       Kb <- 1.381e-23
       f0 <- exp(phi[1])
       Q <- exp(phi[2])
       tau <- exp(zeta)
-      Sw <- exp(phi[3]) * tau
+      Sf <- exp(phi[3]) * tau
+      alpha <- phi[4]
       k <- Kb*private$Temp_ / (tau * pi * f0 * Q)
-      setNames(c(k, f0, Q, Sw), nm = c("k", "f0", "Q", "Sw"))
+      setNames(c(k, f0, Q, Sf, alpha),
+               nm = c("k", "f0", "Q", "Sf", "alpha"))
     },
 
     #' @description Transformation from the original to the computational basis.
@@ -57,13 +59,14 @@ show_model <- R6::R6Class(
       log_Q <- log(theta[3])
       tau <- Kb * private$Temp_ / (theta[1] * pi * theta[2] * theta[3])
       zeta <- log(tau)
-      log_Rw <- log(theta[4]) - zeta
-      phi <- setNames(c(log_f0, log_Q, log_Rw),
-                      nm = c("log_f0", "log_Q", "log_Rw"))
+      log_Rf <- log(theta[4]) - zeta
+      alpha <- theta[5]
+      phi <- setNames(c(log_f0, log_Q, log_Rf, alpha),
+                      nm = c("log_f0", "log_Q", "log_Rf", "alpha"))
       list(phi = phi, zeta = as.numeric(zeta))
     },
 
-    #' @description SHOW model constructor.
+    #' @description SHOF model constructor.
     #'
     #' @param freq Frequency vector.
     #' @param Ypsd Periodogram vector.

@@ -79,8 +79,7 @@ namespace realPSD {
     template<class Type>
     UFun<Type> make_Ufun(int N, objective_function<Type>* obj) {
       DATA_SCALAR(alpha);
-      UFun<Type> Ufun(N, alpha);
-      return Ufun;
+      return UFun<Type>(N, alpha);
     }
 
     #undef TMB_OBJECTIVE_PTR

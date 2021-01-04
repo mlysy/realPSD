@@ -1,13 +1,13 @@
-#' Calculate the frequency basis of the Fourier transform.
+#' Calculate the frequency basis of the discrete Fourier transform.
 #'
 #' @param fs Sampling frequency.
 #' @param N Number of time domain observations.
 #' @param frng Optional frequency range (vector of length 2) on which to restrict the basis.
 #'
-#' @return The one-sided frequency basis `fseq = 1:floor(N/2)/N * fs`, optionally restricted to `frng`.
+#' @return The one-sided frequency basis `freq = 1:floor(N/2)/N * fs`, optionally restricted to `frng`.
 #'
 #' @export
-fft_fseq <- function(fs, N, frng) {
+fft_basis <- function(fs, N, frng) {
   df <- fs/N # frequency discretization
   if(missing(frng)) {
     irng <- c(1, floor(N/2))

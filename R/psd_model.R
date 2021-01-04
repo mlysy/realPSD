@@ -31,13 +31,34 @@ psd_model <- R6::R6Class(
     bin_size_ = NULL, # Bin size.
     bin_type_ = NULL, # Type of binning: mean, median.
 
-    #` Reset bin computations.
-    reset_bar = function() {
-      sapply(c("fbar_", "Ybar_", "Zbar_"),
-             assign, value = NULL, pos = private)
-      ## private$fbar_ <- NULL
-      ## private$Ybar_ <- NULL
-      ## private$Zbar_ <- NULL
+    ## #` Reset bin computations.
+    ## reset_bar = function() {
+    ##   sapply(c("fbar_", "Ybar_", "Zbar_"),
+    ##          assign, value = NULL, pos = private)
+    ##   ## private$fbar_ <- NULL
+    ##   ## private$Ybar_ <- NULL
+    ##   ## private$Zbar_ <- NULL
+    ## },
+
+    #` Perform binning.
+    #`
+    #` Must account here for the fact that `private$Ypsd_` has already been scaled.
+    set_bar = function() {
+      private$fbar_ <- binning(private$freq_,
+                               bin_size = private$bin_size_,
+                               bin_type = private$bin_type_)
+      private$Ybar_ <- binning(private$Ypsd_,
+                               bin_size = private$bin_size_,
+                               bin_type = private$bin_type_)
+      private$Zbar_ <- log(private$Ybar_)
+      # normalize
+      private$Ybar_scale_ <- mean(private$Ybar_)
+      private$Zbar_scale_ <- mean(private$Zbar_)
+      private$Ybar_ <- private$Ybar_ / private$Ybar_scale_
+      private$Zbar_ <- private$Zbar_ - private$Zbar_scale_
+      # correct for previous scaling of private$Ypsd_
+      private$Ybar_scale_ <- private$Ybar_scale_ * private$Ypsd_scale_
+      private$Zbar_scale_ <- private$Zbar_scale_ + log(private$Ypsd_scale_)
     },
 
     ## #` Reset TMB methods.
@@ -142,18 +163,17 @@ psd_model <- R6::R6Class(
     #' @field bin_size Bin size.
     bin_size = function(value) private$bin_size_,
 
+    #' @field bin_type Bin type: "mean" or "median".
+    bin_type = function(value) private$bin_type_,
+
     #' @field freq Frequency vector.
     freq = function(value) private$freq_,
 
     #' @field Ypsd Periodogram vector.
-    Ypsd = function(value) {
-      private$Ypsd_scale_ * private$Ypsd_
-    },
+    Ypsd = function(value) private$Ypsd_scale_ * private$Ypsd_,
 
     #' @field fbar Binned frequency vector.
-    fbar = function(value) {
-      private$fbar_
-    },
+    fbar = function(value) private$fbar_,
 
     #' @field Ybar Binned periodogram vector.
     Ybar = function(value) {
@@ -182,6 +202,7 @@ psd_model <- R6::R6Class(
     set_est = function(est_type = c("lp", "nls", "mle"),
                        bin_size = 100,
                        bin_type = c("mean", "median")) {
+      # input checking
       est_type <- match.arg(est_type)
       private$est_type_ <- est_type
       bin_size <- as.integer(bin_size)
@@ -192,41 +213,33 @@ psd_model <- R6::R6Class(
       private$bin_size_ <- bin_size
       bin_type <- match.arg(bin_type)
       private$bin_type_ <- bin_type
+      # binning
+      if(!is.null(private$Ypsd_)) private$set_bar()
     },
 
     #' @description Set the periodogram data.
     #'
     #' @param freq Frequency vector.
     #' @param Ypsd Periodogram vector.
-    #'
-    #' @note Calculates the normalizing constant and binning, so must be called after `set_est()`.
     set_psd = function(freq, Ypsd) {
+      # input checking
+      if(!is.vector(freq, mode = "numeric")) {
+        stop("freq must be a numeric vector.")
+      }
+      if(!is.vector(Ypsd, mode = "numeric")) {
+        stop("Ypsd must be a numeric vector.")
+      }
       N <- length(freq)
       if(length(Ypsd) != N) {
-        # todo: better errors
-        stop("freq and Ypsd must have same length.")
+        stop("freq and Ypsd must have the same length.")
       }
       private$freq_ <- freq
       private$Ypsd_ <- Ypsd
-      if(private$est_type_ %in% c("lp", "nls")) {
-        # binning
-        private$fbar_ <- binning(private$freq_,
-                                 bin_size = private$bin_size_,
-                                 bin_type = private$bin_type_)
-        private$Ybar_ <- binning(private$Ypsd_,
-                                 bin_size = private$bin_size_,
-                                 bin_type = private$bin_type_)
-        private$Zbar_ <- log(private$Ybar_)
-      }
       # normalize
       private$Ypsd_scale_ <- mean(private$Ypsd_)
       private$Ypsd_ <- private$Ypsd_ / private$Ypsd_scale_
-      if(private$est_type_ %in% c("lp", "nls")) {
-        private$Ybar_scale_ <- mean(private$Ybar_)
-        private$Zbar_scale_ <- mean(private$Zbar_)
-        private$Ybar_ <- private$Ybar_ / private$Ybar_scale_
-        private$Zbar_ <- private$Zbar_ - private$Zbar_scale_
-      }
+      # binning
+      if(!is.null(private$est_type_)) private$set_bar()
     },
 
     #' @description Negative profile loglikelihood constructor.
@@ -292,7 +305,7 @@ psd_model <- R6::R6Class(
                      parameters = parameters,
                      ADreport = TRUE,
                      silent = TRUE,
-                     DLL = "OU_FitMethods")
+                     DLL = private$tmb_DLL_)
     },
 
     #' @description Calculate the optimal value of the log normalizing constant.
@@ -318,15 +331,15 @@ psd_model <- R6::R6Class(
     #'
     #' @return A variance matrix of size `n_phi x n_phi`.
     vcov = function(phi, zeta, to_theta = FALSE) {
-      if(private$est_type_ == "lp") {
+      # variance type: hessian or sandwich
+      var_type <- ifelse(private$est_type_ == "nls" ||
+                         (private$est_type_ == "lp" &&
+                          private$bin_type_ == "median"), "sand", "hess")
+      if(var_type == "hess") {
         nll <- self$nll()
         he <- nll$he(c(phi, zeta))
         out <- chol2inv(chol(he))
-      } else if(private$est_type_ == "mle") {
-        nll <- self$nll()
-        he <- nll$he(c(phi, zeta))
-        out <- chol2inv(chol(he))
-      } else if(private$est_type_ == "nls") {
+      } else if(var_type == "sand") {
         nll <- self$nll()
         resid <- self$resid()
         he <- nll$he(c(phi, zeta))
@@ -334,10 +347,28 @@ psd_model <- R6::R6Class(
         jac <- 2 * resid$fn(c(phi, zeta)) * resid$gr(c(phi, zeta))
         out <- ihe %*% crossprod(jac) %*% ihe
       }
+      ## if(private$est_type_ == "lp") {
+      ##   nll <- self$nll()
+      ##   he <- nll$he(c(phi, zeta))
+      ##   out <- chol2inv(chol(he))
+      ## } else if(private$est_type_ == "mle") {
+      ##   nll <- self$nll()
+      ##   he <- nll$he(c(phi, zeta))
+      ##   out <- chol2inv(chol(he))
+      ## } else if(private$est_type_ == "nls") {
+      ##   nll <- self$nll()
+      ##   resid <- self$resid()
+      ##   he <- nll$he(c(phi, zeta))
+      ##   ihe <- chol2inv(chol(he))
+      ##   jac <- 2 * resid$fn(c(phi, zeta)) * resid$gr(c(phi, zeta))
+      ##   out <- ihe %*% crossprod(jac) %*% ihe
+      ## }
       if(to_theta) {
         # change of variables
-        jac_trans <- numDeriv::jacobian(func = self$itrans,
-                                        x = c(phi, zeta))
+        jac_trans <- numDeriv::jacobian(func = function(eta) {
+          self$to_theta(phi = eta[1:private$n_phi_],
+                        zeta = eta[private$n_phi_+1])
+        }, x = c(phi, zeta))
         out <- jac_trans %*% out %*% t(jac_trans)
       }
       out
@@ -366,3 +397,6 @@ psd_model <- R6::R6Class(
   )
 
 )
+
+#--- helper functions ----------------------------------------------------------
+

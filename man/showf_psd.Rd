@@ -4,10 +4,10 @@
 \alias{showf_psd}
 \title{Calculate SHOWF PSD.}
 \usage{
-showf_psd(fseq, k, f0, Q, Sw, Af, alpha, Temp)
+showf_psd(freq, k, f0, Q, Sw, Sf, alpha, Temp)
 }
 \arguments{
-\item{fseq}{Frequency vector (units: Hz).}
+\item{freq}{Frequency vector (units: Hz).}
 
 \item{k}{Cantilever stiffness (N/m).}
 
@@ -15,14 +15,17 @@ showf_psd(fseq, k, f0, Q, Sw, Af, alpha, Temp)
 
 \item{Q}{Quality factor (unitless).}
 
-\item{Sw}{White noise power (m^2/Hz).}
+\item{Sw}{Power of the white noise term (m^2/Hz).}
+
+\item{Sf}{Power of the 1/f noise term (m^2/Hz).}
+
+\item{alpha}{Exponent of the 1/f noise term (unitless).}
+
+\item{Temp}{Temperature (Kelvin).}
 }
 \value{
-The SHOW PSD evaluated at \code{fseq} (m^2/Hz).
+The SHOWF PSD evaluated at \code{freq} (m^2/Hz).
 }
 \description{
 Calculate SHOWF PSD.
-}
-\note{
-Basically the same as psdSHO.R but psdSHO offers the choice of unit conversion from m2/Hz to fm2/Hz.
 }

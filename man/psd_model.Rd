@@ -8,15 +8,14 @@ Base class for PSD models.
 
 Base class for PSD models.
 }
-\note{
-Calculates the normalizing constant and binning, so must be called after \code{set_est()}.
-}
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
 \item{\code{est_type}}{Estimator type: "lp", "nls", or "mle".}
 
 \item{\code{bin_size}}{Bin size.}
+
+\item{\code{bin_type}}{Bin type: "mean" or "median".}
 
 \item{\code{freq}}{Frequency vector.}
 

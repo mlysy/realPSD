@@ -2,6 +2,7 @@
 
 #define TMB_LIB_INIT R_init_realPSD_TMBExports
 #include <TMB.hpp>
+#include "SHOF_log.hpp"
 #include "SHOW_comp.hpp"
 #include "SHOW_log.hpp"
 #include "SHOW_nat.hpp"
@@ -12,7 +13,9 @@
 template<class Type>
 Type objective_function<Type>::operator() () {
   DATA_STRING(model);
-  if(model == "SHOW_comp") {
+  if(model == "SHOF_log") {
+    return SHOF_log(this);
+  } else if(model == "SHOW_comp") {
     return SHOW_comp(this);
   } else if(model == "SHOW_log") {
     return SHOW_log(this);

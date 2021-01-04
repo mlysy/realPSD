@@ -1,36 +1,29 @@
-/// @file SHOW_log_Model.hpp
+/// @file SHOF_log_Model.hpp
 
-#ifndef realPSD_SHOW_log_Model_hpp
-#define realPSD_SHOW_log_Model_hpp 1
+#ifndef realPSD_SHOF_log_Model_hpp
+#define realPSD_SHOF_log_Model_hpp 1
 
 #include "utils.hpp"
 
 namespace realPSD {
 
-  namespace SHOW_log {
-
-    /// Scale-free PSD for the Simple Harmonic Oscillator + White Noise (SHOW) model.
-    ///
-    /// The Scale-free PSD (`UFun`) for the SHOW model is
-    ///
-    /// \f[
-    /// U(f \mid f_0, Q, R_w) = R_w + \frac{1}{[(f/f_0)^2-1]^2 + [f/(f_0 Q)]^2}.
-    /// \f]
-    ///
-    /// The parameters are supplied as the vector \f$\boldsymbol{\phi} = (\log f_0, \log Q, \log R_w)\f$.
+  /// Scale-free PSD for the Simple Harmonic Oscillator + 1/f Noise Model Without White Noise.
+  ///
+  /// The Scale-free PSD `U(phi)` for the SHOF model is
+  ///
+  /// \f[
+  /// U(f \mid f_0, Q, R_f, alpha) = R_f/f^alpha + \frac{1}{[(f/f_0)^2-1]^2 + [f/(f_0 Q)]^2}.
+  /// \f]
+  ///
+  /// The computational basis for the normalized PSD parameters is \f$\boldsymbol{\phi} = (\log f_0, \log Q, \log R_f, alpha)$\f.
+  namespace SHOF_log {
     template <class Type>
     class UFun {
     private:
-      // //typedefs
-      // /// Typedef equivalent to `matrix<Type>`.
-      // typedef Eigen::Matrix<Type, Eigen::Dynamic, Eigen::Dynamic> MatrixXd_t;
-      // /// Typedef equivalent to `Ref <matrix<Type> >`.
-      // typedef Eigen::Ref <MatrixXd_t> RefMatrix_t;
-      // /// Typedef equivalent to `const Ref <const matrix<Type> >`.
-      // typedef const Eigen::Ref <const MatrixXd_t> cRefMatrix_t;
       // internal variables
       int N_; ///> problem dimensions
       matrix<Type> f2_; ///> Vector of squared frequencies.
+      matrix<Type> logf_; ///> Vector of log frequencies.
     public:
       /// Constructor.
       UFun(int N);
@@ -46,35 +39,25 @@ namespace realPSD {
     inline UFun<Type>::UFun(int N) {
       N_ = N;
       f2_ = zero_matrix<Type>(N_,1);
+      logf_ = zero_matrix<Type>(N_,1);
     }
-
-    // #undef TMB_OBJECTIVE_PTR
-    // #define TMB_OBJECTIVE_PTR obj
-
-    // template<class Type>
-    // inline UFun<Type>::UFun(int N, objective_function<Type>* obj) {
-    //   (UFun(N));
-    // }
-
-    // #undef TMB_OBJECTIVE_PTR
-    // #define TMB_OBJECTIVE_PTR this
 
     template<class Type>
     inline void UFun<Type>::set_f(cRefMatrix<Type>& f) {
       N_ = f.size();
       f2_ = zero_matrix<Type>(N_,1);
+      logf_ = zero_matrix<Type>(N_,1);
       f2_ = f.cwiseProduct(f);
+      logf_.array() = f.array().log();
       return;
     }
 
-    /// Parameters are: `phi = (f0, Q, Rw = Aw/sigma^2)`.
-    // psd = 1/((f^2 / f0^2 - 1)^2 + f^2/(f0*Q)^2) + Rw
     template <class Type>
     inline void UFun<Type>::eval(RefMatrix<Type> U, cRefMatrix<Type>& phi) {
       U = (f2_/exp(Type(2.0) * phi(0,0))).array() - Type(1.0);
       U = U.cwiseProduct(U);
       U += f2_/exp(Type(2.0) * (phi(0,0) + phi(1,0)));
-      U = 1.0/U.array() + exp(phi(2,0));
+      U = 1.0/U.array() + (phi(2,0) - phi(3,0) * logf_.array()).exp();
       return;
     }
 
@@ -82,17 +65,18 @@ namespace realPSD {
     #define TMB_OBJECTIVE_PTR obj
     /// TMB-style constructor.
     ///
-    /// The `DATA_*` macros don't work properly inside class methods, 
+    /// The `DATA_*` macros don't not work properly inside class methods, 
     /// only regular functions.  Therefore, the following "external" constructor is used.
     template<class Type>
     UFun<Type> make_Ufun(int N, objective_function<Type>* obj) {
-      return UFun<Type>(N);
+      UFun<Type> Ufun(N);
+      return Ufun;
     }
 
     #undef TMB_OBJECTIVE_PTR
     #define TMB_OBJECTIVE_PTR this
 
-  } // end namespace SHOW_log
+  } // end namespace SHOF_log
 
 } // end namespace realPSD
 

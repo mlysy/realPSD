@@ -4,10 +4,10 @@
 \alias{show_psd}
 \title{Calculate SHOW PSD.}
 \usage{
-show_psd(fseq, k, f0, Q, Sw, Temp)
+show_psd(freq, k, f0, Q, Sw, Temp)
 }
 \arguments{
-\item{fseq}{Frequency vector (units: Hz).}
+\item{freq}{Frequency vector (units: Hz).}
 
 \item{k}{Cantilever stiffness (N/m).}
 
@@ -18,7 +18,7 @@ show_psd(fseq, k, f0, Q, Sw, Temp)
 \item{Sw}{White noise power (m^2/Hz).}
 }
 \value{
-The SHOW PSD evaluated at \code{fseq} (m^2/Hz).
+The SHOW PSD evaluated at \code{freq} (m^2/Hz).
 }
 \description{
 Calculate SHOW PSD.

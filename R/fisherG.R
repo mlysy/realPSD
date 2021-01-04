@@ -1,9 +1,9 @@
 #' Calculate the tail probability of Fisher's G statistic.
 #'
 #' @param a Probability threshold (scalar between 0 and 1).
-#' @param q Number of variables from which Fisher's G is computed (see **Details**).
+#' @param q Number of variables from which Fisher's G is computed (see 'Details').
 #' @param log_sort If `TRUE`, reorders the terms of the alternating series to minimize numerical overflow.
-#' @return Tail probability of Fisher's G statistic: `Pr(G > a)`.
+#' @return Tail probability of Fisher's G statistic: `Pr(G > a)`.  Attempts to fail with `NA` when numerical underflow (`prob < 0`) is detected.
 #'
 #' @details Let `U = U_0 < ... < U_q`, where `U_1, ... ,U_{q-1}` are the *order statistics* of `n-1` iid Uniforms, `U_0 = 0`, and `U_q = 1`.  Then Fisher's G statistic is defined as `G = max(diff(U))`.
 #'
@@ -35,6 +35,7 @@ fisherG <- function(a, q, log_sort = TRUE) {
   logt <- log(abs(logt)) + maxlt
   mx <- max(logt)
   prob <- sum(sgt * exp(logt - mx))
+  if(prob <= 0) return(NA)
   prob <- exp(log(prob) + mx)
   return(prob)
 }

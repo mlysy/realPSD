@@ -2,21 +2,35 @@
 % Please edit documentation in R/sin_fft.R
 \name{sin_fft}
 \alias{sin_fft}
-\title{FFT (discrete Fourier transform) of sine wave noise}
+\title{Discrete Fourier transform of a sine wave.}
 \usage{
-sin_fft(fseq, fs, D, xi, phi)
+sin_fft(freq, fs, N, A, xi, phi)
 }
 \arguments{
-\item{fseq}{A sequence of frequency points (must be points in the frequency basis)}
+\item{freq}{Frequency vector.}
 
-\item{fs}{Sampling frequency}
+\item{fs}{Sampling frequency.}
 
-\item{D}{Amplitude}
+\item{N}{Number of observations (see 'Details').}
 
-\item{xi}{as specified in the paper}
+\item{A}{Amplitude of the sine wave (see 'Details').}
 
-\item{phi}{as specified in the paper}
+\item{xi}{Frequency (i.e., inverse-period) of the sine wave (see 'Details').}
+
+\item{phi}{Phase of the sine wave (see 'Details').}
+}
+\value{
+A vector of the same length at \code{freq} containing the continuously-extended discrete Fourier transform of the sine wave evaluated at time points \code{0:(N-1)/fs}.
 }
 \description{
-FFT (discrete Fourier transform) of sine wave noise
+Discrete Fourier transform of a sine wave.
+}
+\details{
+For a sine wave defined as\preformatted{g(t) = A * sin(2*pi*xi * t + phi),
+}
+
+computes the (continuously-extended) discrete Fourier transform\preformatted{G(f) = sum_\{n=0\}^\{N-1\} g(n/fs) * exp(2*pi*i/fs * f)
+}
+
+at the frequencies in \code{freq}.  When \code{freq = 0:(N-1) * fs/N}, \code{G(freq)} is the FFT of \code{g(0:(N-1)/fs)}.
 }
