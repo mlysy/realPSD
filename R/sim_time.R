@@ -23,7 +23,7 @@ sim_time <- function(fs, N, fseq, cpsd) {
   if(N == 1) return(Re(yfreq))
   # discrete-time psd: approximated as fs * cpsd
   dpsd <- fs * approx(x = fseq, y = cpsd,
-                      xout = fft_fseq(fs = fs, N = N))$y
+                      xout = fft_basis(fs = fs, N = N))$y
   # simulation in complex domain
   nfreq <- length(dpsd)
   yfreq[1+1:nfreq] <- sqrt(dpsd/2) * (rnorm(nfreq) + 1i * rnorm(nfreq))

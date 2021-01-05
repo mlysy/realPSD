@@ -1,5 +1,5 @@
-#' @title Unwrap radian phases by adding multiples of 2*pi as appropriate to
-#' remove jumps greater than tol. tol defaults to pi.
+#' Unwrap radian phases by adding multiples of 2*pi as appropriate to remove jumps greater than tol. tol defaults to pi.
+#'
 #' @param a Radian angle.
 #' @param tol Tolerance.
 #' @param dim Dimension.
@@ -24,12 +24,12 @@ unwrap <- function(a, tol = pi, dim = 1) {
   m <- sz[dim]
   # Handle case where we are trying to unwrap a scalar, or only have
   # one sample in the specified dimension.
-  if (m == 1)       
+  if (m == 1)
     return(a)
   # Take first order difference to see so that wraps will show up
   # as large values, and the sign will show direction.
   idx <- list()
-  for (i  in  1:nd) 
+  for (i  in  1:nd)
     idx[[i]] <- 1:sz[i]
   idx[[dim]] <- c(1,1:(m-1))
   d <- a[unlist(idx)] - a
@@ -40,34 +40,37 @@ unwrap <- function(a, tol = pi, dim = 1) {
   # Now need to "integrate" this so that the deltas become steps.
   if (nd == 1)
     r <- cumsum(p)
-  else  
+  else
     r <- apply(p, MARGIN = dim, FUN = cumsum)
   # Now add the "steps" to the original data and put output in the
   # same shape as originally.
   a + r
-} 
+}
 
 # test P1 == P2 == P3
-# Z = c(1 - 1i, 2 + 1i, 3 - 1i, 4 + 1i, 
-#   1 + 2i, 2 - 2i, 3 + 2i, 4 - 2i, 
-#   1 - 3i, 2 + 3i, 3 - 3i, 4 + 3i, 
+# Z = c(1 - 1i, 2 + 1i, 3 - 1i, 4 + 1i,
+#   1 + 2i, 2 - 2i, 3 + 2i, 4 - 2i,
+#   1 - 3i, 2 + 3i, 3 - 3i, 4 + 3i,
 #   1 + 4i, 2 - 4i, 3 + 4i, 4 - 4i)
 # P1 = Arg(Z)
 # P2 = atan2(Im(Z), Re(Z))
 # P3 = Im(log(Z))
 
-#' @title noise_sin: This function returns one-sided, unfolded, FFT of sine, with DC component removed. 
+#' Calculates the one-sided, unfolded, FFT of sine, with DC component removed.
+#'
 #' @param A Amplitude.
 #' @param f Frequency.
 #' @param T Total time.
 #' @param SF Sampling Freq (Hz).
 #' @param detrend_flag 1 = True, 0 = False.
-#' @return A list of 
-#' xTime: Time values, 
-#' yTime: Sine signal values, 
-#' xFreq: Frequencies,
-#' yFreq: First freq. up to Nyquist freq of: fft(yTime)/(sqrt(FR)*N)
-#' @details NOTE: Removes DC component, select first frequency up to the Nyquist frequency. NOTE: Uses even PSD's only so it will round yTime to multiple of 2
+#' @return A list of
+#' - `xTime`: Time values,
+#' - `yTime`: Sine signal values,
+#' - `xFreq`: Frequencies,
+#' - `yFreq`: First freq. up to Nyquist freq of: `fft(yTime)/(sqrt(FR)*N)`.
+#'
+#' @details Removes DC component, select first frequency up to the Nyquist frequency. Uses even PSD's only so it will round yTime to multiple of 2
+#'
 noise_sin <- function(f_noise, A_noise, T, SF, detrend_flag) {
   ## Begin
   # Generate sine-wave in time domain

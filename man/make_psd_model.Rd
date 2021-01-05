@@ -4,7 +4,7 @@
 \alias{make_psd_model}
 \title{Create the \pkg{TMB} wrapper file for parameter estimation with user-defined models.}
 \usage{
-make_psd_model(model, header, class, ctor, standalone = TRUE, path = NULL)
+make_psd_model(model, header, class, ctor, standalone = TRUE)
 }
 \arguments{
 \item{model}{Name of model.}

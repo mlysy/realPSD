@@ -1,45 +1,52 @@
-#' ---
-#' title: "Testing the New Interface with the OU Model"
-#' author: "Martin Lysy"
-#' date: "`r Sys.Date()`"
-#' output:
-#'   rmarkdown::html_document:
-#'     toc: yes
-#'     theme: journal
-#' ---
-#' \newcommand{\ud}{\mathop{}\!\mathrm{d}}
-#' \newcommand{\cov}{\operatorname{cov}}
-#' \newcommand{\psd}{\mathcal{S}}
-#' \newcommand{\f}{f}
-#'
-#' # Model
-#'
-#' The OU model is given by the stochastic differential equation
-#' $$
-#' \ud X_t = -\alpha X_t \ud t + \beta \ud B_t.
-#' $$
-#' The autocorrelation function is $\cov(X_s, X_{s+t}) = \beta^2/(2\alpha) \cdot e^{-\alpha|t|}$, and the PSD is
-#' $$
-#' \psd_X(\f) = \frac{\beta^2}{(2\pi \f)^2 + \alpha^2}.
-#' $$
-#'
-#' # Simulate Data
+---
+title: "Testing the New Interface with the OU Model"
+author: "Martin Lysy"
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_vignette:
+    toc: yes
+  rmarkdown::html_document:
+    toc: yes
+    theme: journal
+vignette: >
+  %\VignetteIndexEntry{Testing the New Interface with the OU Model}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
 
-#+ setup
+\newcommand{\ud}{\mathop{}\!\mathrm{d}}
+\newcommand{\cov}{\operatorname{cov}}
+\newcommand{\psd}{\mathcal{S}}
+\newcommand{\f}{f}
+
+# Model
+
+The OU model is given by the stochastic differential equation
+$$
+\ud X_t = -\alpha X_t \ud t + \beta \ud B_t.
+$$
+The autocorrelation function is $\cov(X_s, X_{s+t}) = \beta^2/(2\alpha) \cdot e^{-\alpha|t|}$, and the PSD is
+$$
+\psd_X(\f) = \frac{\beta^2}{(2\pi \f)^2 + \alpha^2}.
+$$
+
+# Simulate Data
+
+```{r setup}
 require(realPSD)
 require(TMB)
 require(R6)
 require(tidyverse)
-source("ou_sim.R")
+```
 
-#+ sim
+```{r sim}
 
-#` PSD for the OU model.
-#`
-#` @param freq Vector of frequencies
-#` @param alpha Mean reversion parameter.
-#` @param beta Scale parameter.
-#` @return PSD vector at the frequencies in `freq`.
+#' PSD for the OU model.
+#'
+#' @param freq Vector of frequencies
+#' @param alpha Mean reversion parameter.
+#' @param beta Scale parameter.
+#' @return PSD vector at the frequencies in `freq`.
 ou_psd <- function(freq, alpha, beta) {
   beta^2/((2*pi*freq)^2 + alpha^2)
 }
@@ -55,10 +62,11 @@ N <- floor(fs/frange[1]) # number of observations
 
 # time domain simulation
 Xt <- ou_sim(gamma = theta0[1], mu = 0, sigma = theta0[2], dt = dt, n_obs = N)
+```
 
-#' ## Empirical vs Theoretical PSD Estimate
+## Empirical vs Theoretical PSD Estimate
 
-#+ psd_emp
+```{r psd_emp}
 psd_emp <- periodogram(Xt, fs = fs)
 psd_emp <- psd_emp %>% filter(freq < 20)
 bin_size <- 100 # for estimation and plotting
@@ -69,18 +77,19 @@ plot(psd_bin$freq, psd_bin$Ypsd, type = "l", log = "xy",
      xlab = "Frequency (Hz)", ylab = "PSD")
 curve(ou_psd(freq = x, alpha = theta0[1], beta = theta0[2]),
       col = "red", add = TRUE)
+```
 
+# Create the `ou_model` Object
 
-#' # Create the `ou_model` Object
-#'
-#' The first step is to create a standalone version of the model.  Here is the definition of the `ou::UFun` class:
+The first step is to create a standalone version of the model.  Here is the definition of the `ou::UFun` class:
 
-#+ ou_ufun, echo = FALSE, results = "asis"
+```{r ou_ufun, echo = FALSE, results = "asis"}
 cat("```cpp", readLines("OU_Model.hpp"), "```", sep = "\n")
+```
 
-#' Now let's compile it and create the `ou_model` object as follows:
+Now let's compile it and create the `ou_model` object as follows:
 
-#+ ou_cpp_def
+```{r ou_cpp_def}
 # create c++ file
 ou_cpp <- make_psd_model(model = "OU",
                          header = "OU_Model.hpp",
@@ -110,12 +119,13 @@ ou_model <- R6::R6Class(
     tmb_DLL_ = "OU_FitMethods"
   )
 )
+```
 
-#' ## Testing
-#'
-#' To check whether the implementation is correct, we'll compare the **TMB** implementation of the $U(\f, \phi)$ method of `ou_model` to a pure R functional implementation.
+## Testing
 
-#+ tmb_test
+To check whether the implementation is correct, we'll compare the **TMB** implementation of the $U(\f, \phi)$ method of `ou_model` to a pure R functional implementation.
+
+```{r tmb_test}
 # construct the model object
 ou_obj <- ou_model$new(freq = psd_emp$freq, Ypsd = psd_emp$Ypsd,
                        bin_size = 100, est_type = "lp")
@@ -125,12 +135,13 @@ U_tmb <- ou_ufun$fn(log(theta0[1])) # evaluate at frequencies for lp estimator
 # same calculation in R
 U_r <- ou_psd(freq = psd_bin$freq, alpha = theta0[1], beta = 1)
 range(U_tmb - U_r)
+```
 
-#' # Parameter Estimation
-#'
-#' ## MLE Method
+# Parameter Estimation
 
-#+ mle_fit
+## MLE Method
+
+```{r mle_fit}
 
 #` Helper function to convert a value of `phi_est` into `eta_coef` and `eta_vcov`.
 #` @param phi Value of `phi`.
@@ -155,10 +166,11 @@ plot(psd_bin$freq, psd_bin$Ypsd, type = "l", log = "xy",
      xlab = "Frequency (Hz)", ylab = "PSD")
 curve(ou_psd(freq = x, alpha = exp(mle_fit$coef[1]), beta = exp(mle_fit$coef[2]/2)),
       col = "red", add = TRUE)
+```
 
-#' ## LP Method
+## LP Method
 
-#+ lp_fit
+```{r lp_fit}
 # instantiate TMB object for profile likelihood
 ou_obj$set_est(est_type = "lp", bin_size = bin_size)
 ou_nlp <- ou_obj$nlp()
@@ -170,10 +182,11 @@ plot(psd_bin$freq, psd_bin$Ypsd, type = "l", log = "xy",
      xlab = "Frequency (Hz)", ylab = "PSD")
 curve(ou_psd(freq = x, alpha = exp(lp_fit$coef[1]), beta = exp(lp_fit$coef[2]/2)),
       col = "red", add = TRUE)
+```
 
-#' ## NLS Method
+## NLS Method
 
-#+ nls_fit
+```{r nls_fit}
 # instantiate TMB object for profile likelihood
 ou_obj$set_est(est_type = "nls", bin_size = bin_size)
 ou_nlp <- ou_obj$nlp()
@@ -185,10 +198,11 @@ plot(psd_bin$freq, psd_bin$Ypsd, type = "l", log = "xy",
      xlab = "Frequency (Hz)", ylab = "PSD")
 curve(ou_psd(freq = x, alpha = exp(lp_fit$coef[1]), beta = exp(lp_fit$coef[2]/2)),
       col = "red", add = TRUE)
+```
 
-#' ## Table of Parameter Estimates
+## Table of Parameter Estimates
 
-#+ disp
+```{r disp}
 disp <- sapply(list(mle = mle_fit, lp = lp_fit, nls = nls_fit),
                function(fit) c(fit$coef[1], sqrt(fit$vcov[1,1]),
                                fit$coef[2], sqrt(fit$vcov[2,2])))
@@ -197,12 +211,13 @@ disp <- cbind(true = c(log(theta0[1]), NA, 2 * log(theta0[2]), NA),
 disp <- t(disp)
 colnames(disp) <- c("phi_est", "phi_se", "zeta_est", "zeta_se")
 signif(disp, 3)
+```
 
-#' # Scratch
-#'
-#' The code below was executed during the debugging of this file.  It is not run here, only kept for reference.
+# Scratch
 
-#+ scratch, eval = FALSE
+The code below was executed during the debugging of this file.  It is not run here, only kept for reference.
+
+```{r scratch, eval = FALSE}
 
 curve(sapply(x, function(phi) ou_nlp$fn(phi)), from = log(.1), to = log(10))
 
@@ -231,3 +246,5 @@ curve(sapply(x, function(phi) ou_nlp_r(phi)), from = log(.1), to = log(10))
 ou_nll_tmb <- ou_obj$nll()
 ou_nll_tmb$fn(lp_fit$coef)
 ou_nll_r(lp_fit$coef)
+```
+

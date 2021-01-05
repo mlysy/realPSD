@@ -5,6 +5,7 @@
 #' @param f0 Resonance frequency (Hz).
 #' @param Q Quality factor (unitless).
 #' @param Sw White noise power (m^2/Hz).
+#' @param Temp Temperature (Kelvin).
 #'
 #' @return The SHOW PSD evaluated at `freq` (m^2/Hz).
 #' @note Basically the same as psdSHO.R but psdSHO offers the choice of unit conversion from m2/Hz to fm2/Hz.

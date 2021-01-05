@@ -215,16 +215,16 @@ get_ufun <- function(model = c("SHOW_nat", "SHOW_log", "SHOW_comp", "SHOWF_log",
   }
 }
 
-# recompile TMB models, install package, and quit
-tmb_recompile <- function() {
-  TMBtools::export_models()
-  pkgbuild::compile_dll()
-  devtools::document()
-  devtools::install(quick = TRUE)
-  q()
-}
+## # recompile TMB models, install package, and quit
+## tmb_recompile <- function() {
+##   TMBtools::export_models()
+##   pkgbuild::compile_dll()
+##   devtools::document()
+##   devtools::install(quick = TRUE)
+##   q()
+## }
 
-tmb_restart <- function() {
-  require(realPSD)
-  require(testthat)
-}
+## tmb_restart <- function() {
+##   require(realPSD)
+##   require(testthat)
+## }

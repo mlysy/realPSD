@@ -16,6 +16,8 @@ show_psd(freq, k, f0, Q, Sw, Temp)
 \item{Q}{Quality factor (unitless).}
 
 \item{Sw}{White noise power (m^2/Hz).}
+
+\item{Temp}{Temperature (Kelvin).}
 }
 \value{
 The SHOW PSD evaluated at \code{freq} (m^2/Hz).

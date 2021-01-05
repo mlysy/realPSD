@@ -1,0 +1,7 @@
+^inst/proj$
+^vignettes/*.html
+^vignettes/*.pdf
+^vignettes/*.o
+^vignettes/*.so
+^vignettes/*.dll
+^TODO\.md$

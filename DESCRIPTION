@@ -2,18 +2,19 @@ Package: realPSD
 Type: Package
 Title: What the package does (short line)
 Version: 0.0.0.9000
-Date: 2020-12-12
+Date: 2021-01-04
 Authors@R: c(person("Feiyu", "Zhu", role = "aut"),
              person("Martin", "Lysy", role = c("aut", "cre"),
                     email = "mlysy@uwaterloo.ca"))
 Description: More about what it does (maybe more than one line).
 License: GPL-3
-Imports: TMB, Rcpp (>= 1.0.1), fftw, whisker, R6
+Imports: TMB, Rcpp (>= 1.0.1), fftw, numDeriv, whisker, R6, utils, stats
 LinkingTo: TMB, Rcpp
 Suggests: 
     knitr,
     rmarkdown,
-    testthat
+    testthat,
+    tidyverse
 VignetteBuilder: knitr
 RoxygenNote: 7.1.1
 Roxygen: list(markdown = TRUE)

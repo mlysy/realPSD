@@ -8,7 +8,7 @@
 #'
 #' @return Vector of strings each containing one line of the \pkg{TMB} wrapper file.
 #' @export
-make_psd_model <- function(model, header, class, ctor, standalone = TRUE, path = NULL) {
+make_psd_model <- function(model, header, class, ctor, standalone = TRUE) {
   # check missing inputs
   ## if(missing(name)) name <- "MyModel"
   if(missing(header)) header <- paste0(model, ".hpp")
