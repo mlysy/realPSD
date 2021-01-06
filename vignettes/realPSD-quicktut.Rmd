@@ -1,0 +1,430 @@
+---
+title: "**realPSD**: Getting Started"
+author: "Martin Lysy, Feiyu Zhu"
+date: "`r Sys.Date()`"
+output:
+  html_vignette:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{realPSD: Getting Started}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: { autoNumber: "AMS" } }
+});
+</script>
+
+\newcommand{\bm}[1]{\boldsymbol{#1}}
+\newcommand{\tx}[1]{\textrm{#1}}
+\newcommand{\XX}{{\bm{X}}}
+\newcommand{\YY}{{\bm{Y}}}
+\newcommand{\ZZ}{{\bm{Z}}}
+\newcommand{\tth}{{\bm{\theta}}}
+\newcommand{\pph}{{\bm{\varphi}}}
+\newcommand{\aal}{{\bm{\alpha}}}
+\newcommand{\bbe}{{\bm{\beta}}}
+\newcommand{\s}{\sigma}
+\newcommand{\f}{f}
+\newcommand{\ud}{\mathrm{d}}
+\newcommand{\psd}{\operatorname{\mathcal S}}
+\newcommand{\cov}{\operatorname{cov}}
+\newcommand{\var}{\operatorname{var}}
+\newcommand{\acf}{\operatorname{\gamma}}
+\newcommand{\carfima}{\operatorname{CARFIMA}}
+\newcommand{\rv}[3]{#2_{#1},\ldots,#2_{#3}}
+\newcommand{\fs}{\f_s}
+\newcommand{\kbt}{k_BT}
+\newcommand{\Aw}{A_{\tx{w}}}
+\newcommand{\Rw}{R_{\tx{w}}}
+
+\newcommand{\F}{{\mathcal F}}
+\newcommand{\N}{{\mathcal N}}
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+# link to packages
+pkg_link <- function(pkg, link) {
+  if(link == "github") {
+    link <- paste0("https://github.com/mlysy/", pkg)
+  } else if(link == "cran") {
+    link <- paste0("https://CRAN.R-project.org/package=", pkg)
+  }
+  paste0("[**", pkg, "**](", link, ")")
+}
+cran_link <- function(pkg) pkg_link(pkg, "cran")
+github_link <- function(pkg) pkg_link(pkg, "github")
+# load required packages
+require(realPSD)
+require(TMB)
+require(R6)
+require(tidyverse)
+```
+
+In this tutorial, you will learn how to quickly implement a simple Ornstein-Uhlenbeck (OU) process and fit its power spectral density (PSD) in R by using **realPSD** package. A basic understanding of C++ and object-oriented programming is required. But don't be afraid, you will be able to build your own model as long as you follow the instructions given in this vignette. For those who want to get themselves familiar with some C++ concepts, there are many great free tutorials online, for example [this one](https://www.geeksforgeeks.org/c-plus-plus/). For advanced users, if you are insterested in the design and theory behind **realPSD**, please check out the [advanced tutorial](http://htmlpreview.github.com/?https://github.com/mlysy/realPSD/master/doc/realPSD-advancedtut.html).
+
+
+# Model Setup
+
+## Ornstein-Uhlenbeck Process
+
+A simple OU model without the additional drift term is given by the stochastic differential equation (SDE)
+$$
+\ud X_t = -\alpha X_t \ud t + \beta \ud B_t
+$$
+where $\alpha > 0$ and $\beta > 0$ and $B_t$ denotes Brownian motion (or Wiener process). If we assume $X_0 \sim \N(0, \beta^2/\alpha)$, then $X_t$ is a stationary, zero-mean Gaussian process with autocovariance function
+$$
+\gamma(t) = \frac{\beta^2}{(2\alpha)} \cdot e^{-\alpha |t|}
+$$
+The power spectral density (PSD) is
+$$
+\psd_X(\f) = \F\{\gamma(t)\} = \frac{\beta^2}{\alpha^2 + (2\pi \f)^2}.
+$$
+where $f$ is the frequency in Hertz (Hz) and $i \equiv \sqrt{-1}$.
+
+In R, we can define a function to calculate the theoretical PSD.
+
+```{r ou_psd}
+#' PSD for the OU model.
+#'
+#' @param freq Vector of frequencies
+#' @param alpha Mean reversion parameter.
+#' @param beta Scale parameter.
+#' @return PSD vector at the frequencies in `freq`.
+ou_psd <- function(freq, alpha, beta) {
+  beta^2/((2*pi*freq)^2 + alpha^2)
+}
+```
+
+## Simulation
+
+In **realPSD** we provide a handy function `ou_sim` to generate the exact OU process. Note the simulation is exact since we are not using Euler approximation. This is only the case for the OU process. To simulate more general and complicated SDEs, approximation is inevitable. For that purpose, the R package `r cran_link("msde")` is the state-of-the-art tool you would like to use.
+
+```{r sim}
+# true parameter values
+theta0 <- c(alpha = 3.1, beta = 2.2)
+
+# timescale for simulation
+frange <- c(1e-4, 1e2) # frequency range
+fs <- frange[2]*2 # sampling frequency
+dt <- 1/fs # interobservation time
+N <- floor(fs/frange[1]) # number of observations
+
+# time domain simulation
+Xt <- ou_sim(gamma = theta0[1], mu = 0, sigma = theta0[2], dt = dt, n_obs = N)
+```
+
+## Empirical vs Theoretical PSD Trajectories
+
+We can easily see that the simulation was successful in that the empirical PSD  overlaps with the theoretical PSD curve.
+
+```{r psd_emp}
+psd_emp <- periodogram(Xt, fs = fs)
+psd_emp <- psd_emp %>% filter(freq < 20)
+bin_size <- 100 # for estimation and plotting
+psd_bin <- as.data.frame(lapply(psd_emp, binning,
+                                bin_size = bin_size, bin_type = "mean"))
+
+plot(psd_bin$freq, psd_bin$Ypsd, type = "l", log = "xy",
+     xlab = "Frequency (Hz)", ylab = "PSD")
+curve(ou_psd(freq = x, alpha = theta0[1], beta = theta0[2]),
+      col = "red", add = TRUE)
+```
+
+# Write the OU Model in C++
+
+## Create the OU model object in C++
+
+To provide efficient estimation for general parametric PSD models, **realPSD** requires you to write your own model in a standalone C++ header file (with extension `.h` or `.hpp`). Here we have it ready for you. 
+
+```{r ou_ufun, echo = FALSE, results = "asis"}
+cat("```cpp", readLines("OU_Model.hpp"), "```", sep = "\n")
+```
+
+Basically, we defined a `UFun` class within our own namespace `ou` to avoid any potential scope conflict with the **realPSD** package. Later whenever we refer to this class, we will use `ou::UFun` to emphasize its namespace. The `ou::UFun` class is nothing fancy but just a collection of necessary data and functions we need to evaluate the likelihood function of the OU process. In our specific example, we need to provide the length of the simulated time series `N` (which is supplied via the constructor function `UFun(int N)`), a vector of frequencies `f` (which is supplied via function `set_f`) and a function `eval` to evaluate the PSD. If you look at the definition of `eval` function
+
+```C++
+/// @param[out] U Normalized PSD vector of size `N`.
+/// @param[in] phi Computational basis parameters.  Here we have `phi = log(alpha)`.
+template <class Type>
+inline void UFun<Type>::eval(RefMatrix<Type> U, cRefMatrix<Type>& phi) {
+  U = (scale_ * f2_).array() + exp(Type(2.0)*phi(0,0));
+  // U = exp(Type(2.0)*phi(1,0)) / U.array();
+  U = U.array().inverse();
+  return;
+}
+```
+you will notice it is basically the C++ translation of the R function `ou_psd`. The only difference is that for numerical purposes, we define the PSD as $S(f) = \beta^2 U(f)$ where 
+$$
+U(f) = \frac{1}{(2\pi f)^2 + \alpha^2}
+$$
+is the normalized PSD we are using in **realPSD**.
+
+The private member variables `f_`, `f2_` and `scale_` can be understood as some intermediary variables to help us create the function `eval` eventually. But we don't need them to be visible outside of the class `ou::UFun`, so they are private. These variables are by no means mandatory but just for convenience. You should think about how to create your own private members based on your specific model. 
+
+As for `RefMatrix<Type>`, it is a user-defined data type used by **realPSD** to help users make use of data types in C++ [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page) library. You can understand `RefMatrix<Type>` simply as a built-in data type for matrix. Please make sure you have the line `#include "realPSD/utils.hpp"` at the beginning of your header file. Then you header file will automatically include some tools to facilitate your job.
+
+You may also notice that we have an external constructor `template<class Type> UFun<Type> make_Ufun(...)` for `ou::UFun` class. Just copy and paste this function to the end of your header file (still within the namespace), it will help you get around some technical issues involved in `r github_link("TMB")`. For more details, please see the [advanced tutorial](http://htmlpreview.github.com/?https://github.com/mlysy/realPSD/master/doc/realPSD-advancedtut.html).
+
+To summarize, you can follow the steps below to create a model header file:
+
+1. Create an empty C++ header file with extension `.h` or `.hpp` and name it whatever you like. In our example, we name the file `OU_Model.hpp`. Put it under the current working directory.
+2. Give a name to your namespace to wrap up your model class. Usually the namespace is named according to your model, e.g. `ou` in our example.
+3. Create a `UFun` class within your namespace. It is recommended to define the class as a template class in the way as shown in our example, i.e. `template <class Type>
+  class UFun {...};`. It would enable you to make use of the data types given by C++ [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page) library. 
+4. Create necessary public members (variables or functions) to get data from outside and to evaluate your normalized PSD, i.e. the U(f) function and necessary private members for internal computation. Usually it is a good idea to make your own constructor (instead of using the default constructor) to initialize some private data members as we did in the example. 
+5. The rest of the file should be just a simple copy-and-paste of the above example header file.
+
+## Compile the OU model
+
+Now let's compile the header file and create the `ou_model` object as follows:
+
+**Step 1:** The package **realPSD** uses `r github_link("TMB")` internally for model building and estimation. But you don't need to learn how to use `r github_link("TMB")` from scratch. **realPSD** provides a wrapper function `make_psd_model` to help you automatically generate a C++ file (called "OU_FitMethods.cpp") needed by `r github_link("TMB")` to compile the model.
+
+```{r ou_cpp_compile_step1}
+# create c++ file
+ou_cpp <- make_psd_model(model = "OU",
+                         header = "OU_Model.hpp",
+                         class = "ou::UFun",
+                         ctor = "ou::make_Ufun",
+                         standalone = TRUE)
+# this avoid compiling if file hasn't changed
+if(!file.exists("OU_FitMethods.cpp") ||
+   !identical(ou_cpp, paste0(readLines("OU_FitMethods.cpp"), collapse = "\n"))) {
+  cat(ou_cpp, sep = "\n", file = "OU_FitMethods.cpp")
+}
+```
+
+Now we explain the above input arguments of `make_psd_model` in detail:
+
+- `name`: Name of the model, in our case, we'd like to name it "OU".
+- `header`: Name of the header file we just created, i.e. "OU_Model.hpp".
+- `class`: Model class with name scope (if any), i.e. `ou::UFun` as shown above.
+- `ctor`: Name of the external constructor in the model header file with name scope (if any). In our example, it is `ou::make_Ufun`.
+- `include`: Additional include directive path, usually package specific, in this example, the path to `FitMethods.hpp`.
+- `standalone`: If `TRUE` creates a standalone `cpp` file to pass to `TMB::compile()`.  Otherwise, creates an `hpp` header file to be placed in a package created with **TMBtools**.
+
+**Step 2:** After we have the necessary C++ file `OU_FitMethods.cpp`, we can compile it by using the following code. It will call `r github_link("TMB")` to compile the model object. Just copy and paste the code for your own project. All you need to change is the name of the file.
+
+```{r ou_cpp_compile_step2, message = FALSE}
+# compile it
+model <- "OU_FitMethods"
+TMB::compile(paste0(model, ".cpp"),
+             PKG_CXXFLAGS = paste0("-I", system.file("include", package = "realPSD"),
+                                   " -std=c++11"))
+dyn.load(TMB::dynlib(model))
+```
+
+**Step 3:** Finally, we create the OU model R6 class in R to facilitate our later estimation process.
+
+```{r ou_cpp_compile_step3}
+# create the ou_model class
+ou_model <- R6::R6Class(
+  classname = "ou_model",
+  inherit = realPSD::psd_model,
+  private = list(
+    n_phi_ = 1,
+    tmb_model_ = "OU",
+    tmb_DLL_ = "OU_FitMethods"
+  )
+)
+```
+
+Here `classname` is user-defined and we call it "ou_model". It will be an object inherit from an existing built-in R6 class object `psd_model` provided by **realPSD**, so we set `inherit = realPSD::psd_model`. `tmb_model_` should be the same as the `model` input in `make_psd_model` and `tmb_DLL_` should be the same as the name of the automatically generated C++ file in the above **Step 1**, i.e. "OU_FitMethods" in our case. For more details about R6 class, please see [here](https://r6.r-lib.org/index.html).
+
+For further references, we list here the public members (with the function body omitted) of the base R6 class `realPSD::psd_model` which can be useful for our later model estimation.
+
+```{r public_list_psd_class}
+#' @description Specify the estimator.
+#'
+#' @param est_type Type of estimator: "lp", "nls", or "mle".
+#' @param bin_size Bin size.
+#' @param bin_type Type of bin: "mean" or "median".
+set_est = function(est_type = c("lp", "nls", "mle"),
+                   bin_size = 100,
+                   bin_type = c("mean", "median")) {...}
+#' @description Set the periodogram data.
+#'
+#' @param freq Frequency vector.
+#' @param Ypsd Periodogram vector.
+set_psd = function(freq, Ypsd) {...}
+
+#' @description Negative profile loglikelihood constructor.
+#'
+#' @param phi0 Vector with which to initialize `phi`.  If missing, a vector of zeros.
+#'
+#' @return A [TMB::MakeADFun()] object.  Relevant methods are: `nlp$fn(phi)`, `nlp$gr(phi)`, `nlp$he(phi)`, and `nlp$simulate(phi)$zeta`, which returns the conditional optimum of `zeta` given `phi`.
+nlp = function(phi0) {...}
+
+
+#' @description Negative loglikelihood constructor.
+#'
+#' @param phi0 Vector with which to initialize `phi`.  If missing, a vector of zeros.
+#' @param zeta0 Scalar with which to initialize `zeta`.  If missing, zero.
+#'
+#' @return A [TMB::MakeADFun()] object.  Relevant methods are: `nll$fn(phi)`, `nll$gr()`, and `nll$he()`.
+nll = function(phi0, zeta0) {...}
+
+
+#' @description Residual constructor.
+#'
+#' @param phi0 Vector with which to initialize `phi`.  If missing, a vector of zeros.
+#' @param zeta0 Scalar with which to initialize `zeta`.  If missing, zero.
+#'
+#' @return A [TMB::MakeADFun()] object.  Relevant methods are: `resid$fn(phi)` and `resid$gr(phi)`.
+resid = function(phi0, zeta0) {...}
+
+#' @description Normalized PSD constructor.
+#'
+#' @param phi0 Vector with which to initialize `phi`.  If missing, a vector of zeros.
+#'
+#' @return A [TMB::MakeADFun()] object.  Relevant methods are: `ufun$fn(phi)` and `ufun$gr(phi)`.
+ufun = function(phi0) {...}
+
+#' @description Calculate the optimal value of the log normalizing constant.
+#'
+#' @param phi0 Vector with which to initialize `phi`.  If missing, a vector of zeros.
+#'
+#' @return A [TMB::MakeADFun()] object.  Relevant methods are: `zeta$fn(phi)`, `zeta$gr()`, and `zeta$he()`.
+zeta = function(phi0) {...}
+
+#' @description Calculate the variance estimator for the parameter fitting method.
+#'
+#' @param phi Vector of normalized PSD parameters.
+#' @param zeta Log of normalization parameter.
+#' @param to_theta If `TRUE`, calculates the variance in the inferential basis.  Otherwise, uses the computational basis.
+#'
+#' @return A variance matrix of size `n_phi x n_phi`.
+vcov = function(phi, zeta, to_theta = FALSE) {...}
+
+#' @description Model object constructor.
+#'
+#' @param freq Frequency vector.
+#' @param Ypsd Periodogram vector.
+#' @param est_type Type of estimator: "lp", "nls", or "mle".
+#' @param bin_size Bin size.
+#' @param bin_type Type of bin: "mean" or "median".
+#' @param ctor_args Optional list of additional arguments to TMB `UFun()` constructor.
+initialize = function(freq, Ypsd,
+                      est_type = c("lp", "nls", "mle"),
+                      bin_size = 100,
+                      bin_type = c("mean", "median"),
+                      ctor_args = NULL) {...}
+```
+
+## Testing
+
+To check whether the implementation is correct, we'll compare the **TMB** implementation of the $U(\f, \phi)$ method of `ou_model` to a pure R functional implementation.
+
+```{r tmb_test}
+# construct the model object
+ou_obj <- ou_model$new(freq = psd_emp$freq, Ypsd = psd_emp$Ypsd,
+                       bin_size = 100, est_type = "lp")
+
+ou_ufun <- ou_obj$ufun() # TMB method corresponding to UFun.eval()
+U_tmb <- ou_ufun$fn(log(theta0[1])) # evaluate at frequencies for lp estimator
+# same calculation in R
+U_r <- ou_psd(freq = psd_bin$freq, alpha = theta0[1], beta = 1)
+range(U_tmb - U_r)
+```
+
+Note that we used `ou_model$new()` to initialize the OU model object. The input arguments can be found in the `initialize` method listed above for the R6 base class `realPSD::psd_model`.
+
+It is always a good idea to do this kind of tests in the process of building your own model. The R package `r cran_link("testthat")` is great for this purpose. For more details about unit tests, please see [here](https://testthat.r-lib.org).
+
+
+# Parameter Estimation 
+
+Now we are ready to fit the OU model by using **realPSD**. Three methods are provided, i.e. maximum likelihood estimation (MLE), log periodogram estimation (LP), non-linear least squares estimation (NLS). The theoretical background of these three methods is summarized in the [advanced tutorial](http://htmlpreview.github.com/?https://github.com/mlysy/realPSD/master/doc/realPSD-advancedtut.html). More technical details can be found in this [preprint]().
+
+Before we start to fit the OU PSD, let's first define a helper function to help us convert parameters.
+
+```{r helper_est}
+#` Helper function to convert a value of `phi_est` into `eta_coef` and `eta_vcov`.
+#` @param phi Value of `phi`.
+#` @param obj Model object created by `ou_model`.
+#` @return List with elements `coef` and `vcov` of parameters on the computational basis, `eta = (phi, zeta)`.
+to_fit <- function(phi, obj) {
+  fit <- list(phi = phi, zeta = obj$nlp()$simulate(phi)$zeta)
+  fit <- list(coef = c(phi = fit$phi, zeta = fit$zeta),
+              vcov = obj$vcov(phi = fit$phi, zeta = fit$zeta))
+  rownames(fit$vcov) <- colnames(fit$vcov) <- names(fit$coef)
+  fit
+}
+```
+
+## MLE
+
+We can fit the OU model using MLE (profile likelihood) as follows:
+
+```{r mle_fit}
+# instantiate TMB object for profile likelihood
+ou_obj$set_est(est_type = "mle")
+ou_nlp <- ou_obj$nlp()
+
+opt <- optimize(f = ou_nlp$fn, lower = log(.1), upper = log(10))
+mle_fit <- to_fit(opt$min, ou_obj)
+
+plot(psd_bin$freq, psd_bin$Ypsd, type = "l", log = "xy",
+     xlab = "Frequency (Hz)", ylab = "PSD")
+curve(ou_psd(freq = x, alpha = exp(mle_fit$coef[1]), beta = exp(mle_fit$coef[2]/2)),
+      col = "red", add = TRUE)
+```
+
+As we can see, the fitted curve fits the simulated data very well.
+
+## LP
+
+Similarly, we can fit the model using LP method.
+
+```{r lp_fit}
+# instantiate TMB object for profile likelihood
+ou_obj$set_est(est_type = "lp", bin_size = bin_size)
+ou_nlp <- ou_obj$nlp()
+
+opt <- optimize(f = ou_nlp$fn, lower = log(.1), upper = log(10))
+lp_fit <- to_fit(opt$min, ou_obj)
+
+plot(psd_bin$freq, psd_bin$Ypsd, type = "l", log = "xy",
+     xlab = "Frequency (Hz)", ylab = "PSD")
+curve(ou_psd(freq = x, alpha = exp(lp_fit$coef[1]), beta = exp(lp_fit$coef[2]/2)),
+      col = "red", add = TRUE)
+```
+
+## NLS
+
+We can implement the NLS method using the following code.
+
+```{r nls_fit}
+# instantiate TMB object for profile likelihood
+ou_obj$set_est(est_type = "nls", bin_size = bin_size)
+ou_nlp <- ou_obj$nlp()
+
+opt <- optimize(f = ou_nlp$fn, lower = log(.1), upper = log(10))
+nls_fit <- to_fit(opt$min, ou_obj)
+
+plot(psd_bin$freq, psd_bin$Ypsd, type = "l", log = "xy",
+     xlab = "Frequency (Hz)", ylab = "PSD")
+curve(ou_psd(freq = x, alpha = exp(lp_fit$coef[1]), beta = exp(lp_fit$coef[2]/2)),
+      col = "red", add = TRUE)
+```
+
+## Table of Parameter Estimates
+
+Finally, let's summarize the estimates in the following table for comparison. As we can see, LP gives very close estimates as MLE and the estimator of both methods produced very small standard errors. NLS, on the other hand, gives an estimator with significantly larger standard errors. This result is expected since NLS for the numerical estimation speed, sacrifices the estimation efficiency. That is price we have to pay.
+
+```{r disp}
+disp <- sapply(list(mle = mle_fit, lp = lp_fit, nls = nls_fit),
+               function(fit) c(fit$coef[1], sqrt(fit$vcov[1,1]),
+                               fit$coef[2], sqrt(fit$vcov[2,2])))
+disp <- cbind(true = c(log(theta0[1]), NA, 2 * log(theta0[2]), NA),
+              disp)
+disp <- t(disp)
+colnames(disp) <- c("phi_est", "phi_se", "zeta_est", "zeta_se")
+signif(disp, 3)
+```

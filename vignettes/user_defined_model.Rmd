@@ -396,3 +396,46 @@ namespace fou {
   #define TMB_OBJECTIVE_PTR this
 } // end namespace fou
 ```
+
+## Create the OU model object in C++
+
+To provide efficient estimation for general parametric PSD models, **realPSD** requires you to write your own model in a standalone C++ header file (with extension `.h` or `.hpp`). Here we have it ready for you. 
+
+```{r ou_ufun, echo = FALSE, results = "asis"}
+cat("```cpp", readLines("OU_Model.hpp"), "```", sep = "\n")
+```
+
+Basically, we defined a `UFun` class within our own namespace `ou` to avoid any potential scope conflict with the **realPSD** package. Later whenever we refer to this class, we will use `ou::UFun` to emphasize its namespace. The `ou::UFun` class is nothing fancy but just a collection of necessary data and functions we need to evaluate the likelihood function of the OU process. In our specific example, we need to provide the length of the simulated time series `N` (which is supplied via the constructor function `UFun(int N)`), a vector of frequencies `f` (which is supplied via function `set_f`) and a function `eval` to evaluate the PSD. If you look at the definition of `eval` function
+
+```C++
+/// @param[out] U Normalized PSD vector of size `N`.
+/// @param[in] phi Computational basis parameters.  Here we have `phi = log(alpha)`.
+template <class Type>
+inline void UFun<Type>::eval(RefMatrix<Type> U, cRefMatrix<Type>& phi) {
+  U = (scale_ * f2_).array() + exp(Type(2.0)*phi(0,0));
+  // U = exp(Type(2.0)*phi(1,0)) / U.array();
+  U = U.array().inverse();
+  return;
+}
+```
+you will notice it is basically the C++ translation of the R function `ou_psd`. The only difference is that for numerical purposes, we define the PSD as $S(f) = \beta^2 U(f)$ where 
+$$
+U(f) = \frac{1}{(2\pi f)^2 + \alpha^2}
+$$
+is the normalized PSD we are using in **realPSD**.
+
+The private member variables `f_`, `f2_` and `scale_` can be understood as some intermediary variables to help us create the function `eval` eventually. But we don't need them to be visible outside of the class `ou::UFun`, so they are private. These variables are by no means mandatory but just for convenience. You should think about how to create your own private members based on your specific model. 
+
+As for `RefMatrix<Type>`, it is a user-defined data type used by **realPSD** to help users make use of data types in C++ [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page) library. You can understand `RefMatrix<Type>` simply as a built-in data type for matrix. Please make sure you have the line `#include "realPSD/utils.hpp"` at the beginning of your header file. Then you header file will automatically include some tools to facilitate your job.
+
+You may also notice that we have an external constructor `template<class Type> UFun<Type> make_Ufun(...)` for `ou::UFun` class. Just copy and paste this function to the end of your header file (still within the namespace), it will help you get around some technical issues involved in `r github_link("TMB")`. For more details, please see the [advanced tutorial](http://htmlpreview.github.com/?https://github.com/mlysy/realPSD/master/doc/realPSD-advancedtut.html).
+
+To summarize, you can follow the steps below to create a model header file:
+
+1. Create an empty C++ header file with extension `.h` or `.hpp` and name it whatever you like. In our example, we name the file `OU_Model.hpp`. Put it under the current working directory.
+2. Give a name to your namespace to wrap up your model class. Usually the namespace is named according to your model, e.g. `ou` in our example.
+3. Create a `UFun` class within your namespace. It is recommended to define the class as a template class in the way as shown in our example, i.e. `template <class Type>
+  class UFun {...};`. It would enable you to make use of the data types given by C++ [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page) library. 
+4. Create necessary public members (variables or functions) to get data from outside and to evaluate your normalized PSD, i.e. the U(f) function and necessary private members for internal computation. Usually it is a good idea to make your own constructor (instead of using the default constructor) to initialize some private data members as we did in the example. 
+5. The rest of the file should be just a simple copy-and-paste of the above example header file.
+

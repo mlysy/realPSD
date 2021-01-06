@@ -1,12 +1,12 @@
 ---
-title: "**realPSD**: Development Notes"
+title: "**realPSD**: **R**obust and **E**fficient C**al**ibration of Parametric PSD Models"
 author: "Martin Lysy, Feiyu Zhu"
 date: "`r Sys.Date()`"
 output:
   rmarkdown::html_vignette:
     toc: yes
 vignette: >
-  %\VignetteIndexEntry{realPSD: Development Notes}
+  %\VignetteIndexEntry{realPSD: Robust and Efficient Calibration of Parametric PSD Models}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -292,6 +292,11 @@ p(i\f)
 	& = \sum_{k=0}^{q} \alpha_{2k} (i\f)^{2k} + \sum_{k=0}^r \alpha_{2k+1} (i\f)^{2k+1} \\
 	& = \sum_{k=0}^q (-1)^k \alpha_{2k} f^{2k} + i\f \sum_{k=0}^r (-1)^k \alpha_{2k+1} f^{2k}
 \end{align*}
+
+
+# Maybe Some More Technical Explanation of the Design of **realPSD** pacakge
+
+TODO...
 
 
 <!-- where $g_m(\tth) = (\bar Y_m - \bar{\psd}_m(\tth))^2$. -->
