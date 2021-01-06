@@ -4,8 +4,8 @@
 *.Rhistory
 *.Rapp.history
 # comment out following line to link to vignette html on github
-inst/doc
-vignettes/.build.timestamp
+# inst/doc
+# vignettes/.build.timestamp
 
 # C++
 *.o
@@ -25,3 +25,5 @@ vignettes/.build.timestamp
 .fls 
 .log
 .synctex.gz
+doc
+Meta
