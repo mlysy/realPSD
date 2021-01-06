@@ -5,5 +5,3 @@
 ^vignettes/*.so
 ^vignettes/*.dll
 ^TODO\.md$
-^doc$
-^Meta$
