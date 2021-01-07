@@ -185,7 +185,7 @@ The private member variables `f_`, `f2_` and `scale_` can be understood as some 
 
 As for `RefMatrix<Type>`, it is a user-defined data type used by **realPSD** to help users make use of data types in C++ [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page) library. You can understand `RefMatrix<Type>` simply as a built-in data type for matrix. Please make sure you have the line `#include "realPSD/utils.hpp"` at the beginning of your header file. Then you header file will automatically include some tools to facilitate your job.
 
-You may also notice that we have an external constructor `template<class Type> UFun<Type> make_Ufun(...)` for `ou::UFun` class. Just copy and paste this function to the end of your header file (still within the namespace), it will help you get around some technical issues involved in `r github_link("TMB")`. For more details, please see the [advanced tutorial](http://htmlpreview.github.io/?https://github.com/mlysy/realPSD/blob/devel-ferris-prerelease/doc/realPSD-advancedtut.html).
+You may also notice that we have an external constructor `template<class Type> UFun<Type> make_Ufun(...)` for `ou::UFun` class. Just copy and paste this function to the end of your header file (still within the namespace), it will help you get around some technical issues involved in `r cran_link("TMB")`. For more details, please see the [advanced tutorial](http://htmlpreview.github.io/?https://github.com/mlysy/realPSD/blob/devel-ferris-prerelease/doc/realPSD-advancedtut.html).
 
 To summarize, you can follow the steps below to create a model header file:
 
@@ -200,7 +200,7 @@ To summarize, you can follow the steps below to create a model header file:
 
 Now let's compile the header file and create the `ou_model` object as follows:
 
-**Step 1:** The package **realPSD** uses `r github_link("TMB")` internally for model building and estimation. But you don't need to learn how to use `r github_link("TMB")` from scratch. **realPSD** provides a wrapper function `make_psd_model` to help you automatically generate a C++ file (called "OU_FitMethods.cpp") needed by `r github_link("TMB")` to compile the model.
+**Step 1:** The package **realPSD** uses `r cran_link("TMB")` internally for model building and estimation. But you don't need to learn how to use `r cran_link("TMB")` from scratch. **realPSD** provides a wrapper function `make_psd_model` to help you automatically generate a C++ file (called "OU_FitMethods.cpp") needed by `r cran_link("TMB")` to compile the model.
 
 ```{r ou_cpp_compile_step1}
 # create c++ file
@@ -225,7 +225,7 @@ Now we explain the above input arguments of `make_psd_model` in detail:
 - `include`: Additional include directive path, usually package specific, in this example, the path to `FitMethods.hpp`.
 - `standalone`: If `TRUE` creates a standalone `cpp` file to pass to `TMB::compile()`.  Otherwise, creates an `hpp` header file to be placed in a package created with **TMBtools**.
 
-**Step 2:** After we have the necessary C++ file `OU_FitMethods.cpp`, we can compile it by using the following code. It will call `r github_link("TMB")` to compile the model object. Just copy and paste the code for your own project. All you need to change is the name of the file.
+**Step 2:** After we have the necessary C++ file `OU_FitMethods.cpp`, we can compile it by using the following code. It will call `r cran_link("TMB")` to compile the model object. Just copy and paste the code for your own project. All you need to change is the name of the file.
 
 ```{r ou_cpp_compile_step2, message = FALSE}
 # compile it
