@@ -94,7 +94,7 @@ The power spectral density (PSD) is the Fourier transform of $\gamma(t)$
 $$
 \psd_X(\f) = \F\{\gamma(t)\} = \frac{\beta^2}{\alpha^2 + (2\pi \f)^2}.
 $$
-where $f$ is the frequency in Hertz (Hz) and $i \equiv \sqrt{-1}$.
+where $f$ is the frequency in Hertz (Hz).
 
 In R, we can define a function to calculate the theoretical PSD.
 
