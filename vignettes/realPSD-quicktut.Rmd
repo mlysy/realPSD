@@ -136,9 +136,9 @@ curve(ou_psd(freq = x, alpha = theta0[1], beta = theta0[2]),
       col = "red", add = TRUE)
 ```
 
-# Write the OU Model in C++
+# Create the OU Model Object
 
-## Create the OU model object in C++
+## Write the OU model header file in C++
 
 To provide efficient estimation for general parametric PSD models, **realPSD** requires you to write your own model in a standalone C++ header file (with extension `.h` or `.hpp`). Here we have it ready for you. 
 
