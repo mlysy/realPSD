@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="Martin Lysy, Feiyu Zhu" />
+
+<meta name="date" content="2021-01-07" />
+
+<title>realPSD: Robust and Efficient Calibration of Parametric PSD Models</title>
+
+<script src="data:application/javascript;base64,Ly8gUGFuZG9jIDIuOSBhZGRzIGF0dHJpYnV0ZXMgb24gYm90aCBoZWFkZXIgYW5kIGRpdi4gV2UgcmVtb3ZlIHRoZSBmb3JtZXIgKHRvCi8vIGJlIGNvbXBhdGlibGUgd2l0aCB0aGUgYmVoYXZpb3Igb2YgUGFuZG9jIDwgMi44KS4KZG9jdW1lbnQuYWRkRXZlbnRMaXN0ZW5lcignRE9NQ29udGVudExvYWRlZCcsIGZ1bmN0aW9uKGUpIHsKICB2YXIgaHMgPSBkb2N1bWVudC5xdWVyeVNlbGVjdG9yQWxsKCJkaXYuc2VjdGlvbltjbGFzcyo9J2xldmVsJ10gPiA6Zmlyc3QtY2hpbGQiKTsKICB2YXIgaSwgaCwgYTsKICBmb3IgKGkgPSAwOyBpIDwgaHMubGVuZ3RoOyBpKyspIHsKICAgIGggPSBoc1tpXTsKICAgIGlmICghL15oWzEtNl0kL2kudGVzdChoLnRhZ05hbWUpKSBjb250aW51ZTsgIC8vIGl0IHNob3VsZCBiZSBhIGhlYWRlciBoMS1oNgogICAgYSA9IGguYXR0cmlidXRlczsKICAgIHdoaWxlIChhLmxlbmd0aCA+IDApIGgucmVtb3ZlQXR0cmlidXRlKGFbMF0ubmFtZSk7CiAgfQp9KTsK"></script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+
+
+
+
+
+<link rel="stylesheet" href="data:text/css,body%20%7B%0Abackground%2Dcolor%3A%20%23fff%3B%0Amargin%3A%201em%20auto%3B%0Amax%2Dwidth%3A%20700px%3B%0Aoverflow%3A%20visible%3B%0Apadding%2Dleft%3A%202em%3B%0Apadding%2Dright%3A%202em%3B%0Afont%2Dfamily%3A%20%22Open%20Sans%22%2C%20%22Helvetica%20Neue%22%2C%20Helvetica%2C%20Arial%2C%20sans%2Dserif%3B%0Afont%2Dsize%3A%2014px%3B%0Aline%2Dheight%3A%201%2E35%3B%0A%7D%0A%23TOC%20%7B%0Aclear%3A%20both%3B%0Amargin%3A%200%200%2010px%2010px%3B%0Apadding%3A%204px%3B%0Awidth%3A%20400px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Aborder%2Dradius%3A%205px%3B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Afont%2Dsize%3A%2013px%3B%0Aline%2Dheight%3A%201%2E3%3B%0A%7D%0A%23TOC%20%2Etoctitle%20%7B%0Afont%2Dweight%3A%20bold%3B%0Afont%2Dsize%3A%2015px%3B%0Amargin%2Dleft%3A%205px%3B%0A%7D%0A%23TOC%20ul%20%7B%0Apadding%2Dleft%3A%2040px%3B%0Amargin%2Dleft%3A%20%2D1%2E5em%3B%0Amargin%2Dtop%3A%205px%3B%0Amargin%2Dbottom%3A%205px%3B%0A%7D%0A%23TOC%20ul%20ul%20%7B%0Amargin%2Dleft%3A%20%2D2em%3B%0A%7D%0A%23TOC%20li%20%7B%0Aline%2Dheight%3A%2016px%3B%0A%7D%0Atable%20%7B%0Amargin%3A%201em%20auto%3B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dcolor%3A%20%23DDDDDD%3B%0Aborder%2Dstyle%3A%20outset%3B%0Aborder%2Dcollapse%3A%20collapse%3B%0A%7D%0Atable%20th%20%7B%0Aborder%2Dwidth%3A%202px%3B%0Apadding%3A%205px%3B%0Aborder%2Dstyle%3A%20inset%3B%0A%7D%0Atable%20td%20%7B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dstyle%3A%20inset%3B%0Aline%2Dheight%3A%2018px%3B%0Apadding%3A%205px%205px%3B%0A%7D%0Atable%2C%20table%20th%2C%20table%20td%20%7B%0Aborder%2Dleft%2Dstyle%3A%20none%3B%0Aborder%2Dright%2Dstyle%3A%20none%3B%0A%7D%0Atable%20thead%2C%20table%20tr%2Eeven%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Ap%20%7B%0Amargin%3A%200%2E5em%200%3B%0A%7D%0Ablockquote%20%7B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Apadding%3A%200%2E25em%200%2E75em%3B%0A%7D%0Ahr%20%7B%0Aborder%2Dstyle%3A%20solid%3B%0Aborder%3A%20none%3B%0Aborder%2Dtop%3A%201px%20solid%20%23777%3B%0Amargin%3A%2028px%200%3B%0A%7D%0Adl%20%7B%0Amargin%2Dleft%3A%200%3B%0A%7D%0Adl%20dd%20%7B%0Amargin%2Dbottom%3A%2013px%3B%0Amargin%2Dleft%3A%2013px%3B%0A%7D%0Adl%20dt%20%7B%0Afont%2Dweight%3A%20bold%3B%0A%7D%0Aul%20%7B%0Amargin%2Dtop%3A%200%3B%0A%7D%0Aul%20li%20%7B%0Alist%2Dstyle%3A%20circle%20outside%3B%0A%7D%0Aul%20ul%20%7B%0Amargin%2Dbottom%3A%200%3B%0A%7D%0Apre%2C%20code%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0Aborder%2Dradius%3A%203px%3B%0Acolor%3A%20%23333%3B%0Awhite%2Dspace%3A%20pre%2Dwrap%3B%20%0A%7D%0Apre%20%7B%0Aborder%2Dradius%3A%203px%3B%0Amargin%3A%205px%200px%2010px%200px%3B%0Apadding%3A%2010px%3B%0A%7D%0Apre%3Anot%28%5Bclass%5D%29%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Acode%20%7B%0Afont%2Dfamily%3A%20Consolas%2C%20Monaco%2C%20%27Courier%20New%27%2C%20monospace%3B%0Afont%2Dsize%3A%2085%25%3B%0A%7D%0Ap%20%3E%20code%2C%20li%20%3E%20code%20%7B%0Apadding%3A%202px%200px%3B%0A%7D%0Adiv%2Efigure%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0Aimg%20%7B%0Abackground%2Dcolor%3A%20%23FFFFFF%3B%0Apadding%3A%202px%3B%0Aborder%3A%201px%20solid%20%23DDDDDD%3B%0Aborder%2Dradius%3A%203px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Amargin%3A%200%205px%3B%0A%7D%0Ah1%20%7B%0Amargin%2Dtop%3A%200%3B%0Afont%2Dsize%3A%2035px%3B%0Aline%2Dheight%3A%2040px%3B%0A%7D%0Ah2%20%7B%0Aborder%2Dbottom%3A%204px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Apadding%2Dbottom%3A%202px%3B%0Afont%2Dsize%3A%20145%25%3B%0A%7D%0Ah3%20%7B%0Aborder%2Dbottom%3A%202px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Afont%2Dsize%3A%20120%25%3B%0A%7D%0Ah4%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23f7f7f7%3B%0Amargin%2Dleft%3A%208px%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Ah5%2C%20h6%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23ccc%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Aa%20%7B%0Acolor%3A%20%230033dd%3B%0Atext%2Ddecoration%3A%20none%3B%0A%7D%0Aa%3Ahover%20%7B%0Acolor%3A%20%236666ff%3B%20%7D%0Aa%3Avisited%20%7B%0Acolor%3A%20%23800080%3B%20%7D%0Aa%3Avisited%3Ahover%20%7B%0Acolor%3A%20%23BB00BB%3B%20%7D%0Aa%5Bhref%5E%3D%22http%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0Aa%5Bhref%5E%3D%22https%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0A%0Acode%20%3E%20span%2Ekw%20%7B%20color%3A%20%23555%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Edt%20%7B%20color%3A%20%23902000%3B%20%7D%20%0Acode%20%3E%20span%2Edv%20%7B%20color%3A%20%2340a070%3B%20%7D%20%0Acode%20%3E%20span%2Ebn%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Efl%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Ech%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Est%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Eco%20%7B%20color%3A%20%23888888%3B%20font%2Dstyle%3A%20italic%3B%20%7D%20%0Acode%20%3E%20span%2Eot%20%7B%20color%3A%20%23007020%3B%20%7D%20%0Acode%20%3E%20span%2Eal%20%7B%20color%3A%20%23ff0000%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Efu%20%7B%20color%3A%20%23900%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Eer%20%7B%20color%3A%20%23a61717%3B%20background%2Dcolor%3A%20%23e3d2d2%3B%20%7D%20%0A" type="text/css" />
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore"><strong>realPSD</strong>: <strong>R</strong>obust and <strong>E</strong>fficient C<strong>al</strong>ibration of Parametric PSD Models</h1>
+<h4 class="author">Martin Lysy, Feiyu Zhu</h4>
+<h4 class="date">2021-01-07</h4>
+
+
+<div id="TOC">
+<ul>
+<li><a href="#overview">Overview</a></li>
+<li><a href="#methods">Methods</a>
+<ul>
+<li><a href="#maximum-likelihood">Maximum Likelihood</a></li>
+<li><a href="#nonlinear-least-squares">Nonlinear Least-Squares</a></li>
+<li><a href="#variance-stabilized-least-squares">Variance-Stabilized Least-Squares</a></li>
+<li><a href="#variance-estimators">Variance Estimators</a></li>
+<li><a href="#model-residuals">Model Residuals</a></li>
+<li><a href="#scaling">Scaling</a></li>
+<li><a href="#median-binning">Median Binning</a></li>
+</ul></li>
+<li><a href="#examples">Examples</a>
+<ul>
+<li><a href="#simple-harmonic-oscillator-with-noise-floor">Simple Harmonic Oscillator with Noise Floor</a></li>
+<li><a href="#fractional-ornstein-uhlenbeck-model">Fractional Ornstein-Uhlenbeck Model</a></li>
+<li><a href="#carfima-models">CARFIMA Models</a></li>
+</ul></li>
+<li><a href="#maybe-some-more-technical-explanation-of-the-design-of-realpsd-pacakge">Maybe Some More Technical Explanation of the Design of <strong>realPSD</strong> pacakge</a></li>
+</ul>
+</div>
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: { autoNumber: "AMS" } }
+});
+</script>
+<div id="overview" class="section level1">
+<h1>Overview</h1>
+<p>Let <span class="math inline">\(X(t)\)</span> denote a continuous time mean-zero stationary process with autocorrelation <span class="math inline">\(\operatorname{\gamma}(t) = \operatorname{cov}(X_s, X_{s+t})\)</span>. with power spectral density (PSD) defined via the inverse Fourier transform relation <span class="math display">\[
+\operatorname{\gamma}(t) = \int_{-\infty}^\infty e^{-2\pi i tf} \operatorname{\mathcal S}(f) \, \mathrm{d}f,
+\]</span> where <span class="math inline">\(f\in \mathbb R\)</span> is the frequency in Hertz. The <strong>realPSD</strong> package provides tools for estimation of parametric PSDs of the form <span class="math display">\[
+\operatorname{\mathcal S}(f,{\boldsymbol{\theta}}) = \sigma^2 \cdot U(f, {\boldsymbol{\varphi}}),
+\]</span> where the PSD parameters are <span class="math inline">\({\boldsymbol{\theta}}= (\sigma, {\boldsymbol{\varphi}})\)</span>. The data <span class="math inline">\({\boldsymbol{X}}= (X_{0},\ldots,X_{N-1})\)</span> consist of discrete observations of <span class="math inline">\(X(t)\)</span> recorded at sampling frequency <span class="math inline">\(f_s\)</span>, such that <span class="math inline">\(X_n = X(n/f_s)\)</span>.</p>
+<p>This package is essentially a port of <a href="https://github.com/mlysy/realSHO"><strong>realSHO</strong></a>, but with the option of adding one’s own models. The interface is through the R <a href="https://CRAN.R-project.org/package=TMB"><strong>TMB</strong></a> package, which uses <a href="https://en.wikipedia.org/wiki/Automatic_differentiation">automatic differentiation</a> (AD) to enable gradient-based optimization algorithms to efficiently perform parameter estimation.</p>
+<!-- This interface is written in Python, and uses [automatic differentiation](https://en.wikipedia.org/wiki/Automatic_differentiation) (AD) to use gradient-based optimization algorithms to efficiently perform parameter estimation. -->
+<!-- ~~Currently the interface is through the R [**TMB**](https://CRAN.R-project.org/package=TMB) package, which makes the underlying C++ code difficult to interface from a different language (e.g., Python, Matlab).  A later step is to create a self-contained C++ library relying only on [**CppAD**](https://coin-or.github.io/CppAD/doc/cppad.htm), the C++ automated differentiation (AD) library on top of which **TMB** is built.~~ -->
+</div>
+<div id="methods" class="section level1">
+<h1>Methods</h1>
+<p><strong>realPSD</strong> provides three different methods for parameter estimation outlined below. For each method, estimation is via optimization over a function of <span class="math inline">\({\boldsymbol{\varphi}}\)</span>, with the fitted value of <span class="math inline">\(\sigma\)</span> being profiled out. In all cases the estimators are built on the discrete Fourier transform of the data, <span class="math inline">\({\boldsymbol{Y}}= (Y_{1},\ldots,Y_{K})\)</span>, where <span class="math inline">\(N = 2K + 1\)</span> and <span class="math display">\[
+Y_k = \frac 1 N \left\vert \sum_{n=0}^{N-1} e^{-2\pi i k n} X_n\right\vert^2.
+\]</span></p>
+<div id="maximum-likelihood" class="section level2">
+<h2>Maximum Likelihood</h2>
+<p>The maximum likelihood estimator is obtained by maximizing the so-called Whittle loglikelihood function, <span class="math display">\[\begin{equation}
+\label{eq:mle}
+\ell_W({\boldsymbol{\theta}}\mid {\boldsymbol{Y}}) = - \sum_{k=1}^K\left(\frac{Y_k}{\operatorname{\mathcal S}_k({\boldsymbol{\theta}})} + \log \operatorname{\mathcal S}_k({\boldsymbol{\theta}})\right),
+\end{equation}\]</span> where <span class="math inline">\(\operatorname{\mathcal S}_k({\boldsymbol{\theta}}) = f_s\cdot \operatorname{\mathcal S}(f_k, {\boldsymbol{\theta}})\)</span> and <span class="math inline">\(f_k = \tfrac k N f_s\)</span>. Note that for given <span class="math inline">\({\boldsymbol{\varphi}}\)</span>, the value of <span class="math inline">\(\sigma^2\)</span> maximizing \eqref{eq:mle} is <span class="math display">\[
+\hat \sigma^2({\boldsymbol{\varphi}}) = \frac 1 K \sum_{k=1}^K \frac{Y_k}{U_k({\boldsymbol{\varphi}})},
+\]</span> where <span class="math inline">\(U_k({\boldsymbol{\varphi}}) = f_s\cdot U(f_k, {\boldsymbol{\varphi}})\)</span>. Therefore, upon maximizing the profile likelihood <span class="math display">\[
+\begin{aligned}
+\ell_{W,\textrm{prof}}({\boldsymbol{\varphi}}\mid {\boldsymbol{Y}}) &amp; = \ell_W({\boldsymbol{\varphi}}, \hat \sigma({\boldsymbol{\varphi}}) \mid {\boldsymbol{Y}}) \\
+&amp; = - K (1 + \log \hat \sigma^2({\boldsymbol{\varphi}})) - \sum_{k=1}^K \log U_k({\boldsymbol{\varphi}}),
+\end{aligned}
+\]</span> we obtain the MLE <span class="math inline">\(\hat {\boldsymbol{\theta}}= (\hat {\boldsymbol{\varphi}}, \hat \sigma(\hat {\boldsymbol{\varphi}}))\)</span>.</p>
+</div>
+<div id="nonlinear-least-squares" class="section level2">
+<h2>Nonlinear Least-Squares</h2>
+<p>In many situations with high-throughput (HTP) data, <span class="math inline">\(K\)</span> is very large, such that calculating the MLE becomes very computationally intensive. An approximation to the MLE involves binning the periodogram ordinates. That is, let <span class="math inline">\(K = B \cdot N_B\)</span>, and <span class="math display">\[
+\bar Y_m = \frac 1 B \sum_{k \in I_m} Y_k, \qquad I_m = \{k \in \mathbb N: (m-1)B &lt; k \le mB\}.
+\]</span> Then the nonlinear least-squares (NLS) estimator maximizes the objective function <span class="math display">\[\begin{equation}
+\label{eq:nls}
+Q_{\textrm{NLS}}({\boldsymbol{\theta}}) = - \sum_{m=1}^{N_B} \big(\bar Y_m - \bar{\operatorname{\mathcal S}}_m({\boldsymbol{\theta}})\big)^2,
+\end{equation}\]</span> where <span class="math inline">\(\bar{\operatorname{\mathcal S}}_m({\boldsymbol{\theta}}) = f_s\cdot \operatorname{\mathcal S}(\bar f_m, {\boldsymbol{\theta}})\)</span> and <span class="math inline">\(\bar f_m = \tfrac 1 B \sum_{k\in I_m} f_k\)</span>. For given <span class="math inline">\({\boldsymbol{\varphi}}\)</span>, the value of <span class="math inline">\(\sigma^2\)</span> maximizing \eqref{eq:nls} is <span class="math display">\[
+\hat \sigma^2({\boldsymbol{\varphi}}) = \frac{\sum_{m=1}^{N_B} \bar{U}_m({\boldsymbol{\varphi}}) \bar Y_m }{\sum_{m=1}^{N_B} \bar{U}_m({\boldsymbol{\varphi}})^2},
+\]</span> where <span class="math inline">\(\bar{U}_m({\boldsymbol{\varphi}}) = f_s\cdot U(\bar f_m, {\boldsymbol{\varphi}})\)</span>. Therefore, upon maximizing the objective function <span class="math display">\[
+Q_{\textrm{NLS},\textrm{prof}}({\boldsymbol{\varphi}}) = -\sum_{m=1}^{N_B} \big(\bar Y_m - \hat \sigma^2({\boldsymbol{\varphi}}) \cdot \bar{U}_m({\boldsymbol{\varphi}})\big)^2,
+\]</span> we obtain the maximum of \eqref{eq:nls} via <span class="math inline">\(\hat {\boldsymbol{\theta}}= (\hat {\boldsymbol{\varphi}}, \hat \sigma(\hat {\boldsymbol{\varphi}}))\)</span>.</p>
+</div>
+<div id="variance-stabilized-least-squares" class="section level2">
+<h2>Variance-Stabilized Least-Squares</h2>
+<p>Let <span class="math inline">\(Z_m = \log(\bar Y_m)\)</span>. Then the log-periodogram (LP) estimator maximizes the approximate loglikelihood <span class="math display">\[\begin{equation}
+\label{eq:lp}
+\ell_{\textrm{LP}}({\boldsymbol{\theta}}\mid {\boldsymbol{Y}}) = -\frac B 2 \sum_{m=1}^{N_B} \big(Z_m + C_B - \log \bar{\operatorname{\mathcal S}}_m({\boldsymbol{\theta}})\big)^2,
+\end{equation}\]</span> where <span class="math inline">\(C_B = \log B - \psi(B)\)</span> and <span class="math inline">\(\psi(x)\)</span> is the <a href="https://en.wikipedia.org/wiki/Digamma_function">digamma function</a>. For given <span class="math inline">\({\boldsymbol{\varphi}}\)</span>, the value of <span class="math inline">\(\sigma^2\)</span> maximizing \eqref{eq:lp} is <span class="math display">\[
+\hat \sigma^2({\boldsymbol{\varphi}}) = \exp\left\{\hat \zeta({\boldsymbol{\varphi}}) + C_B\right\}, \qquad \hat \zeta({\boldsymbol{\varphi}}) = \frac{1}{N_B} \sum_{m=1}^{N_B} Z_m - \log \bar{U}_m({\boldsymbol{\varphi}}),
+\]</span> such that upon maximizing <span class="math display">\[
+\ell_{\textrm{LP},\textrm{prof}}({\boldsymbol{\varphi}}\mid {\boldsymbol{Y}}) = - \sum_{m=1}^{N_B} \big(Z_m - \hat \zeta({\boldsymbol{\varphi}}) - \log \bar U_m({\boldsymbol{\varphi}})\big)^2
+\]</span> we obtain the maximum of \eqref{eq:lp} via <span class="math inline">\(\hat {\boldsymbol{\theta}}= (\hat {\boldsymbol{\varphi}}, \hat \sigma(\hat {\boldsymbol{\varphi}}))\)</span>.</p>
+</div>
+<div id="variance-estimators" class="section level2">
+<h2>Variance Estimators</h2>
+<p>The MLE loglikelihood \eqref{eq:mle} can be used to calculate the observed Fisher information, which in turn can be used to produce the variance estimates <span class="math display">\[
+\widehat{\operatorname{var}}(\hat {\boldsymbol{\theta}}_{\textrm{MLE}}) = -\left[\frac{\partial^2}{\partial {\boldsymbol{\theta}}^2} \ell_W(\hat{\boldsymbol{\theta}}_{\textrm{MLE}} \mid {\boldsymbol{Y}})\right]^{-1}.
+\]</span> It turns out that the same holds for the LP loglikelihood \eqref{eq:lp} up to a small inflation factor: <span class="math display">\[
+\widehat{\operatorname{var}}(\hat {\boldsymbol{\theta}}_{\textrm{LP}}) = D_B \times -\left[\frac{\partial^2}{\partial {\boldsymbol{\theta}}^2} \ell_{\textrm{LP}}(\hat{\boldsymbol{\theta}}_{\textrm{LP}} \mid {\boldsymbol{Y}})\right]^{-1},
+\]</span> where <span class="math inline">\(D_B = B \psi&#39;(B)\)</span>. Note that <span class="math inline">\(D_{10} = 1.05\)</span> and <span class="math inline">\(D_{100} = 1.005\)</span>, such that correcting by <span class="math inline">\(D_B\)</span> has little impact in practice.</p>
+<!-- Both the MLE and LP loglikelihoods \\eqref{eq:mle} and \\eqref{eq:lp} can be used to calculate the observed Fisher information, which in turn can be used to produce the variance estimates -->
+<!-- $$ -->
+<!-- \begin{aligned} -->
+<!-- \widehat{\var}(\hat \tth_{\tx{MLE}}) & = -\left[\frac{\partial^2}{\partial \tth^2} \ell_W(\hat\tth_{\tx{MLE}} \mid \YY)\right]^{-1} \\ -->
+<!-- \widehat{\var}(\hat \tth_{\tx{LP}}) & = -\left[\frac{\partial^2}{\partial \tth^2} \ell_{\tx{LP}}(\hat\tth_{\tx{LP}} \mid \YY)\right]^{-1}. -->
+<!-- \end{aligned} -->
+<!-- $$ -->
+<p>In contrast to the likelihood-based estimators, the variance of the NLS estimator is defined by the sandwich formula <span class="math display">\[\begin{equation}
+\label{eq:sand}
+\widehat{\operatorname{var}}(\hat {\boldsymbol{\theta}}_{\textrm{NLS}}) = - \boldsymbol{A}^{-1} \boldsymbol{B} \boldsymbol{A}^{-1},
+\end{equation}\]</span> where for <span class="math inline">\(g_m({\boldsymbol{\theta}}) = (\bar Y_m - \bar{\operatorname{\mathcal S}}_m({\boldsymbol{\theta}}))^2\)</span>, we have <span class="math display">\[
+\begin{aligned}
+\boldsymbol{A} &amp; = \sum_{m=1}^{N_B} \frac{\partial^2}{\partial {\boldsymbol{\theta}}^2} g_m(\hat {\boldsymbol{\theta}}_{\textrm{NLS}}) \\
+\boldsymbol{B} &amp; = \sum_{m=1}^{N_B} \left[\frac{\partial}{\partial {\boldsymbol{\theta}}} g_m(\hat {\boldsymbol{\theta}}_{\textrm{NLS}})\right]\left[\frac{\partial}{\partial {\boldsymbol{\theta}}} g_m(\hat {\boldsymbol{\theta}}_{\textrm{NLS}})\right]&#39;.
+\end{aligned}
+\]</span></p>
+</div>
+<div id="model-residuals" class="section level2">
+<h2>Model Residuals</h2>
+<p>Both the NLS and LP (profile) optimization problems can be rewritten as minimizing a sum-of-squares objective function <span class="math display">\[
+S({\boldsymbol{\varphi}}) = \sum_{m=1}^{N_B} r_m({\boldsymbol{\varphi}})^2,
+\]</span> for which specialized optimization algorithms such as <a href="https://en.wikipedia.org/wiki/Gauss%E2%80%93Newton_algorithm">Gauss-Newton</a> or <a href="https://en.wikipedia.org/wiki/Levenberg%E2%80%93Marquardt_algorithm">Levenberg-Marquardt</a> can be used.</p>
+</div>
+<div id="scaling" class="section level2">
+<h2>Scaling</h2>
+<p><strong>TODO:</strong> Better explain why we do this.</p>
+<p>For numerical stability, we have found that it is often preferable to express the Whittle likelihood \eqref{eq:mle} as <span class="math display">\[
+\ell_W({\boldsymbol{\theta}}\mid {\boldsymbol{Y}}) = - \sum_{k=1}^K\left(\frac{Y_k^{(s)}}{\operatorname{\mathcal S}_k({\boldsymbol{\theta}})/C_s} + \log \operatorname{\mathcal S}_k({\boldsymbol{\theta}})\right),
+\]</span> where <span class="math inline">\(Y_k^{(s)} = Y_k/C_s\)</span> and <span class="math inline">\(C_s &gt; 0\)</span> is a scaling factor (e.g., <span class="math inline">\(C_s = K^{-1} \sum_{k=1}^K Y_k\)</span>). In this case, the value of <span class="math inline">\(\sigma^2\)</span> maximing \eqref{eq:mle} for given <span class="math inline">\({\boldsymbol{\varphi}}\)</span> is <span class="math display">\[
+\hat \sigma^2({\boldsymbol{\varphi}}) = C_s \cdot \hat \sigma^2_{(s)}({\boldsymbol{\varphi}}), \qquad \hat \sigma^2_{(s)}({\boldsymbol{\varphi}}) = \frac {1} K \sum_{k=1}^K \frac{Y_k^{(s)}}{U_k({\boldsymbol{\varphi}})},
+\]</span> and the profile loglikelihood may be expressed as <span class="math display">\[
+\ell_{W,\textrm{prof}}({\boldsymbol{\varphi}}\mid {\boldsymbol{Y}}) = - K (1 + \log C_s + \log \hat \sigma_{(s)}^2({\boldsymbol{\varphi}})) - \sum_{k=1}^K \log U_k({\boldsymbol{\varphi}}).
+\]</span></p>
+<p>Similarly, for the NLS estimator we may maximize the objective function <span class="math display">\[
+Q_{\textrm{NLS}}^{(s)}({\boldsymbol{\theta}}) = - \sum_{m=1}^{N_B} \big(\bar Y_m^{(s)} - \bar{\operatorname{\mathcal S}}_m({\boldsymbol{\theta}})/C_s\big)^2,
+\]</span> where <span class="math inline">\(\bar Y_m^{(s)} = \bar Y_m / C_s\)</span>. The corresponding profiled function is <span class="math display">\[
+Q_{\textrm{NLS},\textrm{prof}}^{(s)}({\boldsymbol{\varphi}}) = -\sum_{m=1}^{N_B} \big(\bar Y_m^{(s)} - \hat \sigma_{(s)}^2({\boldsymbol{\varphi}}) \cdot \bar{U}_m({\boldsymbol{\varphi}})\big)^2,
+\]</span> where <span class="math display">\[
+\hat \sigma_{(s)}^2({\boldsymbol{\varphi}}) = \frac{\sum_{m=1}^{N_B} \bar{U}_m({\boldsymbol{\varphi}}) \bar Y_m^{(s)} }{\sum_{m=1}^{N_B} \bar{U}_m({\boldsymbol{\varphi}})^2} = \hat \sigma^2({\boldsymbol{\varphi}})/C_s.
+\]</span></p>
+<p>Scaling is typically not needed for the LP estimator, but for completeness we provide the calculations here. That is, for <span class="math inline">\(Z_m^{(s)} = Z_m - C_s\)</span>, we have <span class="math display">\[
+\ell_{\textrm{LP}}({\boldsymbol{\theta}}\mid {\boldsymbol{Y}}) = - \frac B 2 \big(Z_m^{(s)} + C_s + C_B - \log \bar{\operatorname{\mathcal S}}_m({\boldsymbol{\theta}}) \big)^2
+\]</span> and <span class="math display">\[
+\hat \sigma^2({\boldsymbol{\varphi}}) = \exp\left\{\hat \zeta_{(s)}({\boldsymbol{\varphi}}) + C_s + C_B\right\}, \qquad \hat \zeta_{(s)}({\boldsymbol{\varphi}}) = \frac{1}{N_B} \sum_{m=1}^{N_B} Z_m^{(s)} - \log \bar{U}_m({\boldsymbol{\varphi}}).
+\]</span></p>
+</div>
+<div id="median-binning" class="section level2">
+<h2>Median Binning</h2>
+<p>The NLS and LP estimators are defined in terms of the bin mean <span class="math inline">\(\bar Y_m\)</span>. To decrease sensitivity to outliers, one might consider the bin median <span class="math inline">\(\tilde Y_m = \operatorname{median}\{Y_k: k \in I_m\}\)</span>. In this case, we have <span class="math display">\[
+\begin{aligned}
+\lim_{B\to\infty} E[\tilde Y_m] &amp; = \bar{\operatorname{\mathcal S}}_m({\boldsymbol{\theta}}) \cdot \log 2, \\ \lim_{B\to\infty} E[\log \tilde Y_m] &amp; = \log \bar{\operatorname{\mathcal S}}_m({\boldsymbol{\theta}}) + \log \log 2,
+\end{aligned}
+\]</span> such that we may try to maximize the objective functions <span class="math display">\[
+\begin{aligned}
+\tilde Q^{(s)}_{\textrm{NLS}}({\boldsymbol{\theta}}) &amp; = - \sum_{m=1}^{N_B}\big(\tilde Y_m^{(s)} - (\log 2/C_s) \cdot \bar{\operatorname{\mathcal S}}_m({\boldsymbol{\theta}})\big)^2 \\
+\tilde Q^{(s)}_{\textrm{LP}}({\boldsymbol{\theta}}) &amp; = - \sum_{m=1}^{N_B} \big(\tilde Z_m^{(s)} + C_s - \log \log 2 - \log \bar{\operatorname{\mathcal S}}_m({\boldsymbol{\theta}})\big)^2.
+\end{aligned}
+\]</span> Note here that neither the LP nor NLS estimators are asympotically loglikelihoods, such that variance estimators should use the sandwich formula \eqref{eq:sand}.</p>
+</div>
+</div>
+<div id="examples" class="section level1">
+<h1>Examples</h1>
+<div id="simple-harmonic-oscillator-with-noise-floor" class="section level2">
+<h2>Simple Harmonic Oscillator with Noise Floor</h2>
+<p>The SHOW model is given by <span class="math display">\[\begin{equation}
+\label{eq:show}
+\begin{aligned}
+\operatorname{\mathcal S}(f, {\boldsymbol{\theta}}) &amp; = A_{\textrm{w}}+ \frac{k_BT/(k \cdot \pi f_0 Q)}{[(f/f_0)^2-1]^2 + [f/(f_0Q)]^2} \\
+&amp; = \sigma^2 \times \left\{R_{\textrm{w}}+ \frac{1}{[(f/f_0)^2-1]^2 + [f/\gamma]^2}\right\},
+\end{aligned}
+\end{equation}\]</span> where <span class="math inline">\(\sigma^2 = k_BT/(k\cdot \pi f_0Q)\)</span>, <span class="math inline">\(R_{\textrm{w}}= A_{\textrm{w}}/\sigma^2\)</span>, <span class="math inline">\(\gamma = f_0Q\)</span>, and <span class="math inline">\({\boldsymbol{\varphi}}= (f_0, \gamma, R_{\textrm{w}})\)</span>.</p>
+</div>
+<div id="fractional-ornstein-uhlenbeck-model" class="section level2">
+<h2>Fractional Ornstein-Uhlenbeck Model</h2>
+<p>The fOU model is expressed as <span class="math display">\[
+\mathrm{d}X(t) = -\gamma X(t)\, \mathrm{d}t + \tau \, \mathrm{d}B_t^H,
+\]</span> where <span class="math inline">\(\gamma, \tau &gt; 0\)</span> and <span class="math inline">\(B_t^H\)</span> is fractional Brownian motion with Hurst parameter <span class="math inline">\(0 &lt; H &lt; 1\)</span>. The PSD for this model is <span class="math display">\[\begin{equation}
+\label{eq:fcar}
+\operatorname{\mathcal S}(f, {\boldsymbol{\theta}}) = \sigma^2 \times \frac{|f|^{1-2H}}{f^2 + \gamma^2},
+\end{equation}\]</span> where <span class="math inline">\({\boldsymbol{\varphi}}= (H, \gamma)\)</span> and <span class="math inline">\(\sigma^2 = \tau^2 \cdot \Gamma(2H+1)\sin(\pi H)/(2\pi)\)</span>.</p>
+</div>
+<div id="carfima-models" class="section level2">
+<h2>CARFIMA Models</h2>
+<p>More generally, a <span class="math inline">\(\operatorname{CARFIMA}(p,q)\)</span> process is defined by the differential equation <span class="math display">\[
+X_t^{(p)} = + \sum_{k=1}^{p-1} \alpha_k X_t^{(k-1)} + \tau \left[B_t^{H(1)} + \sum_{m=1}^{q} \beta_m B_t^{H(m+1)}\right],
+\]</span> where <span class="math inline">\(X(t)\)</span> is stationary if and only if <span class="math display">\[
+\alpha(x) = x^p - \sum_{k=1}^{p-1} \alpha_k x^{k-1} = \prod_{k=1}^p(x - r_k)
+\]</span> is such that <span class="math inline">\(\mathscr R(r_k) &lt; 0\)</span> for <span class="math inline">\(k = 1,\ldots,p\)</span>. The PSD of the model is given by <span class="math display">\[\begin{equation}
+\label{eq:carfima}
+\operatorname{\mathcal S}(f, {\boldsymbol{\theta}}) = \sigma^2 \times \frac{|f|^{1-2H} \cdot |1 + \sum_{m=1}^q \beta_m (if)^m|^2}{|(if)^p - \sum_{k=1}^p \alpha_k (if)^{k-1}|^2}, 
+\end{equation}\]</span> where <span class="math inline">\({\boldsymbol{\varphi}}= (H, {\boldsymbol{\alpha}}, {\boldsymbol{\beta}})\)</span>, and <span class="math inline">\(\sigma^2 = \tau^2 \cdot \Gamma(2H+1)\sin(\pi H)/(2\pi)\)</span>.<br />
+<!-- , $0 < H < 1$, and $\aal = (\rv 1 \alpha q )$ and $\bbe = (\rv 1 \beta p )$ are such that the complex polynomials in the numerator and denominator of \\eqref{eq:carfima} have no roots in the unit circle.  The model parameters are $\pph = (\aal, \bbe, H)$. --> Since <strong>TMB</strong> does not support complex arithmetic, the polynomials are calculated as follows.</p>
+<p>Consider a polynomial <span class="math inline">\(p(x) = \sum_{k=0}^p \alpha_k x^k\)</span> with <span class="math inline">\(\alpha_k \in \mathbb R\)</span>. <span class="math display">\[\begin{align*}
+p(if) 
+    &amp; = \sum_{k=0}^p \alpha_k (if)^k \\
+    &amp; = \sum_{k=0}^{q} \alpha_{2k} (if)^{2k} + \sum_{k=0}^r \alpha_{2k+1} (if)^{2k+1} \\
+    &amp; = \sum_{k=0}^q (-1)^k \alpha_{2k} f^{2k} + if\sum_{k=0}^r (-1)^k \alpha_{2k+1} f^{2k}
+\end{align*}\]</span></p>
+</div>
+</div>
+<div id="maybe-some-more-technical-explanation-of-the-design-of-realpsd-pacakge" class="section level1">
+<h1>Maybe Some More Technical Explanation of the Design of <strong>realPSD</strong> pacakge</h1>
+<p>TODO…</p>
+<!-- where $g_m(\tth) = (\bar Y_m - \bar{\psd}_m(\tth))^2$. -->
+<!-- ## Implementation -->
+<!-- ### Python -->
+<!-- I'm not sure about OOP in Python, but in pseudo C++ I suggest we have a base class for each PSD model defined by $U(\f, \pph)$, and derived class for each method.  So for example: -->
+<!-- ```{Rcpp, eval = FALSE} -->
+<!-- class showModel { -->
+<!-- // private/protected members here -->
+<!-- public: -->
+<!--   double UFun(const double f, const Vector& phi);   -->
+<!-- }; -->
+<!-- template <class Model> -->
+<!-- class LPFit : public Model { -->
+<!-- public: -->
+<!--   // constructor: copy + allocate memory here -->
+<!--   LPFit(const Vector& xPSD, const Vector& yPSD, const int binSize); -->
+<!--   // conditional optimum of log_tau = log(tau) = log(sigma^2) -->
+<!--   double logTauFit(const Vector& phi);       -->
+<!--   // objective function: set up to minimize it -->
+<!--   double obj(const Vector& phi); -->
+<!--   // gradient & hessian -->
+<!--   void grad(Vector& g, const Vector& phi); -->
+<!--   void hess(Matrix& H, const Vector& phi); -->
+<!--   // sometimes these re-use calculations from OFun. -->
+<!--   // In that case, it's more efficient to have something like -->
+<!--   double obj(Vector& g, Matrix& H, const Vector& phi); -->
+<!--   // default optimization method. -->
+<!--   //user has the option to do this manually with `obj`, `grad`, `hess` if -->
+<!--   // default doesn't work. -->
+<!--   // Or, simply don't provide a default if it's too complicated! -->
+<!--   void fit(Vector& phi, double& logTau, const Vector& phiInit, -->
+<!--            ...); // ellipsis is for additional tuning parameters -->
+<!--   // variance estimator -->
+<!--   void var(Matrix& V, const Vector& phi, const double logTau); -->
+<!-- }; -->
+<!-- ``` -->
+<!-- Some useful Python packages: -->
+<!-- - [**autograd**](https://github.com/HIPS/autograd): Automatic differentiation of Python and Numpy functions. -->
+<!-- - [**NLopt**](https://nlopt.readthedocs.io/en/latest/): Excellent nonlinear optimization library, with Python interface.  I suggest using gradient-based algorithms in combination with the above. -->
+<!-- Other functions the library should contain: -->
+<!-- - `tsSim`: Simulate time series with given PSD. -->
+<!-- - `periodogram`: Calculate the periodogram of a time series. -->
+<!-- - `fisherGstat`: For denoising. -->
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
