@@ -1,5 +1,5 @@
 ---
-title: "**realPSD**: **R**obust and **E**fficient C**al**ibration of Parametric PSD Models"
+title: "**realPSD**: Robust and Efficient Calibration of Parametric PSD Models"
 author: "Martin Lysy, Feiyu Zhu"
 date: "`r Sys.Date()`"
 output:
@@ -42,6 +42,12 @@ MathJax.Hub.Config({
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
+  warning = FALSE, 
+  message = FALSE,
+  fig.align = "center",
+  fig.pos = "!htb",
+  fig.retina = 2,
+  dpi = 300,
   collapse = TRUE,
   comment = "#>"
 )
