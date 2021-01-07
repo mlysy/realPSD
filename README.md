@@ -11,9 +11,9 @@
 
 ### Installation
 
-**TMB** uses the C++ library **Eigen**. Thus, **realPSD** also relies on it. Please make sure that **Eigen** is installed on your machine. The installation of **Eigen** can be found [here](https://eigen.tuxfamily.org/dox/GettingStarted.html).
+**realPSD** relies on **TMB**. Please make sure that **TMB** is correctly installed on your machine. The installation of **TMB** can be found [here](https://github.com/kaskr/adcomp/wiki/Download).
 
-Once you have installed **Eigen** correctly, **realPSD** can be installed from GitHub via the command:
+Once you have installed **TMB** successfully, **realPSD** can be installed from GitHub via the command:
 
 ```r
 devtools::install_github("mlysy/realPSD")
