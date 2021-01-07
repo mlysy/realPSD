@@ -1,12 +1,12 @@
 ---
-title: "**realPSD**: Robust and Efficient Calibration of Parametric PSD Models"
+title: "**realPSD**: Theory and Design Principles"
 author: "Martin Lysy, Feiyu Zhu"
 date: "`r Sys.Date()`"
 output:
   rmarkdown::html_vignette:
-    toc: yes
+    toc: true
 vignette: >
-  %\VignetteIndexEntry{realPSD: Robust and Efficient Calibration of Parametric PSD Models}
+  %\VignetteIndexEntry{realPSD: Theory and Design Principles}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -64,20 +64,23 @@ cran_link <- function(pkg) pkg_link(pkg, "cran")
 github_link <- function(pkg) pkg_link(pkg, "github")
 ```
 
+This vignette explains the theory behind the built-in estimation methods provided by **realPSD** and also discusses some technical details in designing **realPSD**. This package is essentially a port of `r github_link("realSHO")` whic is based on [MATLAB](https://www.mathworks.com/products/matlab.html), but with the option of freely adding one's own models and carrying out accurate and efficient gradient calculations.  The interface is through the R `r cran_link("TMB")` package, which uses [automatic differentiation](https://en.wikipedia.org/wiki/Automatic_differentiation) (AD) to enable gradient-based optimization algorithms to efficiently perform parameter estimation.
+
+For a complete exposition of the theory (with theorems and proofs) as well as the real-world application background, please check out this [preprint](). 
+
 # Overview
 
 Let $X(t)$ denote a continuous time mean-zero stationary process with autocorrelation $\acf(t) = \cov(X_s, X_{s+t})$. with power spectral density (PSD) defined via the inverse Fourier transform relation
 $$
 \acf(t) = \int_{-\infty}^\infty e^{-2\pi i t\f} \psd(\f) \, \ud \f,
 $$
-where $\f \in \mathbb R$ is the frequency in Hertz.  The **realPSD** package provides tools for estimation of parametric PSDs of the form
+where $\f \in \mathbb R$ is the frequency in Hertz (Hz).  The **realPSD** package provides tools for estimation of parametric PSDs of the form
 $$
 \psd(\f,\tth) = \s^2 \cdot U(\f, \pph),
 $$
-where the PSD parameters are $\tth = (\s, \pph)$.   The data $\XX = (\rv 0 X {N-1})$ consist of discrete observations of $X(t)$ recorded at sampling frequency $\fs$, such that $X_n = X(n/\fs)$.  
+where the PSD parameters are $\tth = (\s, \pph)$.   The data $\XX = (\rv 0 X {N-1})$ consist of discrete observations of $X(t)$ recorded at sampling frequency $\fs$, such that $X_n = X(n/\fs)$.
 
-This package is essentially a port of `r github_link("realSHO")`, but with the option of adding one's own models.  The interface is through the R `r cran_link("TMB")` package, which uses [automatic differentiation](https://en.wikipedia.org/wiki/Automatic_differentiation) (AD) to enable gradient-based optimization algorithms to efficiently perform parameter estimation.
-
+Traditional theory of time series always assumes that the time interval of the collected data $\XX = (\rv 0 X {N-1})$ is fixed and the asymptotics of the estimators are all about the situation when $N \to \infty$. However, in many modern scientific experiments, for example recordings collected by an [Atomic Force Microscope](https://en.wikipedia.org/wiki/Atomic_force_microscopy), **high-throughput (HTP) data** are very common. That is, we can let both $\fs \to \infty$ and $N \to \infty$. In this situation, traditional theory fails. To overcome this, traditional techniques have to be generalized. **realPSD** was built as a robust and efficient toolbox to realize this. That being said, you can still use **realPSD** for traditional settings, for example to fit an Ornstein-Uhlenbeck (OU) model, as we've already shown in the [quick tutorial](http://htmlpreview.github.io/?https://github.com/mlysy/realPSD/blob/devel-ferris-prerelease/doc/realPSD-quicktut.html).
 
 <!-- This interface is written in Python, and uses [automatic differentiation](https://en.wikipedia.org/wiki/Automatic_differentiation) (AD) to use gradient-based optimization algorithms to efficiently perform parameter estimation. -->
 
@@ -86,9 +89,14 @@ This package is essentially a port of `r github_link("realSHO")`, but with the o
 # Methods
 
 **realPSD** provides three different methods for parameter estimation outlined below.  For each method, estimation is via optimization over a function of $\pph$, with the fitted value of $\s$ being profiled out.  In all cases the estimators are built on the discrete Fourier transform of the data, $\YY = (\rv 1 Y K)$, where $N = 2K + 1$ and
+
 $$
-Y_k = \frac 1 N \left\vert \sum_{n=0}^{N-1} e^{-2\pi i k n} X_n\right\vert^2.
+Y_k = \frac{1}{N \fs} \left\vert \sum_{n=0}^{N-1} e^{-2\pi i k n} X_n\right\vert^2.
 $$
+
+**realPSD** provides a function `periodogram()` to calculate this $Y_k$. Note that the returned periodogram is just one-sided. For more details about how $Y_k$ is related to the Whittle-type loglikelihood in the MLE, please refer to Proposition 1 and the discussion thereafter in this [preprint]().
+
+All the following methods are provided in the C++ header files in **realPSD**, please check out the source code of `FitMethods.hpp`, `MLEFit.hpp`, `NLSFit.hpp` and `LPFit.hpp` etc.
 
 ## Maximum Likelihood
 
@@ -97,11 +105,11 @@ The maximum likelihood estimator is obtained by maximizing the so-called Whittle
 \label{eq:mle}
 \ell_W(\tth \mid \YY) = - \sum_{k=1}^K\left(\frac{Y_k}{\psd_k(\tth)} + \log \psd_k(\tth)\right),
 \end{equation}
-where $\psd_k(\tth) = \fs \cdot \psd(\f_k, \tth)$ and $f_k = \tfrac k N \fs$.  Note that for given $\pph$, the value of $\s^2$ maximizing \\eqref{eq:mle} is
+where where $\psd_k(\tth) = \psd(\f_k, \tth)$ and $f_k = \tfrac k N \fs$.  Note that for given $\pph$, the value of $\s^2$ maximizing \\eqref{eq:mle} is
 $$
 \hat \s^2(\pph) = \frac 1 K \sum_{k=1}^K \frac{Y_k}{U_k(\pph)},
 $$
-where $U_k(\pph) = \fs \cdot U(\f_k, \pph)$.  Therefore, upon maximizing the profile likelihood
+where $U_k(\pph) = U(\f_k, \pph)$.  Therefore, upon maximizing the profile likelihood
 $$
 \begin{aligned}
 \ell_{W,\tx{prof}}(\pph \mid \YY) & = \ell_W(\pph, \hat \s(\pph) \mid \YY) \\
@@ -121,17 +129,17 @@ Then the nonlinear least-squares (NLS) estimator maximizes the objective functio
 \label{eq:nls}
 Q_{\tx{NLS}}(\tth) = - \sum_{m=1}^{N_B} \big(\bar Y_m - \bar{\psd}_m(\tth)\big)^2,
 \end{equation}
-where $\bar{\psd}_m(\tth) = \fs \cdot \psd(\bar \f_m, \tth)$ and $\bar \f_m = \tfrac 1 B \sum_{k\in I_m} \f_k$.  For given $\pph$, the value of $\s^2$ maximizing \\eqref{eq:nls} is
+where $\bar{\psd}_m(\tth) = \psd(\bar \f_m, \tth)$ and $\bar \f_m = \tfrac 1 B \sum_{k\in I_m} \f_k$.  For given $\pph$, the value of $\s^2$ maximizing \\eqref{eq:nls} is
 $$
 \hat \s^2(\pph) = \frac{\sum_{m=1}^{N_B} \bar{U}_m(\pph) \bar Y_m }{\sum_{m=1}^{N_B} \bar{U}_m(\pph)^2},
 $$
-where $\bar{U}_m(\pph) = \fs \cdot U(\bar f_m, \pph)$.  Therefore, upon maximizing the objective function
+where $\bar{U}_m(\pph) = U(\bar f_m, \pph)$.  Therefore, upon maximizing the objective function
 $$
 Q_{\tx{NLS},\tx{prof}}(\pph) = -\sum_{m=1}^{N_B} \big(\bar Y_m - \hat \sigma^2(\pph) \cdot \bar{U}_m(\pph)\big)^2,
 $$
 we obtain the maximum of \\eqref{eq:nls} via $\hat \tth = (\hat \pph, \hat \sigma(\hat \pph))$.
 
-## Variance-Stabilized Least-Squares
+## Log-Periodogram (Variance-Stabilized Least-Squares)
 
 Let $Z_m = \log(\bar Y_m)$.  Then the log-periodogram (LP) estimator maximizes the approximate loglikelihood
 \begin{equation}
@@ -191,8 +199,6 @@ for which specialized optimization algorithms such as [Gauss-Newton](https://en.
 
 ## Scaling
 
-**TODO:** Better explain why we do this.
-
 For numerical stability, we have found that it is often preferable to express the Whittle likelihood \\eqref{eq:mle} as
 $$
 \ell_W(\tth \mid \YY) = - \sum_{k=1}^K\left(\frac{Y_k^{(s)}}{\psd_k(\tth)/C_s} + \log \psd_k(\tth)\right),
@@ -245,6 +251,30 @@ $$
 $$
 Note here that neither the LP nor NLS estimators are asympotically loglikelihoods, such that variance estimators should use the sandwich formula \\eqref{eq:sand}.
 
+## List of Built-in Fitting Methods
+
+For general users, the fitting methods specified in `FitMethods.hpp` are hidden. You don't really need to know the underlying details, since **realPSD** has already handled (by using R6 class) choosing the proper fitting methods for you. But for adavanced users who are insterested in using `TMB::MakeADFun` directly, one can specify `method` as
+
+ - `UFun`: evaluate U function $U(\f, \pph)$.
+ - `MLE_ufun`: evaluate U function $U_k(\pph)$ for MLE method.
+ - `MLE_nll`: evaluate the negative log-likelihood function with proper scaling for MLE method.
+ - `MLE_nlp`: evaluate the profile likelihood with proper scaling for MLE method.
+ - `MLE_zeta`: evaluate $\simga^2$ with proper scaling for MLE method.
+ - `MLE_res`: get the vector of residuals for MLE method.
+
+ - `LP_ufun`: evaluate $\bar{U}_m(\pph)$ for LP method.
+ - `LP_nll`: evaluate the negative log-likelihood function with proper scaling for LP method. 
+ - `LP_nlp`: evaluate the profile likelihood with proper scaling for LP method.
+ - `LP_zeta`: evaluate $\zeta$ with proper scaling for LP method.
+ - `LP_res`: get the vector of residuals for LP method.
+
+ - `NLS_ufun`: evaluate U function $U_k(\pph)$ for NLS method.
+ - `NLS_nll`: evaluate the negative log-likelihood function with proper scaling for NLS method.
+ - `NLS_nlp`: evaluate the profile likelihood with proper scaling for NLS method.
+ - `NLS_zeta`: evaluate $\simga^2$ with proper scaling for NLS method.
+ - `NLS_res`: get the vector of residuals for NLS method.
+
+
 # Examples
 
 ## Simple Harmonic Oscillator with Noise Floor
@@ -258,6 +288,48 @@ The SHOW model is given by
 \end{aligned}
 \end{equation}
 where $\sigma^2 = \kbt/(k\cdot \pi \f_0Q)$, $\Rw = \Aw/\sigma^2$, $\gamma = \f_0Q$, and $\pph = (\f_0, \gamma, \Rw)$.
+
+This is a built-in model in **realPSD** with three different parameterizations:
+
+  - natural parameterization as shown above;
+  - log-transformed parameters, i.e. $\pph = (\log\f_0, \log Q, \log \Rw)$;
+  - computational parameterization, i.e. $\pph = (\f_0, \gamma, \Rw)$ where $\gamma = \f_0 Q$.
+
+To call this model using R6 class from R, one can use the following template.
+
+```{r, SHOW_R6, eval = FALSE}
+model <- sample(c("SHOW_nat", "SHOW_log", "SHOW_comp"), size = 1) # can be chosen from any of these
+your_model <- R6::R6Class(
+          classname = "your_model",
+          inherit = realPSD::psd_model,
+          private = list(
+            Temp_ = NULL, # temperature
+            n_phi_ = 3, # specify the number of parameters, for SHOW model, f0, Q, Rw
+            tmb_DLL_ = "realPSD_TMBExports",
+            tmb_model_ = model
+          ),
+          active = list(
+            #' @field Temp Temperature of the system.
+            Temp = function() private$Temp_
+          )
+        )
+```
+
+Then if one calls `your_model$ufun()`, it actually returns a `TMB::MakeADFun()` object. For those who are familiar with **TMB**, you can also directly call `TMB::MakeADFun` as follows (say we want to get the U function under MLE):
+
+```{r, SHOW_MLE_ufun, eval = FALSE}
+# get MLE Ufun
+scale <- mean(Ypsd)
+# create TMB model object
+tmod <- TMB::MakeADFun(data = list(model = model,
+                                   method = "MLE_ufun",
+                                   f = matrix(freq),
+                                   Y = matrix(Ypsd/scale),
+                                   scale = log(scale)),
+                       parameters = list(phi = matrix(rep(0, 3))),
+                       ADreport = TRUE,
+                       silent = TRUE, DLL = "realPSD_TMBExports")
+```
 
 ## Fractional Ornstein-Uhlenbeck Model
 
@@ -300,10 +372,62 @@ p(i\f)
 \end{align*}
 
 
-# Maybe Some More Technical Explanation of the Design of **realPSD** pacakge
+# Interfacing with **TMB**
 
-TODO...
+`r cran_link("TMB")` is a great interface for R users to make use of the [**CppAD**](https://coin-or.github.io/CppAD/doc/cppad.htm) C++ library for [automatic differentiation](https://en.wikipedia.org/wiki/Automatic_differentiation). However, the study curve of **TMB** may be steep, especially for those new to this area. When **realPSD** was designed, we would like to make it as easy as possible for **realPSD** users to realize their models without dealing with **TMB** directly. The principle and coding practices are well explained [here](https://github.com/mlysy/TMBtools#tmb-coding-practices). It is strongly recommended to read the documentation in `r github_link("TMBtools")` and the instructions [here](https://github.com/kaskr/adcomp/wiki/Development#distributing-code) for those who are interested in using **TMB** to build flexible statistical models in R.
 
+## External Constructor for User-defined Model Object
+
+**TMB** and other source code (e.g., [**Rcpp**]((http://www.rcpp.org/))) in an R package cannot be merged into a single shared library, as documented [here](https://github.com/kaskr/adcomp/issues/247).  Therefore, the approach taken by **realPSD** is to have a separate shared object for the **TMB** models
+
+If you still remember the OU example in the [quick tutorial](http://htmlpreview.github.io/?https://github.com/mlysy/realPSD/blob/devel-ferris-prerelease/doc/realPSD-quicktut.html), one of the necessary steps in writing your own model C++ header file is to include an external constructor like this
+
+```C++
+#undef TMB_OBJECTIVE_PTR
+#define TMB_OBJECTIVE_PTR obj
+  /// External constructor for `ou::UFun` objects.
+  ///
+  /// The arguments to this function are always `N` and `obj`.  Inside the function, we can specify additional TMB macros (`DATA_VECTOR`, etc.), to obtain inputs to the `UFun` constructor.
+  ///
+  /// @param[in] N Number of frequency/psd observations.
+  /// @param[in] obj Pointer to the TMB object.
+  /// @return An `ou::UFun` object.
+  template<class Type>
+  UFun<Type> make_Ufun(int N, objective_function<Type>* obj) {
+    return UFun<Type>(N);
+  }
+#undef TMB_OBJECTIVE_PTR
+#define TMB_OBJECTIVE_PTR this
+```
+
+This is a workaround to let the TMB object pointer find the current model object (which is not built into the **realPSD** package).
+
+## Compile-on-the-fly
+
+To compile any user-defined model object on-the-fly, we make use of [whisker](https://github.com/edwindj/whisker) to automatically create a template C++ file which is needed for **TMB** to compile the model correctly. The template was designed in a similar way as proposed by `r github_link("TMBtools")`.
+
+This technique has already been included into the built-in function `realPSD::make_psd_model`. Thus, users do not need to worry about how to realize this themselves. As we've already used in the OU example, by calling `make_psd_model` as follows
+
+```{r, ou_make_psd_model, eval = FALSE}
+# create c++ file
+ou_cpp <- make_psd_model(model = "OU",
+                         header = "OU_Model.hpp",
+                         class = "ou::UFun",
+                         ctor = "ou::make_Ufun",
+                         standalone = TRUE)
+```
+
+**realPSD** automatically generate a `.cpp` file under the current working directory (named `OU_FitMethods.cpp`) which contains the following content.
+
+```{r ou_ufun, echo = FALSE, results = "asis"}
+cat("```cpp", readLines("OU_FitMethods.cpp"), "```", sep = "\n")
+```
+
+This template allows users to put their models in separate header files from each other and compile the model using **TMB** correctly. 
+
+## Wrap the Model Object by R6 Class
+
+To let users to directly deal with **TMB** or the `FitMethods.hpp` in **realPSD** is not a wise choice and is very clumsy. Instead, we wrap the model object in an R6 class, which greatly streamlines the workflow of building and estimating process. Any user-defined PSD models will be a inherited class from the built-in base class `realPSD::psd_model` in which we have already defined all the necessary infrastructures. Therefore, fitting any user-defined PSD models using **realPSD** is a very consistent process. If you are insterested in how we realize this, please check out the source code of `psd_model.R`. For more details about R6 class, one can see [here](https://r6.r-lib.org/index.html).
 
 <!-- where $g_m(\tth) = (\bar Y_m - \bar{\psd}_m(\tth))^2$. -->
 
