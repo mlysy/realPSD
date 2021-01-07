@@ -1,6 +1,6 @@
 Package: realPSD
 Type: Package
-Title: What the package does (short line)
+Title: Provides robust and efficient calibration of any parametric power spectral density (PSD) models, especially for dynamical processes with extremely large observations. Three built-in estimation methods are provided: maximum likelihood estimation (MLE) based on Whittle-type likelihood, log-periodogram estimation and nonlinear least squares estimation (NLS). The package also provides a routine for removing most electronic noise in an automated pre-processing step, which would be very useful for spectral analysis based on recordings contaminated by various sources of instrumental noise in real-world applications.
 Version: 0.0.0.9000
 Date: 2021-01-04
 Authors@R: c(person("Feiyu", "Zhu", role = "aut"),
