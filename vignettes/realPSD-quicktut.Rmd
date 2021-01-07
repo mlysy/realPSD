@@ -77,7 +77,7 @@ A simple OU model without the additional drift term is given by the stochastic d
 $$
 \ud X_t = -\alpha X_t \ud t + \beta \ud B_t
 $$
-where $\alpha > 0$ and $\beta > 0$ and $B_t$ denotes Brownian motion (or Wiener process). If we assume $X_0 \sim \N(0, \beta^2/\alpha)$, then $X_t$ is a stationary, zero-mean Gaussian process with autocovariance function
+where $\alpha > 0$ and $\beta > 0$ and $B_t$ denotes Brownian motion (or Wiener process). If we assume $X_0 \sim \N(0, \beta^2/2\alpha)$, then $X_t$ is a stationary, zero-mean Gaussian process with autocovariance function
 $$
 \gamma(t) = \frac{\beta^2}{(2\alpha)} \cdot e^{-\alpha |t|}
 $$
