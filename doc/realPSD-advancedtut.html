@@ -14,7 +14,7 @@
 
 <meta name="date" content="2021-01-07" />
 
-<title>realPSD: Robust and Efficient Calibration of Parametric PSD Models</title>
+<title>realPSD: Theory and Design Principles</title>
 
 <script src="data:application/javascript;base64,Ly8gUGFuZG9jIDIuOSBhZGRzIGF0dHJpYnV0ZXMgb24gYm90aCBoZWFkZXIgYW5kIGRpdi4gV2UgcmVtb3ZlIHRoZSBmb3JtZXIgKHRvCi8vIGJlIGNvbXBhdGlibGUgd2l0aCB0aGUgYmVoYXZpb3Igb2YgUGFuZG9jIDwgMi44KS4KZG9jdW1lbnQuYWRkRXZlbnRMaXN0ZW5lcignRE9NQ29udGVudExvYWRlZCcsIGZ1bmN0aW9uKGUpIHsKICB2YXIgaHMgPSBkb2N1bWVudC5xdWVyeVNlbGVjdG9yQWxsKCJkaXYuc2VjdGlvbltjbGFzcyo9J2xldmVsJ10gPiA6Zmlyc3QtY2hpbGQiKTsKICB2YXIgaSwgaCwgYTsKICBmb3IgKGkgPSAwOyBpIDwgaHMubGVuZ3RoOyBpKyspIHsKICAgIGggPSBoc1tpXTsKICAgIGlmICghL15oWzEtNl0kL2kudGVzdChoLnRhZ05hbWUpKSBjb250aW51ZTsgIC8vIGl0IHNob3VsZCBiZSBhIGhlYWRlciBoMS1oNgogICAgYSA9IGguYXR0cmlidXRlczsKICAgIHdoaWxlIChhLmxlbmd0aCA+IDApIGgucmVtb3ZlQXR0cmlidXRlKGFbMF0ubmFtZSk7CiAgfQp9KTsK"></script>
 
@@ -28,6 +28,94 @@
     </style>
 
 
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    for (var j = 0; j < rules.length; j++) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') continue;
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
 
 
 
@@ -44,7 +132,7 @@
 
 
 
-<h1 class="title toc-ignore"><strong>realPSD</strong>: <strong>R</strong>obust and <strong>E</strong>fficient C<strong>al</strong>ibration of Parametric PSD Models</h1>
+<h1 class="title toc-ignore"><strong>realPSD</strong>: Theory and Design Principles</h1>
 <h4 class="author">Martin Lysy, Feiyu Zhu</h4>
 <h4 class="date">2021-01-07</h4>
 
@@ -56,11 +144,12 @@
 <ul>
 <li><a href="#maximum-likelihood">Maximum Likelihood</a></li>
 <li><a href="#nonlinear-least-squares">Nonlinear Least-Squares</a></li>
-<li><a href="#variance-stabilized-least-squares">Variance-Stabilized Least-Squares</a></li>
+<li><a href="#log-periodogram-variance-stabilized-least-squares">Log-Periodogram (Variance-Stabilized Least-Squares)</a></li>
 <li><a href="#variance-estimators">Variance Estimators</a></li>
 <li><a href="#model-residuals">Model Residuals</a></li>
 <li><a href="#scaling">Scaling</a></li>
 <li><a href="#median-binning">Median Binning</a></li>
+<li><a href="#list-of-built-in-fitting-methods">List of Built-in Fitting Methods</a></li>
 </ul></li>
 <li><a href="#examples">Examples</a>
 <ul>
@@ -68,7 +157,12 @@
 <li><a href="#fractional-ornstein-uhlenbeck-model">Fractional Ornstein-Uhlenbeck Model</a></li>
 <li><a href="#carfima-models">CARFIMA Models</a></li>
 </ul></li>
-<li><a href="#maybe-some-more-technical-explanation-of-the-design-of-realpsd-pacakge">Maybe Some More Technical Explanation of the Design of <strong>realPSD</strong> pacakge</a></li>
+<li><a href="#interfacing-with-tmb">Interfacing with <strong>TMB</strong></a>
+<ul>
+<li><a href="#external-constructor-for-user-defined-model-object">External Constructor for User-defined Model Object</a></li>
+<li><a href="#compile-on-the-fly">Compile-on-the-fly</a></li>
+<li><a href="#wrap-the-model-object-by-r6-class">Wrap the Model Object by R6 Class</a></li>
+</ul></li>
 </ul>
 </div>
 
@@ -77,30 +171,35 @@ MathJax.Hub.Config({
   TeX: { equationNumbers: { autoNumber: "AMS" } }
 });
 </script>
+<p>This vignette explains the theory behind the built-in estimation methods provided by <strong>realPSD</strong> and also discusses some technical details in designing <strong>realPSD</strong>. This package is essentially a port of <a href="https://github.com/mlysy/realSHO"><strong>realSHO</strong></a> whic is based on <a href="https://www.mathworks.com/products/matlab.html">MATLAB</a>, but with the option of freely adding one’s own models and carrying out accurate and efficient gradient calculations. The interface is through the R <a href="https://CRAN.R-project.org/package=TMB"><strong>TMB</strong></a> package, which uses <a href="https://en.wikipedia.org/wiki/Automatic_differentiation">automatic differentiation</a> (AD) to enable gradient-based optimization algorithms to efficiently perform parameter estimation.</p>
+<p>For a complete exposition of the theory (with theorems and proofs) as well as the real-world application background, please check out this <a href>preprint</a>.</p>
 <div id="overview" class="section level1">
 <h1>Overview</h1>
 <p>Let <span class="math inline">\(X(t)\)</span> denote a continuous time mean-zero stationary process with autocorrelation <span class="math inline">\(\operatorname{\gamma}(t) = \operatorname{cov}(X_s, X_{s+t})\)</span>. with power spectral density (PSD) defined via the inverse Fourier transform relation <span class="math display">\[
 \operatorname{\gamma}(t) = \int_{-\infty}^\infty e^{-2\pi i tf} \operatorname{\mathcal S}(f) \, \mathrm{d}f,
-\]</span> where <span class="math inline">\(f\in \mathbb R\)</span> is the frequency in Hertz. The <strong>realPSD</strong> package provides tools for estimation of parametric PSDs of the form <span class="math display">\[
+\]</span> where <span class="math inline">\(f\in \mathbb R\)</span> is the frequency in Hertz (Hz). The <strong>realPSD</strong> package provides tools for estimation of parametric PSDs of the form <span class="math display">\[
 \operatorname{\mathcal S}(f,{\boldsymbol{\theta}}) = \sigma^2 \cdot U(f, {\boldsymbol{\varphi}}),
 \]</span> where the PSD parameters are <span class="math inline">\({\boldsymbol{\theta}}= (\sigma, {\boldsymbol{\varphi}})\)</span>. The data <span class="math inline">\({\boldsymbol{X}}= (X_{0},\ldots,X_{N-1})\)</span> consist of discrete observations of <span class="math inline">\(X(t)\)</span> recorded at sampling frequency <span class="math inline">\(f_s\)</span>, such that <span class="math inline">\(X_n = X(n/f_s)\)</span>.</p>
-<p>This package is essentially a port of <a href="https://github.com/mlysy/realSHO"><strong>realSHO</strong></a>, but with the option of adding one’s own models. The interface is through the R <a href="https://CRAN.R-project.org/package=TMB"><strong>TMB</strong></a> package, which uses <a href="https://en.wikipedia.org/wiki/Automatic_differentiation">automatic differentiation</a> (AD) to enable gradient-based optimization algorithms to efficiently perform parameter estimation.</p>
+<p>Traditional theory of time series always assumes that the time interval of the collected data <span class="math inline">\({\boldsymbol{X}}= (X_{0},\ldots,X_{N-1})\)</span> is fixed and the asymptotics of the estimators are all about the situation when <span class="math inline">\(N \to \infty\)</span>. However, in many modern scientific experiments, for example recordings collected by an <a href="https://en.wikipedia.org/wiki/Atomic_force_microscopy">Atomic Force Microscope</a>, <strong>high-throughput (HTP) data</strong> are very common. That is, we can let both <span class="math inline">\(f_s\to \infty\)</span> and <span class="math inline">\(N \to \infty\)</span>. In this situation, traditional theory fails. To overcome this, traditional techniques have to be generalized. <strong>realPSD</strong> was built as a robust and efficient toolbox to realize this. That being said, you can still use <strong>realPSD</strong> for traditional settings, for example to fit an Ornstein-Uhlenbeck (OU) model, as we’ve already shown in the <a href="http://htmlpreview.github.io/?https://github.com/mlysy/realPSD/blob/devel-ferris-prerelease/doc/realPSD-quicktut.html">quick tutorial</a>.</p>
 <!-- This interface is written in Python, and uses [automatic differentiation](https://en.wikipedia.org/wiki/Automatic_differentiation) (AD) to use gradient-based optimization algorithms to efficiently perform parameter estimation. -->
 <!-- ~~Currently the interface is through the R [**TMB**](https://CRAN.R-project.org/package=TMB) package, which makes the underlying C++ code difficult to interface from a different language (e.g., Python, Matlab).  A later step is to create a self-contained C++ library relying only on [**CppAD**](https://coin-or.github.io/CppAD/doc/cppad.htm), the C++ automated differentiation (AD) library on top of which **TMB** is built.~~ -->
 </div>
 <div id="methods" class="section level1">
 <h1>Methods</h1>
-<p><strong>realPSD</strong> provides three different methods for parameter estimation outlined below. For each method, estimation is via optimization over a function of <span class="math inline">\({\boldsymbol{\varphi}}\)</span>, with the fitted value of <span class="math inline">\(\sigma\)</span> being profiled out. In all cases the estimators are built on the discrete Fourier transform of the data, <span class="math inline">\({\boldsymbol{Y}}= (Y_{1},\ldots,Y_{K})\)</span>, where <span class="math inline">\(N = 2K + 1\)</span> and <span class="math display">\[
-Y_k = \frac 1 N \left\vert \sum_{n=0}^{N-1} e^{-2\pi i k n} X_n\right\vert^2.
+<p><strong>realPSD</strong> provides three different methods for parameter estimation outlined below. For each method, estimation is via optimization over a function of <span class="math inline">\({\boldsymbol{\varphi}}\)</span>, with the fitted value of <span class="math inline">\(\sigma\)</span> being profiled out. In all cases the estimators are built on the discrete Fourier transform of the data, <span class="math inline">\({\boldsymbol{Y}}= (Y_{1},\ldots,Y_{K})\)</span>, where <span class="math inline">\(N = 2K + 1\)</span> and</p>
+<p><span class="math display">\[
+Y_k = \frac{1}{N f_s} \left\vert \sum_{n=0}^{N-1} e^{-2\pi i k n} X_n\right\vert^2.
 \]</span></p>
+<p><strong>realPSD</strong> provides a function <code>periodogram()</code> to calculate this <span class="math inline">\(Y_k\)</span>. Note that the returned periodogram is just one-sided. For more details about how <span class="math inline">\(Y_k\)</span> is related to the Whittle-type loglikelihood in the MLE, please refer to Proposition 1 and the discussion thereafter in this <a href>preprint</a>.</p>
+<p>All the following methods are provided in the C++ header files in <strong>realPSD</strong>, please check out the source code of <code>FitMethods.hpp</code>, <code>MLEFit.hpp</code>, <code>NLSFit.hpp</code> and <code>LPFit.hpp</code> etc.</p>
 <div id="maximum-likelihood" class="section level2">
 <h2>Maximum Likelihood</h2>
 <p>The maximum likelihood estimator is obtained by maximizing the so-called Whittle loglikelihood function, <span class="math display">\[\begin{equation}
 \label{eq:mle}
 \ell_W({\boldsymbol{\theta}}\mid {\boldsymbol{Y}}) = - \sum_{k=1}^K\left(\frac{Y_k}{\operatorname{\mathcal S}_k({\boldsymbol{\theta}})} + \log \operatorname{\mathcal S}_k({\boldsymbol{\theta}})\right),
-\end{equation}\]</span> where <span class="math inline">\(\operatorname{\mathcal S}_k({\boldsymbol{\theta}}) = f_s\cdot \operatorname{\mathcal S}(f_k, {\boldsymbol{\theta}})\)</span> and <span class="math inline">\(f_k = \tfrac k N f_s\)</span>. Note that for given <span class="math inline">\({\boldsymbol{\varphi}}\)</span>, the value of <span class="math inline">\(\sigma^2\)</span> maximizing \eqref{eq:mle} is <span class="math display">\[
+\end{equation}\]</span> where where <span class="math inline">\(\operatorname{\mathcal S}_k({\boldsymbol{\theta}}) = \operatorname{\mathcal S}(f_k, {\boldsymbol{\theta}})\)</span> and <span class="math inline">\(f_k = \tfrac k N f_s\)</span>. Note that for given <span class="math inline">\({\boldsymbol{\varphi}}\)</span>, the value of <span class="math inline">\(\sigma^2\)</span> maximizing \eqref{eq:mle} is <span class="math display">\[
 \hat \sigma^2({\boldsymbol{\varphi}}) = \frac 1 K \sum_{k=1}^K \frac{Y_k}{U_k({\boldsymbol{\varphi}})},
-\]</span> where <span class="math inline">\(U_k({\boldsymbol{\varphi}}) = f_s\cdot U(f_k, {\boldsymbol{\varphi}})\)</span>. Therefore, upon maximizing the profile likelihood <span class="math display">\[
+\]</span> where <span class="math inline">\(U_k({\boldsymbol{\varphi}}) = U(f_k, {\boldsymbol{\varphi}})\)</span>. Therefore, upon maximizing the profile likelihood <span class="math display">\[
 \begin{aligned}
 \ell_{W,\textrm{prof}}({\boldsymbol{\varphi}}\mid {\boldsymbol{Y}}) &amp; = \ell_W({\boldsymbol{\varphi}}, \hat \sigma({\boldsymbol{\varphi}}) \mid {\boldsymbol{Y}}) \\
 &amp; = - K (1 + \log \hat \sigma^2({\boldsymbol{\varphi}})) - \sum_{k=1}^K \log U_k({\boldsymbol{\varphi}}),
@@ -114,14 +213,14 @@ Y_k = \frac 1 N \left\vert \sum_{n=0}^{N-1} e^{-2\pi i k n} X_n\right\vert^2.
 \]</span> Then the nonlinear least-squares (NLS) estimator maximizes the objective function <span class="math display">\[\begin{equation}
 \label{eq:nls}
 Q_{\textrm{NLS}}({\boldsymbol{\theta}}) = - \sum_{m=1}^{N_B} \big(\bar Y_m - \bar{\operatorname{\mathcal S}}_m({\boldsymbol{\theta}})\big)^2,
-\end{equation}\]</span> where <span class="math inline">\(\bar{\operatorname{\mathcal S}}_m({\boldsymbol{\theta}}) = f_s\cdot \operatorname{\mathcal S}(\bar f_m, {\boldsymbol{\theta}})\)</span> and <span class="math inline">\(\bar f_m = \tfrac 1 B \sum_{k\in I_m} f_k\)</span>. For given <span class="math inline">\({\boldsymbol{\varphi}}\)</span>, the value of <span class="math inline">\(\sigma^2\)</span> maximizing \eqref{eq:nls} is <span class="math display">\[
+\end{equation}\]</span> where <span class="math inline">\(\bar{\operatorname{\mathcal S}}_m({\boldsymbol{\theta}}) = \operatorname{\mathcal S}(\bar f_m, {\boldsymbol{\theta}})\)</span> and <span class="math inline">\(\bar f_m = \tfrac 1 B \sum_{k\in I_m} f_k\)</span>. For given <span class="math inline">\({\boldsymbol{\varphi}}\)</span>, the value of <span class="math inline">\(\sigma^2\)</span> maximizing \eqref{eq:nls} is <span class="math display">\[
 \hat \sigma^2({\boldsymbol{\varphi}}) = \frac{\sum_{m=1}^{N_B} \bar{U}_m({\boldsymbol{\varphi}}) \bar Y_m }{\sum_{m=1}^{N_B} \bar{U}_m({\boldsymbol{\varphi}})^2},
-\]</span> where <span class="math inline">\(\bar{U}_m({\boldsymbol{\varphi}}) = f_s\cdot U(\bar f_m, {\boldsymbol{\varphi}})\)</span>. Therefore, upon maximizing the objective function <span class="math display">\[
+\]</span> where <span class="math inline">\(\bar{U}_m({\boldsymbol{\varphi}}) = U(\bar f_m, {\boldsymbol{\varphi}})\)</span>. Therefore, upon maximizing the objective function <span class="math display">\[
 Q_{\textrm{NLS},\textrm{prof}}({\boldsymbol{\varphi}}) = -\sum_{m=1}^{N_B} \big(\bar Y_m - \hat \sigma^2({\boldsymbol{\varphi}}) \cdot \bar{U}_m({\boldsymbol{\varphi}})\big)^2,
 \]</span> we obtain the maximum of \eqref{eq:nls} via <span class="math inline">\(\hat {\boldsymbol{\theta}}= (\hat {\boldsymbol{\varphi}}, \hat \sigma(\hat {\boldsymbol{\varphi}}))\)</span>.</p>
 </div>
-<div id="variance-stabilized-least-squares" class="section level2">
-<h2>Variance-Stabilized Least-Squares</h2>
+<div id="log-periodogram-variance-stabilized-least-squares" class="section level2">
+<h2>Log-Periodogram (Variance-Stabilized Least-Squares)</h2>
 <p>Let <span class="math inline">\(Z_m = \log(\bar Y_m)\)</span>. Then the log-periodogram (LP) estimator maximizes the approximate loglikelihood <span class="math display">\[\begin{equation}
 \label{eq:lp}
 \ell_{\textrm{LP}}({\boldsymbol{\theta}}\mid {\boldsymbol{Y}}) = -\frac B 2 \sum_{m=1}^{N_B} \big(Z_m + C_B - \log \bar{\operatorname{\mathcal S}}_m({\boldsymbol{\theta}})\big)^2,
@@ -163,7 +262,6 @@ S({\boldsymbol{\varphi}}) = \sum_{m=1}^{N_B} r_m({\boldsymbol{\varphi}})^2,
 </div>
 <div id="scaling" class="section level2">
 <h2>Scaling</h2>
-<p><strong>TODO:</strong> Better explain why we do this.</p>
 <p>For numerical stability, we have found that it is often preferable to express the Whittle likelihood \eqref{eq:mle} as <span class="math display">\[
 \ell_W({\boldsymbol{\theta}}\mid {\boldsymbol{Y}}) = - \sum_{k=1}^K\left(\frac{Y_k^{(s)}}{\operatorname{\mathcal S}_k({\boldsymbol{\theta}})/C_s} + \log \operatorname{\mathcal S}_k({\boldsymbol{\theta}})\right),
 \]</span> where <span class="math inline">\(Y_k^{(s)} = Y_k/C_s\)</span> and <span class="math inline">\(C_s &gt; 0\)</span> is a scaling factor (e.g., <span class="math inline">\(C_s = K^{-1} \sum_{k=1}^K Y_k\)</span>). In this case, the value of <span class="math inline">\(\sigma^2\)</span> maximing \eqref{eq:mle} for given <span class="math inline">\({\boldsymbol{\varphi}}\)</span> is <span class="math display">\[
@@ -197,6 +295,28 @@ Q_{\textrm{NLS},\textrm{prof}}^{(s)}({\boldsymbol{\varphi}}) = -\sum_{m=1}^{N_B}
 \end{aligned}
 \]</span> Note here that neither the LP nor NLS estimators are asympotically loglikelihoods, such that variance estimators should use the sandwich formula \eqref{eq:sand}.</p>
 </div>
+<div id="list-of-built-in-fitting-methods" class="section level2">
+<h2>List of Built-in Fitting Methods</h2>
+<p>For general users, the fitting methods specified in <code>FitMethods.hpp</code> are hidden. You don’t really need to know the underlying details, since <strong>realPSD</strong> has already handled (by using R6 class) choosing the proper fitting methods for you. But for adavanced users who are insterested in using <code>TMB::MakeADFun</code> directly, one can specify <code>method</code> as</p>
+<ul>
+<li><p><code>UFun</code>: evaluate U function <span class="math inline">\(U(f, {\boldsymbol{\varphi}})\)</span>.</p></li>
+<li><p><code>MLE_ufun</code>: evaluate U function <span class="math inline">\(U_k({\boldsymbol{\varphi}})\)</span> for MLE method.</p></li>
+<li><p><code>MLE_nll</code>: evaluate the negative log-likelihood function with proper scaling for MLE method.</p></li>
+<li><p><code>MLE_nlp</code>: evaluate the profile likelihood with proper scaling for MLE method.</p></li>
+<li><p><code>MLE_zeta</code>: evaluate <span class="math inline">\(\simga^2\)</span> with proper scaling for MLE method.</p></li>
+<li><p><code>MLE_res</code>: get the vector of residuals for MLE method.</p></li>
+<li><p><code>LP_ufun</code>: evaluate <span class="math inline">\(\bar{U}_m({\boldsymbol{\varphi}})\)</span> for LP method.</p></li>
+<li><p><code>LP_nll</code>: evaluate the negative log-likelihood function with proper scaling for LP method.</p></li>
+<li><p><code>LP_nlp</code>: evaluate the profile likelihood with proper scaling for LP method.</p></li>
+<li><p><code>LP_zeta</code>: evaluate <span class="math inline">\(\zeta\)</span> with proper scaling for LP method.</p></li>
+<li><p><code>LP_res</code>: get the vector of residuals for LP method.</p></li>
+<li><p><code>NLS_ufun</code>: evaluate U function <span class="math inline">\(U_k({\boldsymbol{\varphi}})\)</span> for NLS method.</p></li>
+<li><p><code>NLS_nll</code>: evaluate the negative log-likelihood function with proper scaling for NLS method.</p></li>
+<li><p><code>NLS_nlp</code>: evaluate the profile likelihood with proper scaling for NLS method.</p></li>
+<li><p><code>NLS_zeta</code>: evaluate <span class="math inline">\(\simga^2\)</span> with proper scaling for NLS method.</p></li>
+<li><p><code>NLS_res</code>: get the vector of residuals for NLS method.</p></li>
+</ul>
+</div>
 </div>
 <div id="examples" class="section level1">
 <h1>Examples</h1>
@@ -209,6 +329,40 @@ Q_{\textrm{NLS},\textrm{prof}}^{(s)}({\boldsymbol{\varphi}}) = -\sum_{m=1}^{N_B}
 &amp; = \sigma^2 \times \left\{R_{\textrm{w}}+ \frac{1}{[(f/f_0)^2-1]^2 + [f/\gamma]^2}\right\},
 \end{aligned}
 \end{equation}\]</span> where <span class="math inline">\(\sigma^2 = k_BT/(k\cdot \pi f_0Q)\)</span>, <span class="math inline">\(R_{\textrm{w}}= A_{\textrm{w}}/\sigma^2\)</span>, <span class="math inline">\(\gamma = f_0Q\)</span>, and <span class="math inline">\({\boldsymbol{\varphi}}= (f_0, \gamma, R_{\textrm{w}})\)</span>.</p>
+<p>This is a built-in model in <strong>realPSD</strong> with three different parameterizations:</p>
+<ul>
+<li>natural parameterization as shown above;</li>
+<li>log-transformed parameters, i.e. <span class="math inline">\({\boldsymbol{\varphi}}= (\log f_0, \log Q, \log R_{\textrm{w}})\)</span>;</li>
+<li>computational parameterization, i.e. <span class="math inline">\({\boldsymbol{\varphi}}= (f_0, \gamma, R_{\textrm{w}})\)</span> where <span class="math inline">\(\gamma = f_0 Q\)</span>.</li>
+</ul>
+<p>To call this model using R6 class from R, one can use the following template.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>model <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="fu">c</span>(<span class="st">&quot;SHOW_nat&quot;</span>, <span class="st">&quot;SHOW_log&quot;</span>, <span class="st">&quot;SHOW_comp&quot;</span>), <span class="at">size =</span> <span class="dv">1</span>) <span class="co"># can be chosen from any of these</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>your_model <span class="ot">&lt;-</span> R6<span class="sc">::</span><span class="fu">R6Class</span>(</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>          <span class="at">classname =</span> <span class="st">&quot;your_model&quot;</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>          <span class="at">inherit =</span> realPSD<span class="sc">::</span>psd_model,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>          <span class="at">private =</span> <span class="fu">list</span>(</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>            <span class="at">Temp_ =</span> <span class="cn">NULL</span>, <span class="co"># temperature</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>            <span class="at">n_phi_ =</span> <span class="dv">3</span>, <span class="co"># specify the number of parameters, for SHOW model, f0, Q, Rw</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>            <span class="at">tmb_DLL_ =</span> <span class="st">&quot;realPSD_TMBExports&quot;</span>,</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>            <span class="at">tmb_model_ =</span> model</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>          ),</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>          <span class="at">active =</span> <span class="fu">list</span>(</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>            <span class="co">#&#39; @field Temp Temperature of the system.</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>            <span class="at">Temp =</span> <span class="cf">function</span>() private<span class="sc">$</span>Temp_</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>          )</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>        )</span></code></pre></div>
+<p>Then if one calls <code>your_model$ufun()</code>, it actually returns a <code>TMB::MakeADFun()</code> object. For those who are familiar with <strong>TMB</strong>, you can also directly call <code>TMB::MakeADFun</code> as follows (say we want to get the U function under MLE):</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># get MLE Ufun</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>scale <span class="ot">&lt;-</span> <span class="fu">mean</span>(Ypsd)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># create TMB model object</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>tmod <span class="ot">&lt;-</span> TMB<span class="sc">::</span><span class="fu">MakeADFun</span>(<span class="at">data =</span> <span class="fu">list</span>(<span class="at">model =</span> model,</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">method =</span> <span class="st">&quot;MLE_ufun&quot;</span>,</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">f =</span> <span class="fu">matrix</span>(freq),</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">Y =</span> <span class="fu">matrix</span>(Ypsd<span class="sc">/</span>scale),</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">scale =</span> <span class="fu">log</span>(scale)),</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>                       <span class="at">parameters =</span> <span class="fu">list</span>(<span class="at">phi =</span> <span class="fu">matrix</span>(<span class="fu">rep</span>(<span class="dv">0</span>, <span class="dv">3</span>))),</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>                       <span class="at">ADreport =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>                       <span class="at">silent =</span> <span class="cn">TRUE</span>, <span class="at">DLL =</span> <span class="st">&quot;realPSD_TMBExports&quot;</span>)</span></code></pre></div>
 </div>
 <div id="fractional-ornstein-uhlenbeck-model" class="section level2">
 <h2>Fractional Ornstein-Uhlenbeck Model</h2>
@@ -238,9 +392,76 @@ p(if)
 \end{align*}\]</span></p>
 </div>
 </div>
-<div id="maybe-some-more-technical-explanation-of-the-design-of-realpsd-pacakge" class="section level1">
-<h1>Maybe Some More Technical Explanation of the Design of <strong>realPSD</strong> pacakge</h1>
-<p>TODO…</p>
+<div id="interfacing-with-tmb" class="section level1">
+<h1>Interfacing with <strong>TMB</strong></h1>
+<p><a href="https://CRAN.R-project.org/package=TMB"><strong>TMB</strong></a> is a great interface for R users to make use of the <a href="https://coin-or.github.io/CppAD/doc/cppad.htm"><strong>CppAD</strong></a> C++ library for <a href="https://en.wikipedia.org/wiki/Automatic_differentiation">automatic differentiation</a>. However, the study curve of <strong>TMB</strong> may be steep, especially for those new to this area. When <strong>realPSD</strong> was designed, we would like to make it as easy as possible for <strong>realPSD</strong> users to realize their models without dealing with <strong>TMB</strong> directly. The principle and coding practices are well explained <a href="https://github.com/mlysy/TMBtools#tmb-coding-practices">here</a>. It is strongly recommended to read the documentation in <a href="https://github.com/mlysy/TMBtools"><strong>TMBtools</strong></a> and the instructions <a href="https://github.com/kaskr/adcomp/wiki/Development#distributing-code">here</a> for those who are interested in using <strong>TMB</strong> to build flexible statistical models in R.</p>
+<div id="external-constructor-for-user-defined-model-object" class="section level2">
+<h2>External Constructor for User-defined Model Object</h2>
+<p><strong>TMB</strong> and other source code (e.g., <a href="(http://www.rcpp.org/)"><strong>Rcpp</strong></a>) in an R package cannot be merged into a single shared library, as documented <a href="https://github.com/kaskr/adcomp/issues/247">here</a>. Therefore, the approach taken by <strong>realPSD</strong> is to have a separate shared object for the <strong>TMB</strong> models</p>
+<p>If you still remember the OU example in the <a href="http://htmlpreview.github.io/?https://github.com/mlysy/realPSD/blob/devel-ferris-prerelease/doc/realPSD-quicktut.html">quick tutorial</a>, one of the necessary steps in writing your own model C++ header file is to include an external constructor like this</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode c++"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#undef TMB_OBJECTIVE_PTR</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#define TMB_OBJECTIVE_PTR </span>obj</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// External constructor for `ou::UFun` objects.</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">///</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// The arguments to this function are always `N` and `obj`.  Inside the function, we can specify additional TMB macros (`DATA_VECTOR`, etc.), to obtain inputs to the `UFun` constructor.</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="co">///</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// </span><span class="an">@param[in]</span><span class="co"> </span><span class="cv">N</span><span class="co"> Number of frequency/psd observations.</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// </span><span class="an">@param[in]</span><span class="co"> </span><span class="cv">obj</span><span class="co"> Pointer to the TMB object.</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// </span><span class="an">@return</span><span class="co"> An `ou::UFun` object.</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span>&lt;<span class="kw">class</span> Type&gt;</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  UFun&lt;Type&gt; make_Ufun(<span class="dt">int</span> N, objective_function&lt;Type&gt;* obj) {</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> UFun&lt;Type&gt;(N);</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="pp">#undef TMB_OBJECTIVE_PTR</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="pp">#define TMB_OBJECTIVE_PTR </span><span class="kw">this</span></span></code></pre></div>
+<p>This is a workaround to let the TMB object pointer find the current model object (which is not built into the <strong>realPSD</strong> package).</p>
+</div>
+<div id="compile-on-the-fly" class="section level2">
+<h2>Compile-on-the-fly</h2>
+<p>To compile any user-defined model object on-the-fly, we make use of <a href="https://github.com/edwindj/whisker">whisker</a> to automatically create a template C++ file which is needed for <strong>TMB</strong> to compile the model correctly. The template was designed in a similar way as proposed by <a href="https://github.com/mlysy/TMBtools"><strong>TMBtools</strong></a>.</p>
+<p>This technique has already been included into the built-in function <code>realPSD::make_psd_model</code>. Thus, users do not need to worry about how to realize this themselves. As we’ve already used in the OU example, by calling <code>make_psd_model</code> as follows</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># create c++ file</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>ou_cpp <span class="ot">&lt;-</span> <span class="fu">make_psd_model</span>(<span class="at">model =</span> <span class="st">&quot;OU&quot;</span>,</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>                         <span class="at">header =</span> <span class="st">&quot;OU_Model.hpp&quot;</span>,</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">class =</span> <span class="st">&quot;ou::UFun&quot;</span>,</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>                         <span class="at">ctor =</span> <span class="st">&quot;ou::make_Ufun&quot;</span>,</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>                         <span class="at">standalone =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+<p><strong>realPSD</strong> automatically generate a <code>.cpp</code> file under the current working directory (named <code>OU_FitMethods.cpp</code>) which contains the following content.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co">/// </span><span class="an">@file</span><span class="co"> OU_Generics.hpp</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co">/// </span><span class="an">@brief</span><span class="co"> Generic code which supplies everything needed to the **TMB** compiler for `OU`.</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;TMB.hpp&gt;</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&quot;realPSD/FitMethods.hpp&quot;</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&quot;OU_Model.hpp&quot;</span><span class="pp"> </span><span class="co">// model class definition</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="co">// #include &quot;&quot; // the generic package code</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="pp">#undef TMB_OBJECTIVE_PTR</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="pp">#define TMB_OBJECTIVE_PTR </span>obj</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span>&lt;<span class="kw">class</span> Type&gt;</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>Type OU_Generics(objective_function&lt;Type&gt;* obj) {</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> realPSD::FitMethods&lt;Type, ou::UFun&lt;Type&gt; &gt;(obj, ou::make_Ufun&lt;Type&gt;);</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a><span class="pp">#undef TMB_OBJECTIVE_PTR</span></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a><span class="pp">#define TMB_OBJECTIVE_PTR </span><span class="kw">this</span></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span>&lt;<span class="kw">class</span> Type&gt;</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>Type objective_function&lt;Type&gt;::<span class="kw">operator</span>() () {</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>  DATA_STRING(model);</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span>(model == <span class="st">&quot;OU&quot;</span>) {</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> OU_Generics&lt;Type&gt;(<span class="kw">this</span>);</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>    error(<span class="st">&quot;Unknown model.&quot;</span>);</span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> Type(<span class="fl">0.0</span>);</span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>This template allows users to put their models in separate header files from each other and compile the model using <strong>TMB</strong> correctly.</p>
+</div>
+<div id="wrap-the-model-object-by-r6-class" class="section level2">
+<h2>Wrap the Model Object by R6 Class</h2>
+<p>To let users to directly deal with <strong>TMB</strong> or the <code>FitMethods.hpp</code> in <strong>realPSD</strong> is not a wise choice and is very clumsy. Instead, we wrap the model object in an R6 class, which greatly streamlines the workflow of building and estimating process. Any user-defined PSD models will be a inherited class from the built-in base class <code>realPSD::psd_model</code> in which we have already defined all the necessary infrastructures. Therefore, fitting any user-defined PSD models using <strong>realPSD</strong> is a very consistent process. If you are insterested in how we realize this, please check out the source code of <code>psd_model.R</code>. For more details about R6 class, one can see <a href="https://r6.r-lib.org/index.html">here</a>.</p>
 <!-- where $g_m(\tth) = (\bar Y_m - \bar{\psd}_m(\tth))^2$. -->
 <!-- ## Implementation -->
 <!-- ### Python -->
@@ -283,6 +504,7 @@ p(if)
 <!-- - `tsSim`: Simulate time series with given PSD. -->
 <!-- - `periodogram`: Calculate the periodogram of a time series. -->
 <!-- - `fisherGstat`: For denoising. -->
+</div>
 </div>
 
 

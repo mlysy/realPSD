@@ -4,7 +4,8 @@ knitr::opts_chunk$set(
   message = FALSE,
   fig.align = "center",
   fig.pos = "!htb",
-  out.width = "\\textwidth", 
+  fig.retina = 2,
+  dpi = 300,
   collapse = TRUE,
   comment = "#>"
 )
