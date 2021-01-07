@@ -259,7 +259,7 @@ For general users, the fitting methods specified in `FitMethods.hpp` are hidden.
  - `MLE_ufun`: evaluate U function $U_k(\pph)$ for MLE method.
  - `MLE_nll`: evaluate the negative log-likelihood function with proper scaling for MLE method.
  - `MLE_nlp`: evaluate the profile likelihood with proper scaling for MLE method.
- - `MLE_zeta`: evaluate $\simga^2$ with proper scaling for MLE method.
+ - `MLE_zeta`: evaluate $\sigma^2$ with proper scaling for MLE method.
  - `MLE_res`: get the vector of residuals for MLE method.
 
  - `LP_ufun`: evaluate $\bar{U}_m(\pph)$ for LP method.
@@ -271,7 +271,7 @@ For general users, the fitting methods specified in `FitMethods.hpp` are hidden.
  - `NLS_ufun`: evaluate U function $U_k(\pph)$ for NLS method.
  - `NLS_nll`: evaluate the negative log-likelihood function with proper scaling for NLS method.
  - `NLS_nlp`: evaluate the profile likelihood with proper scaling for NLS method.
- - `NLS_zeta`: evaluate $\simga^2$ with proper scaling for NLS method.
+ - `NLS_zeta`: evaluate $\sigma^2$ with proper scaling for NLS method.
  - `NLS_res`: get the vector of residuals for NLS method.
 
 
