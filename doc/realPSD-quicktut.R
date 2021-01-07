@@ -5,7 +5,10 @@ knitr::opts_chunk$set(
   fig.align = "center",
   fig.pos = "!htb",
   fig.retina = 2,
-  dpi = 300,
+  # dpi = 200,
+  fig.width = 10, 
+  fig.height = 5, 
+  out.width = "90%",
   collapse = TRUE,
   comment = "#>"
 )

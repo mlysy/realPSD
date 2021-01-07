@@ -2,10 +2,6 @@
 knitr::opts_chunk$set(
   warning = FALSE, 
   message = FALSE,
-  fig.align = "center",
-  fig.pos = "!htb",
-  fig.retina = 2,
-  dpi = 300,
   collapse = TRUE,
   comment = "#>"
 )
