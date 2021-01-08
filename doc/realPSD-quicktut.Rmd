@@ -110,6 +110,10 @@ ou_psd <- function(freq, alpha, beta) {
 }
 ```
 
+## Parameter Basis
+
+In **realPSD**, we use $\theta$ to represent the parameter vector in the "inferential" basis which is what we can read directly from the model, i.e. $\theta = (\alpha, \beta)$ for the OU model. On the other hand, in the "computational" basis, we use $\log$ transformed parameters to help the optimization under unconstrained scale, i.e. $\phi = \log(\alpha)$ and $\zeta = \log(\beta^2) = 2\log(\beta)$ in the OU example. We will later see the difference between the two.
+
 ## Simulation
 
 **realPSD** provides a handy function `ou_sim` to generate the exact OU process. Note the simulation is exact since we are not using Euler approximation. This is only the case for the OU process. To simulate more general and complicated SDEs, approximation is inevitable. For that purpose, the R package `r cran_link("msde")` is the state-of-the-art tool you would like to use.
@@ -247,15 +251,35 @@ ou_model <- R6::R6Class(
     n_phi_ = 1,
     tmb_model_ = "OU",
     tmb_DLL_ = "OU_FitMethods"
+  ),
+  public = list(
+    #  Method to convert a value of `phi` into `theta` for the OU model
+    #' @param theta Value of `phi = log(alpha)`
+    #' @param zeta Value of `zeta = 2*log(beta)`
+    #' @return Parameter vector of `theta = c(alpha, beta)`
+    to_theta = function(phi, zeta) {
+      c(alpha = exp(phi), beta = exp(zeta/2))
+    },
+    # Helper functions to convert a value of natural parameter `theta` into the log transformed parameter `phi_zeta` for the OU model
+    #' @param theta Value of `theta = c(alpha, beta)`
+    #' @param obj Model object created by `ou_model`
+    #' @return List with element `phi` and `zeta`
+    to_phi = function(theta) {
+      phi <- log(theta[1])
+      zeta <- 2*log(theta[2])
+      list(phi = phi, zeta = zeta)
+    }
   )
 )
 ```
 
-Here `classname` is user-defined and we call it "ou_model". It will be an object inherit from an existing built-in R6 class object `psd_model` provided by **realPSD**, so we set `inherit = realPSD::psd_model`. `tmb_model_` should be the same as the `model` input in `make_psd_model` and `tmb_DLL_` should be the same as the name of the automatically generated C++ file in the above **Step 1**, i.e. "OU_FitMethods" in our case. For more details about R6 class, please see [here](https://r6.r-lib.org/index.html).
+Here `classname` is user-defined and we call it "ou_model". It will be an object inherit from an existing built-in R6 class object `psd_model` provided by **realPSD**, so we set `inherit = realPSD::psd_model`. `tmb_model_` should be the same as the `model` input in `make_psd_model` and `tmb_DLL_` should be the same as the name of the automatically generated C++ file in the above **Step 1**, i.e. "OU_FitMethods" in our case. We can add public methods specifically for the OU model as shown above (i.e. `to_theta`, `to_phi`). Please note that `to_theta` should be treated as a reserved keyword for converting parameters from their computational basis ($\log$ transformed parameterization $\phi$ and $\zeta$) back to the inferential basis (natural parameterization $\theta$). If one specify `to_theta = TRUE` in method `vcov()` for the object model, then it will try to find a method called `to_theta` when converting the standard error estimates by using the sandwich estimator.
+
+For more details about R6 class, please see [here](https://r6.r-lib.org/index.html).
 
 For further references, we list here the public members (with the function body omitted) of the base R6 class `realPSD::psd_model` which can be useful for our later model estimation.
 
-```{r public_list_psd_class}
+```{r public_list_psd_class, eval = FALSE}
 #' @description Specify the estimator.
 #'
 #' @param est_type Type of estimator: "lp", "nls", or "mle".
@@ -349,7 +373,7 @@ U_r <- ou_psd(freq = psd_bin$freq, alpha = theta0[1], beta = 1)
 range(U_tmb - U_r)
 ```
 
-Note that we used `ou_model$new()` to initialize the OU model object. The input arguments can be found in the `initialize` method listed above for the R6 base class `realPSD::psd_model`.
+Note that we used R6 class to initialize the OU model object by using the method `ou_model$new()` . The input arguments can be found in the `initialize` method listed above for the R6 base class `realPSD::psd_model`.
 
 It is always a good idea to do this kind of tests in the process of building your own model. The R package `r cran_link("testthat")` is great for this purpose. For more details about unit tests, please see [here](https://testthat.r-lib.org).
 
@@ -358,9 +382,9 @@ It is always a good idea to do this kind of tests in the process of building you
 
 Now we are ready to fit the OU model by using **realPSD**. Three methods are provided, i.e. maximum likelihood estimation (MLE), log periodogram estimation (LP), non-linear least squares estimation (NLS). The theoretical background of these three methods is summarized in the [advanced tutorial](http://htmlpreview.github.io/?https://github.com/mlysy/realPSD/blob/devel-ferris-prerelease/doc/realPSD-advancedtut.html). More technical details can be found in this [preprint]().
 
-Before we start to fit the OU PSD, let's first define a helper function to help us convert parameters.
+Before we start to fit the OU PSD, let's first define some helper functions to help us convert parameters.
 
-```{r helper_est}
+```{r helper_fn}
 #` Helper function to convert a value of `phi_est` into `eta_coef` and `eta_vcov`.
 #` @param phi Value of `phi`.
 #` @param obj Model object created by `ou_model`.
@@ -371,6 +395,26 @@ to_fit <- function(phi, obj) {
               vcov = obj$vcov(phi = fit$phi, zeta = fit$zeta))
   rownames(fit$vcov) <- colnames(fit$vcov) <- names(fit$coef)
   fit
+}
+# Helper function to convert the fitted parameter `phi` which is on the computational basis (log-transformed) into the natural parameter `theta` for the OU model
+#' @param phi Value of `phi`
+#' @param obj Model object created by `ou_model`
+#' @return A list with elements `coef`, `vcov`, and `se`.
+to_est <- function(phi, obj) {
+  zeta <- obj$nlp()$simulate(phi)$zeta
+  coef <- obj$to_theta(phi,zeta)
+  vcov <- obj$vcov(phi, zeta, to_theta = TRUE)
+  # change of variables
+  # he <- obj$nll()$he(c(phi, zeta))
+  # out <- chol2inv(chol(he))
+  # jac_trans <- numDeriv::jacobian(func = function(eta) {
+  #         obj$to_theta(phi = eta[1],
+  #                       zeta = eta[2])
+  # }, x = c(phi, zeta))
+  # vcov <- jac_trans %*% out %*% t(jac_trans)
+  colnames(vcov) <- rownames(vcov) <- names(coef)
+  se <- sqrt(diag(vcov))
+  list(coef = coef, se = se, vcov = vcov)
 }
 ```
 
@@ -384,7 +428,8 @@ ou_obj$set_est(est_type = "mle")
 ou_nlp <- ou_obj$nlp()
 
 opt <- optimize(f = ou_nlp$fn, lower = log(.1), upper = log(10))
-mle_fit <- to_fit(opt$min, ou_obj)
+mle_fit <- to_fit(opt$min, ou_obj) # estimates in the computational/log-transformed basis
+mle_est <- to_est(opt$min, ou_obj) # estimates in the "inferential basis"
 
 plot(psd_bin$freq, psd_bin$Ypsd, type = "l", log = "xy",
      xlab = "Frequency (Hz)", ylab = "PSD")
@@ -405,6 +450,7 @@ ou_nlp <- ou_obj$nlp()
 
 opt <- optimize(f = ou_nlp$fn, lower = log(.1), upper = log(10))
 lp_fit <- to_fit(opt$min, ou_obj)
+lp_est <- to_est(opt$min, ou_obj)
 
 plot(psd_bin$freq, psd_bin$Ypsd, type = "l", log = "xy",
      xlab = "Frequency (Hz)", ylab = "PSD")
@@ -423,6 +469,7 @@ ou_nlp <- ou_obj$nlp()
 
 opt <- optimize(f = ou_nlp$fn, lower = log(.1), upper = log(10))
 nls_fit <- to_fit(opt$min, ou_obj)
+nls_est <- to_est(opt$min, ou_obj)
 
 plot(psd_bin$freq, psd_bin$Ypsd, type = "l", log = "xy",
      xlab = "Frequency (Hz)", ylab = "PSD")
@@ -442,5 +489,17 @@ disp <- cbind(true = c(log(theta0[1]), NA, 2 * log(theta0[2]), NA),
               disp)
 disp <- t(disp)
 colnames(disp) <- c("phi_est", "phi_se", "zeta_est", "zeta_se")
+signif(disp, 3)
+```
+
+We can also transform the parameter back to the natural scale (the "inferential basis"), i.e. convert `phi` and `zeta` back to `theta` and output the table.
+
+```{r disp2}
+disp <- sapply(list(mle = mle_est, lp = lp_est, nls = nls_est),
+               function(fit) c(fit$coef[1], sqrt(fit$vcov[1,1]),
+                               fit$coef[2], sqrt(fit$vcov[2,2])))
+disp <- cbind(true = c(theta0[1], NA, theta0[2], NA), disp)
+disp <- t(disp)
+colnames(disp) <- c("alpha_est", "alpha_se", "beta_est", "beta_se")
 signif(disp, 3)
 ```

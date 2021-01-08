@@ -4,9 +4,9 @@
 \name{realPSD-package}
 \alias{realPSD}
 \alias{realPSD-package}
-\title{realPSD: What the package does (short line)}
+\title{realPSD: Robust and Efficient Calibration of Parametric Power Spectral Density (PSD) Models}
 \description{
-More about what it does (maybe more than one line).
+Provides robust and efficient calibration of any parametric power spectral density (PSD) models, especially for dynamical processes with extremely large observations. Three built-in estimation methods are provided: maximum likelihood estimation (MLE) based on Whittle-type likelihood, log-periodogram estimation and nonlinear least squares estimation (NLS). The package also provides a routine for removing most electronic noise in an automated pre-processing step, which would be very useful for spectral analysis based on recordings contaminated by various sources of instrumental noise in real-world applications.
 }
 \author{
 \strong{Maintainer}: Martin Lysy \email{f28zhu@uwaterloo.ca}

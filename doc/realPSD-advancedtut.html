@@ -149,11 +149,11 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li><a href="#model-residuals">Model Residuals</a></li>
 <li><a href="#scaling">Scaling</a></li>
 <li><a href="#median-binning">Median Binning</a></li>
-<li><a href="#list-of-built-in-fitting-methods">List of Built-in Fitting Methods</a></li>
 </ul></li>
 <li><a href="#examples">Examples</a>
 <ul>
 <li><a href="#simple-harmonic-oscillator-with-noise-floor">Simple Harmonic Oscillator with Noise Floor</a></li>
+<li><a href="#simple-harmonic-oscillator-with-1f-noise">Simple Harmonic Oscillator with <span class="math inline">\(1/f\)</span> Noise</a></li>
 <li><a href="#fractional-ornstein-uhlenbeck-model">Fractional Ornstein-Uhlenbeck Model</a></li>
 <li><a href="#carfima-models">CARFIMA Models</a></li>
 </ul></li>
@@ -162,6 +162,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li><a href="#external-constructor-for-user-defined-model-object">External Constructor for User-defined Model Object</a></li>
 <li><a href="#compile-on-the-fly">Compile-on-the-fly</a></li>
 <li><a href="#wrap-the-model-object-by-r6-class">Wrap the Model Object by R6 Class</a></li>
+<li><a href="#list-of-built-in-fitting-methods">List of Built-in Fitting Methods</a></li>
 </ul></li>
 </ul>
 </div>
@@ -295,28 +296,6 @@ Q_{\textrm{NLS},\textrm{prof}}^{(s)}({\boldsymbol{\varphi}}) = -\sum_{m=1}^{N_B}
 \end{aligned}
 \]</span> Note here that neither the LP nor NLS estimators are asympotically loglikelihoods, such that variance estimators should use the sandwich formula \eqref{eq:sand}.</p>
 </div>
-<div id="list-of-built-in-fitting-methods" class="section level2">
-<h2>List of Built-in Fitting Methods</h2>
-<p>For general users, the fitting methods specified in <code>FitMethods.hpp</code> are hidden. You don’t really need to know the underlying details, since <strong>realPSD</strong> has already handled (by using R6 class) choosing the proper fitting methods for you. But for adavanced users who are insterested in using <code>TMB::MakeADFun</code> directly, one can specify <code>method</code> as</p>
-<ul>
-<li><p><code>UFun</code>: evaluate U function <span class="math inline">\(U(f, {\boldsymbol{\varphi}})\)</span>.</p></li>
-<li><p><code>MLE_ufun</code>: evaluate U function <span class="math inline">\(U_k({\boldsymbol{\varphi}})\)</span> for MLE method.</p></li>
-<li><p><code>MLE_nll</code>: evaluate the negative log-likelihood function with proper scaling for MLE method.</p></li>
-<li><p><code>MLE_nlp</code>: evaluate the profile likelihood with proper scaling for MLE method.</p></li>
-<li><p><code>MLE_zeta</code>: evaluate <span class="math inline">\(\sigma^2\)</span> with proper scaling for MLE method.</p></li>
-<li><p><code>MLE_res</code>: get the vector of residuals for MLE method.</p></li>
-<li><p><code>LP_ufun</code>: evaluate <span class="math inline">\(\bar{U}_m({\boldsymbol{\varphi}})\)</span> for LP method.</p></li>
-<li><p><code>LP_nll</code>: evaluate the negative log-likelihood function with proper scaling for LP method.</p></li>
-<li><p><code>LP_nlp</code>: evaluate the profile likelihood with proper scaling for LP method.</p></li>
-<li><p><code>LP_zeta</code>: evaluate <span class="math inline">\(\zeta\)</span> with proper scaling for LP method.</p></li>
-<li><p><code>LP_res</code>: get the vector of residuals for LP method.</p></li>
-<li><p><code>NLS_ufun</code>: evaluate U function <span class="math inline">\(U_k({\boldsymbol{\varphi}})\)</span> for NLS method.</p></li>
-<li><p><code>NLS_nll</code>: evaluate the negative log-likelihood function with proper scaling for NLS method.</p></li>
-<li><p><code>NLS_nlp</code>: evaluate the profile likelihood with proper scaling for NLS method.</p></li>
-<li><p><code>NLS_zeta</code>: evaluate <span class="math inline">\(\sigma^2\)</span> with proper scaling for NLS method.</p></li>
-<li><p><code>NLS_res</code>: get the vector of residuals for NLS method.</p></li>
-</ul>
-</div>
 </div>
 <div id="examples" class="section level1">
 <h1>Examples</h1>
@@ -331,38 +310,21 @@ Q_{\textrm{NLS},\textrm{prof}}^{(s)}({\boldsymbol{\varphi}}) = -\sum_{m=1}^{N_B}
 \end{equation}\]</span> where <span class="math inline">\(\sigma^2 = k_BT/(k\cdot \pi f_0Q)\)</span>, <span class="math inline">\(R_{\textrm{w}}= A_{\textrm{w}}/\sigma^2\)</span>, <span class="math inline">\(\gamma = f_0Q\)</span>, and <span class="math inline">\({\boldsymbol{\varphi}}= (f_0, \gamma, R_{\textrm{w}})\)</span>.</p>
 <p>This is a built-in model in <strong>realPSD</strong> with three different parameterizations:</p>
 <ul>
-<li>natural parameterization as shown above;</li>
-<li>log-transformed parameters, i.e. <span class="math inline">\({\boldsymbol{\varphi}}= (\log f_0, \log Q, \log R_{\textrm{w}})\)</span>;</li>
-<li>computational parameterization, i.e. <span class="math inline">\({\boldsymbol{\varphi}}= (f_0, \gamma, R_{\textrm{w}})\)</span> where <span class="math inline">\(\gamma = f_0 Q\)</span>.</li>
+<li>natural parameterization <span class="math inline">\({\boldsymbol{\theta}}= (f_0, \gamma, R_{\textrm{w}})\)</span> which is the straightforward parameter vector users want to look at;</li>
+<li>log-transformed parameters, i.e. <span class="math inline">\({\boldsymbol{\varphi}}= (\log f_0, \log Q, \log R_{\textrm{w}})\)</span> which improves numerical optimization on an unconstrained scale;</li>
+<li>computational parameterization, i.e. <span class="math inline">\({\boldsymbol{\varphi}}= (f_0, \gamma, R_{\textrm{w}})\)</span> where <span class="math inline">\(\gamma = f_0 Q\)</span> which is useful for profile likelihood estimation.</li>
 </ul>
-<p>To call this model using R6 class from R, one can use the following template.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>model <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="fu">c</span>(<span class="st">&quot;SHOW_nat&quot;</span>, <span class="st">&quot;SHOW_log&quot;</span>, <span class="st">&quot;SHOW_comp&quot;</span>), <span class="at">size =</span> <span class="dv">1</span>) <span class="co"># can be chosen from any of these</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>your_model <span class="ot">&lt;-</span> R6<span class="sc">::</span><span class="fu">R6Class</span>(</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>          <span class="at">classname =</span> <span class="st">&quot;your_model&quot;</span>,</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>          <span class="at">inherit =</span> realPSD<span class="sc">::</span>psd_model,</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>          <span class="at">private =</span> <span class="fu">list</span>(</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>            <span class="at">Temp_ =</span> <span class="cn">NULL</span>, <span class="co"># temperature</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>            <span class="at">n_phi_ =</span> <span class="dv">3</span>, <span class="co"># specify the number of parameters, for SHOW model, f0, Q, Rw</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>            <span class="at">tmb_DLL_ =</span> <span class="st">&quot;realPSD_TMBExports&quot;</span>,</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>            <span class="at">tmb_model_ =</span> model</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>          ),</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>          <span class="at">active =</span> <span class="fu">list</span>(</span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>            <span class="co">#&#39; @field Temp Temperature of the system.</span></span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>            <span class="at">Temp =</span> <span class="cf">function</span>() private<span class="sc">$</span>Temp_</span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>          )</span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>        )</span></code></pre></div>
-<p>Then if one calls <code>your_model$ufun()</code>, it actually returns a <code>TMB::MakeADFun()</code> object. For those who are familiar with <strong>TMB</strong>, you can also directly call <code>TMB::MakeADFun</code> as follows (say we want to get the U function under MLE):</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># get MLE Ufun</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>scale <span class="ot">&lt;-</span> <span class="fu">mean</span>(Ypsd)</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># create TMB model object</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>tmod <span class="ot">&lt;-</span> TMB<span class="sc">::</span><span class="fu">MakeADFun</span>(<span class="at">data =</span> <span class="fu">list</span>(<span class="at">model =</span> model,</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">method =</span> <span class="st">&quot;MLE_ufun&quot;</span>,</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">f =</span> <span class="fu">matrix</span>(freq),</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">Y =</span> <span class="fu">matrix</span>(Ypsd<span class="sc">/</span>scale),</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">scale =</span> <span class="fu">log</span>(scale)),</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>                       <span class="at">parameters =</span> <span class="fu">list</span>(<span class="at">phi =</span> <span class="fu">matrix</span>(<span class="fu">rep</span>(<span class="dv">0</span>, <span class="dv">3</span>))),</span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>                       <span class="at">ADreport =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>                       <span class="at">silent =</span> <span class="cn">TRUE</span>, <span class="at">DLL =</span> <span class="st">&quot;realPSD_TMBExports&quot;</span>)</span></code></pre></div>
+</div>
+<div id="simple-harmonic-oscillator-with-1f-noise" class="section level2">
+<h2>Simple Harmonic Oscillator with <span class="math inline">\(1/f\)</span> Noise</h2>
+<p>The SHOF model is given by</p>
+<p><span class="math display">\[\begin{equation}
+\label{eq:shof}
+\begin{aligned}
+\operatorname{\mathcal S}(f, {\boldsymbol{\theta}}) &amp;= \frac{A_{\textrm{f}}}{f^\alpha} + \frac{k_BT/(k \cdot \pi f_0 Q)}{[(f/f_0)^2-1]^2 + [f/(f_0Q)]^2} \\
+&amp;= \sigma^2 \times \left\{ \frac{R_{\textrm{f}}}{f^\alpha} + \frac{1}{[(f/f_0)^2-1]^2 + [f/\gamma]^2} \right\}
+\end{aligned}
+\end{equation}\]</span> where <span class="math inline">\(\sigma^2 = k_BT/(k\cdot \pi f_0Q)\)</span>, <span class="math inline">\(R_{\textrm{f}}= A_{\textrm{f}}/\sigma^2\)</span>, <span class="math inline">\(\gamma = f_0Q\)</span>, and <span class="math inline">\({\boldsymbol{\theta}}= (f_0, Q, R_{\textrm{f}}, \alpha)\)</span>.</p>
 </div>
 <div id="fractional-ornstein-uhlenbeck-model" class="section level2">
 <h2>Fractional Ornstein-Uhlenbeck Model</h2>
@@ -399,69 +361,98 @@ p(if)
 <h2>External Constructor for User-defined Model Object</h2>
 <p><strong>TMB</strong> and other source code (e.g., <a href="(http://www.rcpp.org/)"><strong>Rcpp</strong></a>) in an R package cannot be merged into a single shared library, as documented <a href="https://github.com/kaskr/adcomp/issues/247">here</a>. Therefore, the approach taken by <strong>realPSD</strong> is to have a separate shared object for the <strong>TMB</strong> models</p>
 <p>If you still remember the OU example in the <a href="http://htmlpreview.github.io/?https://github.com/mlysy/realPSD/blob/devel-ferris-prerelease/doc/realPSD-quicktut.html">quick tutorial</a>, one of the necessary steps in writing your own model C++ header file is to include an external constructor like this</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode c++"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#undef TMB_OBJECTIVE_PTR</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#define TMB_OBJECTIVE_PTR </span>obj</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// External constructor for `ou::UFun` objects.</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">///</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// The arguments to this function are always `N` and `obj`.  Inside the function, we can specify additional TMB macros (`DATA_VECTOR`, etc.), to obtain inputs to the `UFun` constructor.</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="co">///</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// </span><span class="an">@param[in]</span><span class="co"> </span><span class="cv">N</span><span class="co"> Number of frequency/psd observations.</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// </span><span class="an">@param[in]</span><span class="co"> </span><span class="cv">obj</span><span class="co"> Pointer to the TMB object.</span></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// </span><span class="an">@return</span><span class="co"> An `ou::UFun` object.</span></span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span>&lt;<span class="kw">class</span> Type&gt;</span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  UFun&lt;Type&gt; make_Ufun(<span class="dt">int</span> N, objective_function&lt;Type&gt;* obj) {</span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> UFun&lt;Type&gt;(N);</span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="pp">#undef TMB_OBJECTIVE_PTR</span></span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="pp">#define TMB_OBJECTIVE_PTR </span><span class="kw">this</span></span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode c++"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#undef TMB_OBJECTIVE_PTR</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#define TMB_OBJECTIVE_PTR </span>obj</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// External constructor for `ou::UFun` objects.</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">///</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// The arguments to this function are always `N` and `obj`.  Inside the function, we can specify additional TMB macros (`DATA_VECTOR`, etc.), to obtain inputs to the `UFun` constructor.</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="co">///</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// </span><span class="an">@param[in]</span><span class="co"> </span><span class="cv">N</span><span class="co"> Number of frequency/psd observations.</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// </span><span class="an">@param[in]</span><span class="co"> </span><span class="cv">obj</span><span class="co"> Pointer to the TMB object.</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// </span><span class="an">@return</span><span class="co"> An `ou::UFun` object.</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span>&lt;<span class="kw">class</span> Type&gt;</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  UFun&lt;Type&gt; make_Ufun(<span class="dt">int</span> N, objective_function&lt;Type&gt;* obj) {</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> UFun&lt;Type&gt;(N);</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="pp">#undef TMB_OBJECTIVE_PTR</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="pp">#define TMB_OBJECTIVE_PTR </span><span class="kw">this</span></span></code></pre></div>
 <p>This is a workaround to let the TMB object pointer find the current model object (which is not built into the <strong>realPSD</strong> package).</p>
 </div>
 <div id="compile-on-the-fly" class="section level2">
 <h2>Compile-on-the-fly</h2>
 <p>To compile any user-defined model object on-the-fly, we make use of <a href="https://github.com/edwindj/whisker">whisker</a> to automatically create a template C++ file which is needed for <strong>TMB</strong> to compile the model correctly. The template was designed in a similar way as proposed by <a href="https://github.com/mlysy/TMBtools"><strong>TMBtools</strong></a>.</p>
 <p>This technique has already been included into the built-in function <code>realPSD::make_psd_model</code>. Thus, users do not need to worry about how to realize this themselves. As we’ve already used in the OU example, by calling <code>make_psd_model</code> as follows</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># create c++ file</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>ou_cpp <span class="ot">&lt;-</span> <span class="fu">make_psd_model</span>(<span class="at">model =</span> <span class="st">&quot;OU&quot;</span>,</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>                         <span class="at">header =</span> <span class="st">&quot;OU_Model.hpp&quot;</span>,</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">class =</span> <span class="st">&quot;ou::UFun&quot;</span>,</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>                         <span class="at">ctor =</span> <span class="st">&quot;ou::make_Ufun&quot;</span>,</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>                         <span class="at">standalone =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># create c++ file</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>ou_cpp <span class="ot">&lt;-</span> <span class="fu">make_psd_model</span>(<span class="at">model =</span> <span class="st">&quot;OU&quot;</span>,</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>                         <span class="at">header =</span> <span class="st">&quot;OU_Model.hpp&quot;</span>,</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">class =</span> <span class="st">&quot;ou::UFun&quot;</span>,</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>                         <span class="at">ctor =</span> <span class="st">&quot;ou::make_Ufun&quot;</span>,</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>                         <span class="at">standalone =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
 <p><strong>realPSD</strong> automatically generate a <code>.cpp</code> file under the current working directory (named <code>OU_FitMethods.cpp</code>) which contains the following content.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co">/// </span><span class="an">@file</span><span class="co"> OU_Generics.hpp</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co">/// </span><span class="an">@brief</span><span class="co"> Generic code which supplies everything needed to the **TMB** compiler for `OU`.</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;TMB.hpp&gt;</span></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&quot;realPSD/FitMethods.hpp&quot;</span></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&quot;OU_Model.hpp&quot;</span><span class="pp"> </span><span class="co">// model class definition</span></span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="co">// #include &quot;&quot; // the generic package code</span></span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="pp">#undef TMB_OBJECTIVE_PTR</span></span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="pp">#define TMB_OBJECTIVE_PTR </span>obj</span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span>&lt;<span class="kw">class</span> Type&gt;</span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>Type OU_Generics(objective_function&lt;Type&gt;* obj) {</span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> realPSD::FitMethods&lt;Type, ou::UFun&lt;Type&gt; &gt;(obj, ou::make_Ufun&lt;Type&gt;);</span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a><span class="pp">#undef TMB_OBJECTIVE_PTR</span></span>
-<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a><span class="pp">#define TMB_OBJECTIVE_PTR </span><span class="kw">this</span></span>
-<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span>&lt;<span class="kw">class</span> Type&gt;</span>
-<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>Type objective_function&lt;Type&gt;::<span class="kw">operator</span>() () {</span>
-<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>  DATA_STRING(model);</span>
-<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span>(model == <span class="st">&quot;OU&quot;</span>) {</span>
-<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> OU_Generics&lt;Type&gt;(<span class="kw">this</span>);</span>
-<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
-<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>    error(<span class="st">&quot;Unknown model.&quot;</span>);</span>
-<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> Type(<span class="fl">0.0</span>);</span>
-<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">/// </span><span class="an">@file</span><span class="co"> OU_Generics.hpp</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co">/// </span><span class="an">@brief</span><span class="co"> Generic code which supplies everything needed to the **TMB** compiler for `OU`.</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;TMB.hpp&gt;</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&quot;realPSD/FitMethods.hpp&quot;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&quot;OU_Model.hpp&quot;</span><span class="pp"> </span><span class="co">// model class definition</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co">// #include &quot;&quot; // the generic package code</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="pp">#undef TMB_OBJECTIVE_PTR</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="pp">#define TMB_OBJECTIVE_PTR </span>obj</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span>&lt;<span class="kw">class</span> Type&gt;</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>Type OU_Generics(objective_function&lt;Type&gt;* obj) {</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> realPSD::FitMethods&lt;Type, ou::UFun&lt;Type&gt; &gt;(obj, ou::make_Ufun&lt;Type&gt;);</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="pp">#undef TMB_OBJECTIVE_PTR</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="pp">#define TMB_OBJECTIVE_PTR </span><span class="kw">this</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span>&lt;<span class="kw">class</span> Type&gt;</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>Type objective_function&lt;Type&gt;::<span class="kw">operator</span>() () {</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>  DATA_STRING(model);</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span>(model == <span class="st">&quot;OU&quot;</span>) {</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> OU_Generics&lt;Type&gt;(<span class="kw">this</span>);</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>    error(<span class="st">&quot;Unknown model.&quot;</span>);</span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> Type(<span class="fl">0.0</span>);</span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <p>This template allows users to put their models in separate header files from each other and compile the model using <strong>TMB</strong> correctly.</p>
 </div>
 <div id="wrap-the-model-object-by-r6-class" class="section level2">
 <h2>Wrap the Model Object by R6 Class</h2>
-<p>To let users to directly deal with <strong>TMB</strong> or the <code>FitMethods.hpp</code> in <strong>realPSD</strong> is not a wise choice and is very clumsy. Instead, we wrap the model object in an R6 class, which greatly streamlines the workflow of building and estimating process. Any user-defined PSD models will be a inherited class from the built-in base class <code>realPSD::psd_model</code> in which we have already defined all the necessary infrastructures. Therefore, fitting any user-defined PSD models using <strong>realPSD</strong> is a very consistent process. If you are insterested in how we realize this, please check out the source code of <code>psd_model.R</code>. For more details about R6 class, one can see <a href="https://r6.r-lib.org/index.html">here</a>.</p>
+<p>To let users to directly deal with <strong>TMB</strong> or the <code>FitMethods.hpp</code> in <strong>realPSD</strong> is not a wise choice and is very clumsy. Instead, we wrap the model object in an R6 class, which greatly streamlines the workflow of building and estimating process.</p>
+<p><strong>realPSD</strong> provides three very important base classes in which we have already defined all the necessary infrastructures.</p>
+<ul>
+<li><code>psd_model</code> for any parametric PSD model</li>
+<li><code>show_model</code> for any SHOW model (see the example below)</li>
+<li><code>shof_model</code> for any SHO model with <span class="math inline">\(1/f\)</span> noise (see the example below)</li>
+</ul>
+<p>One can easily create a model object by using the <code>new()</code> method in the above R6 base classes. Therefore, fitting any PSD models or specifically any SHOW/SHOF models using <strong>realPSD</strong> is a very consistent process. If you are insterested in how we realize this, please check out the source code of <code>psd_model.R</code>. For more details about R6 class, one can see <a href="https://r6.r-lib.org/index.html">here</a>. For more details about how we defined the base class and how to use the methods therein, please see the documentation for each class.</p>
+</div>
+<div id="list-of-built-in-fitting-methods" class="section level2">
+<h2>List of Built-in Fitting Methods</h2>
+<p>For general users, the fitting methods specified in <code>FitMethods.hpp</code> are hidden. You don’t really need to know the underlying details, since <strong>realPSD</strong> has already handled (by using R6 class) choosing the proper fitting methods for you. But for adavanced users who are insterested in using <code>TMB::MakeADFun</code> directly, one can specify <code>method</code> as</p>
+<ul>
+<li><p><code>UFun</code>: evaluate U function <span class="math inline">\(U(f, {\boldsymbol{\varphi}})\)</span>.</p></li>
+<li><p><code>MLE_ufun</code>: evaluate U function <span class="math inline">\(U_k({\boldsymbol{\varphi}})\)</span> for MLE method.</p></li>
+<li><p><code>MLE_nll</code>: evaluate the negative log-likelihood function with proper scaling for MLE method.</p></li>
+<li><p><code>MLE_nlp</code>: evaluate the profile likelihood with proper scaling for MLE method.</p></li>
+<li><p><code>MLE_zeta</code>: evaluate <span class="math inline">\(\sigma^2\)</span> with proper scaling for MLE method.</p></li>
+<li><p><code>MLE_res</code>: get the vector of residuals for MLE method.</p></li>
+<li><p><code>LP_ufun</code>: evaluate <span class="math inline">\(\bar{U}_m({\boldsymbol{\varphi}})\)</span> for LP method.</p></li>
+<li><p><code>LP_nll</code>: evaluate the negative log-likelihood function with proper scaling for LP method.</p></li>
+<li><p><code>LP_nlp</code>: evaluate the profile likelihood with proper scaling for LP method.</p></li>
+<li><p><code>LP_zeta</code>: evaluate <span class="math inline">\(\zeta\)</span> with proper scaling for LP method.</p></li>
+<li><p><code>LP_res</code>: get the vector of residuals for LP method.</p></li>
+<li><p><code>NLS_ufun</code>: evaluate U function <span class="math inline">\(U_k({\boldsymbol{\varphi}})\)</span> for NLS method.</p></li>
+<li><p><code>NLS_nll</code>: evaluate the negative log-likelihood function with proper scaling for NLS method.</p></li>
+<li><p><code>NLS_nlp</code>: evaluate the profile likelihood with proper scaling for NLS method.</p></li>
+<li><p><code>NLS_zeta</code>: evaluate <span class="math inline">\(\sigma^2\)</span> with proper scaling for NLS method.</p></li>
+<li><p><code>NLS_res</code>: get the vector of residuals for NLS method.</p></li>
+</ul>
 <!-- where $g_m(\tth) = (\bar Y_m - \bar{\psd}_m(\tth))^2$. -->
 <!-- ## Implementation -->
 <!-- ### Python -->
