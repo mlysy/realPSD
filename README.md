@@ -1,4 +1,4 @@
-# **realPSD**: **R**obust and **E**fficient C**al**ibration of Parametric PSD Models 
+# **realPSD**: **R**obust and **E**fficient C**al**ibration of Parametric Power Spectral Density (PSD) Models 
 
 *Martin Lysy, Feiyu Zhu*
 
