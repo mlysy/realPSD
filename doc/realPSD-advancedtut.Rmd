@@ -384,10 +384,10 @@ To let users to directly deal with **TMB** or the `FitMethods.hpp` in **realPSD*
 **realPSD** provides three very important base classes in which we have already defined all the necessary infrastructures.
 
   - `psd_model` for any parametric PSD model
-  - `show_model` for any SHOW model (see the example below)
-  - `shof_model` for any SHO model with $1/f$ noise (see the example below)
+  - `show_model` for any SHOW model (see the example above)
+  - `shof_model` for any SHO model with $1/f$ noise (see the example above)
 
-One can easily create a model object by using the `new()` method in the above R6 base classes. Therefore, fitting any PSD models or specifically any SHOW/SHOF models using **realPSD** is a very consistent process. If you are insterested in how we realize this, please check out the source code of `psd_model.R`. For more details about R6 class, one can see [here](https://r6.r-lib.org/index.html). For more details about how we defined the base class and how to use the methods therein, please see the documentation for each class.
+One can easily create a model object by using the `new()` method in the above R6 base classes. Therefore, fitting any PSD models or specifically any SHOW/SHOF models using **realPSD** is a very consistent process. If you are insterested in how we realized this, please check out the source code of `psd_model.R`. For more details about R6 class, one can see [here](https://r6.r-lib.org/index.html). For more details about how we defined the base class and how to use the methods therein, please see the documentation for each class.
 
 ## List of Built-in Fitting Methods
 
