@@ -260,7 +260,7 @@ ou_model <- R6::R6Class(
     to_theta = function(phi, zeta) {
       c(alpha = exp(phi), beta = exp(zeta/2))
     },
-    # Helper functions to convert a value of natural parameter `theta` into the log transformed parameter `phi_zeta` for the OU model
+    # Method to convert a value of natural parameter `theta` into the log transformed parameter `phi_zeta` for the OU model
     #' @param theta Value of `theta = c(alpha, beta)`
     #' @param obj Model object created by `ou_model`
     #' @return List with element `phi` and `zeta`
