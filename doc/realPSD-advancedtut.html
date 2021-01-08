@@ -376,7 +376,7 @@ p(if)
 <span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  }</span>
 <span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="pp">#undef TMB_OBJECTIVE_PTR</span></span>
 <span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="pp">#define TMB_OBJECTIVE_PTR </span><span class="kw">this</span></span></code></pre></div>
-<p>This is a workaround to let the TMB object pointer find the current model object (which is not built into the <strong>realPSD</strong> package).</p>
+<p>This is a workaround to let the TMB object pointer find the current model object (which is not built into the <strong>realPSD</strong> package). Here we specifically used one line <code>UFun&lt;type&gt;(N)</code> as the return. In this way the memory will be allocated only once, and the C++ compiler knows to move instead of copying the object.</p>
 </div>
 <div id="compile-on-the-fly" class="section level2">
 <h2>Compile-on-the-fly</h2>
