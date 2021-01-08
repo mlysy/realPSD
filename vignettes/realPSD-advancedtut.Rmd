@@ -39,6 +39,8 @@ MathJax.Hub.Config({
 \newcommand{\kbt}{k_BT}
 \newcommand{\Aw}{A_{\tx{w}}}
 \newcommand{\Rw}{R_{\tx{w}}}
+\newcommand{\Rf}{R_{\tx{f}}}
+\newcommand{\Af}{A_{\tx{f}}}
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
@@ -247,6 +249,16 @@ $$
 $$
 Note here that neither the LP nor NLS estimators are asympotically loglikelihoods, such that variance estimators should use the sandwich formula \\eqref{eq:sand}.
 
+## R6 Base Classes
+
+**realPSD** provides three very important base classes: 
+
+  - `psd_model` for any parametric PSD model
+  - `show_model` for any SHOW model (see the example below)
+  - `shof_model` for any SHO model with $1/f$ noise (see the example below)
+
+One can easily create a model object by using the `new()` method in the above R6 base classes. For more details, please see the documentation for each class.
+
 ## List of Built-in Fitting Methods
 
 For general users, the fitting methods specified in `FitMethods.hpp` are hidden. You don't really need to know the underlying details, since **realPSD** has already handled (by using R6 class) choosing the proper fitting methods for you. But for adavanced users who are insterested in using `TMB::MakeADFun` directly, one can specify `method` as
@@ -287,45 +299,23 @@ where $\sigma^2 = \kbt/(k\cdot \pi \f_0Q)$, $\Rw = \Aw/\sigma^2$, $\gamma = \f_0
 
 This is a built-in model in **realPSD** with three different parameterizations:
 
-  - natural parameterization as shown above;
-  - log-transformed parameters, i.e. $\pph = (\log\f_0, \log Q, \log \Rw)$;
-  - computational parameterization, i.e. $\pph = (\f_0, \gamma, \Rw)$ where $\gamma = \f_0 Q$.
+  - natural parameterization $\tth = (\f_0, \gamma, \Rw)$ which is the straightforward parameter vector users want to look at;
+  - log-transformed parameters, i.e. $\pph = (\log\f_0, \log Q, \log \Rw)$ which improves numerical optimization on an unconstrained scale;
+  - computational parameterization, i.e. $\pph = (\f_0, \gamma, \Rw)$ where $\gamma = \f_0 Q$ which is useful for profile likelihood estimation.
 
-To call this model using R6 class from R, one can use the following template.
+## Simple Harmonic Oscillator with $1/f$ Noise
 
-```{r, SHOW_R6, eval = FALSE}
-model <- sample(c("SHOW_nat", "SHOW_log", "SHOW_comp"), size = 1) # can be chosen from any of these
-your_model <- R6::R6Class(
-          classname = "your_model",
-          inherit = realPSD::psd_model,
-          private = list(
-            Temp_ = NULL, # temperature
-            n_phi_ = 3, # specify the number of parameters, for SHOW model, f0, Q, Rw
-            tmb_DLL_ = "realPSD_TMBExports",
-            tmb_model_ = model
-          ),
-          active = list(
-            #' @field Temp Temperature of the system.
-            Temp = function() private$Temp_
-          )
-        )
-```
+The SHOF model is given by 
 
-Then if one calls `your_model$ufun()`, it actually returns a `TMB::MakeADFun()` object. For those who are familiar with **TMB**, you can also directly call `TMB::MakeADFun` as follows (say we want to get the U function under MLE):
+\begin{equation}
+\label{eq:shof}
+\begin{aligned}
+\psd(\f, \tth) &= \frac{\Af}{\f^\alpha} + \frac{\kbt/(k \cdot \pi \f_0 Q)}{[(\f/\f_0)^2-1]^2 + [f/(\f_0Q)]^2} \\
+&= \sigma^2 \times \left\{ \frac{\Rf}{\f^\alpha} + \frac{1}{[(\f/\f_0)^2-1]^2 + [f/\gamma]^2} \right\}
+\end{aligned}
+\end{equation}
+where $\sigma^2 = \kbt/(k\cdot \pi \f_0Q)$, $\Rf = \Af/\sigma^2$, $\gamma = \f_0Q$, and $\tth = (\f_0, Q, \Rf, \alpha)$.
 
-```{r, SHOW_MLE_ufun, eval = FALSE}
-# get MLE Ufun
-scale <- mean(Ypsd)
-# create TMB model object
-tmod <- TMB::MakeADFun(data = list(model = model,
-                                   method = "MLE_ufun",
-                                   f = matrix(freq),
-                                   Y = matrix(Ypsd/scale),
-                                   scale = log(scale)),
-                       parameters = list(phi = matrix(rep(0, 3))),
-                       ADreport = TRUE,
-                       silent = TRUE, DLL = "realPSD_TMBExports")
-```
 
 ## Fractional Ornstein-Uhlenbeck Model
 
