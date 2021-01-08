@@ -352,7 +352,7 @@ If you still remember the OU example in the [quick tutorial](http://htmlpreview.
 #define TMB_OBJECTIVE_PTR this
 ```
 
-This is a workaround to let the TMB object pointer find the current model object (which is not built into the **realPSD** package).
+This is a workaround to let the TMB object pointer find the current model object (which is not built into the **realPSD** package). Here we specifically used one line `UFun<type>(N)` as the return. In this way the memory will be allocated only once, and the C++ compiler knows to move instead of copying the object.
 
 ## Compile-on-the-fly
 
