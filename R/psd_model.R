@@ -392,6 +392,22 @@ psd_model <- R6::R6Class(
       self$set_est(est_type, bin_size, bin_type)
       self$set_psd(freq, Ypsd)
       private$ctor_args_ <- ctor_args
+    },
+
+    #' @description Method to convert the fitted parameter `phi` to estimates coefficients and covariances (either on the natural scale or on the log scale) for report.
+    #' @param phi Value of `phi`.
+    #' @param to_theta If `TRUE`, calculates the variance in the inferential basis.  Otherwise, uses the computational basis.
+    #' @return A list with elements `coef` and `vcov`. If `to_theta = TRUE`, in the inferential basis, otherwise in the computational basis.
+    to_est = function(phi, to_theta = FALSE) {
+      fit <- list(phi = phi, zeta = self$nlp()$simulate(phi)$zeta)
+      if(to_theta) {
+        fit <- list(coef = self$to_theta(phi = fit$phi, zeta = fit$zeta),
+                    vcov = self$vcov(phi = fit$phi, zeta = fit$zeta, to_theta = TRUE))
+      } else {
+        fit <- list(coef = c(phi = fit$phi, zeta = fit$zeta),
+                    vcov = self$vcov(phi = fit$phi, zeta = fit$zeta))
+      }
+      fit 
     }
 
   )
