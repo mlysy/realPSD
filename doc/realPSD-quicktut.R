@@ -28,6 +28,13 @@ require(realPSD)
 require(TMB)
 require(R6)
 require(tidyverse)
+# get current working directory
+wd <- getwd()
+# invisibly copy OU_Model.hpp from realPSD to the current working directory
+# this trick helps realPSD pass win_builder test in rebuilding vignettes section
+file.copy(from = system.file("include", "realPSD", "OU_Model.hpp", 
+                              package = "realPSD"),
+          to = wd)
 
 ## ----ou_psd-------------------------------------------------------------------
 #' PSD for the OU model.
@@ -75,11 +82,8 @@ ou_cpp <- make_psd_model(model = "OU",
                          class = "ou::UFun",
                          ctor = "ou::make_Ufun",
                          standalone = TRUE)
-# this avoid compiling if file hasn't changed
-if(!file.exists("OU_FitMethods.cpp") ||
-   !identical(ou_cpp, paste0(readLines("OU_FitMethods.cpp"), collapse = "\n"))) {
-  cat(ou_cpp, sep = "\n", file = "OU_FitMethods.cpp")
-}
+# write the content into a .cpp file called OU_FitMethods.cpp under your current working directory
+cat(ou_cpp, sep = "\n", file = "OU_FitMethods.cpp")
 
 ## ----ou_cpp_compile_step2, message = FALSE------------------------------------
 # compile it
