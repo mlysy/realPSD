@@ -279,7 +279,7 @@ Now we explain the above input arguments of `make_psd_model` in detail:
 model <- "OU_FitMethods"
 TMB::compile(paste0(model, ".cpp"),
              PKG_CXXFLAGS = paste0("-I", system.file("include", package = "realPSD"),
-                                   " -std=c++11"))
+                                   " -std=gnu++11"))
 dyn.load(TMB::dynlib(model))
 ```
 

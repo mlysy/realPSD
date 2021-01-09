@@ -87,7 +87,7 @@ cat(ou_cpp, sep = "\n", file = "OU_FitMethods.cpp")
 model <- "OU_FitMethods"
 TMB::compile(paste0(model, ".cpp"),
              PKG_CXXFLAGS = paste0("-I", system.file("include", package = "realPSD"),
-                                   " -std=c++11"))
+                                   " -std=gnu++11"))
 dyn.load(TMB::dynlib(model))
 
 ## ----ou_cpp_compile_step3-----------------------------------------------------

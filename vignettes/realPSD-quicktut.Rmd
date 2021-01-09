@@ -347,6 +347,40 @@ It is always a good idea to do this kind of tests in the process of building you
 
 Now we are ready to fit the OU model by using **realPSD**. Three methods are provided, i.e. maximum likelihood estimation (MLE), log periodogram estimation (LP), non-linear least squares estimation (NLS). The theoretical background of these three methods is summarized in the [advanced tutorial](http://htmlpreview.github.io/?https://github.com/mlysy/realPSD/blob/devel-ferris-prerelease/doc/realPSD-advancedtut.html). More technical details can be found in this [preprint]().
 
+```{r helper_for_debug, echo = FALSE, eval = FALSE}
+#` Helper function to convert a value of `phi_est` into `eta_coef` and `eta_vcov`.
+#` @param phi Value of `phi`.
+#` @param obj Model object created by `ou_model`.
+#` @return List with elements `coef` and `vcov` of parameters on the computational basis, `eta = (phi, zeta)`.
+to_fit <- function(phi, obj) {
+  fit <- list(phi = phi, zeta = obj$nlp()$simulate(phi)$zeta)
+  fit <- list(coef = c(phi = fit$phi, zeta = fit$zeta),
+              vcov = obj$vcov(phi = fit$phi, zeta = fit$zeta))
+  rownames(fit$vcov) <- colnames(fit$vcov) <- names(fit$coef)
+  fit
+}
+# Helper function to convert the fitted parameter `phi` which is on the computational basis (log-transformed) into the natural parameter `theta` for the OU model
+#' @param phi Value of `phi`
+#' @param obj Model object created by `ou_model`
+#' @return A list with elements `coef`, `vcov`, and `se`.
+to_est <- function(phi, obj) {
+  zeta <- obj$nlp()$simulate(phi)$zeta
+  coef <- obj$to_theta(phi,zeta)
+  vcov <- obj$vcov(phi, zeta, to_theta = TRUE)
+  # change of variables
+  # he <- obj$nll()$he(c(phi, zeta))
+  # out <- chol2inv(chol(he))
+  # jac_trans <- numDeriv::jacobian(func = function(eta) {
+  #         obj$to_theta(phi = eta[1],
+  #                       zeta = eta[2])
+  # }, x = c(phi, zeta))
+  # vcov <- jac_trans %*% out %*% t(jac_trans)
+  colnames(vcov) <- rownames(vcov) <- names(coef)
+  se <- sqrt(diag(vcov))
+  list(coef = coef, se = se, vcov = vcov)
+}
+```
+
 ## MLE
 
 We can fit the OU model using MLE (profile likelihood) as follows:
