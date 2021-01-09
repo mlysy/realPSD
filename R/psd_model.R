@@ -407,6 +407,7 @@ psd_model <- R6::R6Class(
         fit <- list(coef = c(phi = fit$phi, zeta = fit$zeta),
                     vcov = self$vcov(phi = fit$phi, zeta = fit$zeta))
       }
+      rownames(fit$vcov) <- colnames(fit$vcov) <- names(fit$coef)
       fit 
     }
 
