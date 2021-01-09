@@ -160,7 +160,7 @@ curve(ou_psd(freq = x, alpha = theta0[1], beta = theta0[2]),
 
 ## Write the OU model header file in C++
 
-To provide efficient estimation for general parametric PSD models, **realPSD** requires you to write your own model in a standalone C++ header file (with extension `.h` or `.hpp`). Here we have it ready for you. 
+To provide efficient estimation for general parametric PSD models, **realPSD** requires you to write your own model in a standalone C++ header file (with extension `.hpp`). Here we have it ready for you. 
 
 ```{r ou_ufun, echo = FALSE, results = "asis"}
 cat("```cpp", readLines("OU_Model.hpp"), "```", sep = "\n")
@@ -200,7 +200,7 @@ You may also notice that we have an external constructor `template<class Type> U
 
 To summarize, you can follow the steps below to create a model header file:
 
-1. Create an empty C++ header file with extension `.h` or `.hpp` and name it whatever you like. In our example, we name the file `OU_Model.hpp`. Put it under the current working directory.
+1. Create an empty C++ header file with extension `.hpp` and name it whatever you like. In our example, we name the file `OU_Model.hpp`. Put it under the current working directory.
 2. Give a name to your namespace to wrap your model class. Usually the namespace is named according to your model, e.g. `ou` in our example.
 3. Create a `UFun` class within your namespace. It is recommended to define the class as a template class in the way as shown in our example, i.e. `template <class Type>
   class UFun {...};`. It would enable you to make use of the data types given by C++ [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page) library. 
