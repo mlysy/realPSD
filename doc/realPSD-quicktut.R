@@ -72,9 +72,6 @@ plot(psd_bin$freq, psd_bin$Ypsd, type = "l", log = "xy",
 curve(ou_psd(freq = x, alpha = theta0[1], beta = theta0[2]),
       col = "red", add = TRUE)
 
-## ----ou_ufun, echo = FALSE, results = "asis"----------------------------------
-cat("```cpp", readLines("OU_Model.hpp"), "```", sep = "\n")
-
 ## ----ou_cpp_compile_step1-----------------------------------------------------
 # create c++ file
 ou_cpp <- make_psd_model(model = "OU",
@@ -123,83 +120,6 @@ ou_model <- R6::R6Class(
   )
 )
 
-## ----public_list_psd_class, eval = FALSE--------------------------------------
-#  #' @description Specify the estimator.
-#  #'
-#  #' @param est_type Type of estimator: "lp", "nls", or "mle".
-#  #' @param bin_size Bin size.
-#  #' @param bin_type Type of bin: "mean" or "median".
-#  set_est = function(est_type = c("lp", "nls", "mle"),
-#                     bin_size = 100,
-#                     bin_type = c("mean", "median")) {...}
-#  #' @description Set the periodogram data.
-#  #'
-#  #' @param freq Frequency vector.
-#  #' @param Ypsd Periodogram vector.
-#  set_psd = function(freq, Ypsd) {...}
-#  
-#  #' @description Negative profile loglikelihood constructor.
-#  #'
-#  #' @param phi0 Vector with which to initialize `phi`.  If missing, a vector of zeros.
-#  #'
-#  #' @return A [TMB::MakeADFun()] object.  Relevant methods are: `nlp$fn(phi)`, `nlp$gr(phi)`, `nlp$he(phi)`, and `nlp$simulate(phi)$zeta`, which returns the conditional optimum of `zeta` given `phi`.
-#  nlp = function(phi0) {...}
-#  
-#  
-#  #' @description Negative loglikelihood constructor.
-#  #'
-#  #' @param phi0 Vector with which to initialize `phi`.  If missing, a vector of zeros.
-#  #' @param zeta0 Scalar with which to initialize `zeta`.  If missing, zero.
-#  #'
-#  #' @return A [TMB::MakeADFun()] object.  Relevant methods are: `nll$fn(phi)`, `nll$gr()`, and `nll$he()`.
-#  nll = function(phi0, zeta0) {...}
-#  
-#  
-#  #' @description Residual constructor.
-#  #'
-#  #' @param phi0 Vector with which to initialize `phi`.  If missing, a vector of zeros.
-#  #' @param zeta0 Scalar with which to initialize `zeta`.  If missing, zero.
-#  #'
-#  #' @return A [TMB::MakeADFun()] object.  Relevant methods are: `resid$fn(phi)` and `resid$gr(phi)`.
-#  resid = function(phi0, zeta0) {...}
-#  
-#  #' @description Normalized PSD constructor.
-#  #'
-#  #' @param phi0 Vector with which to initialize `phi`.  If missing, a vector of zeros.
-#  #'
-#  #' @return A [TMB::MakeADFun()] object.  Relevant methods are: `ufun$fn(phi)` and `ufun$gr(phi)`.
-#  ufun = function(phi0) {...}
-#  
-#  #' @description Calculate the optimal value of the log normalizing constant.
-#  #'
-#  #' @param phi0 Vector with which to initialize `phi`.  If missing, a vector of zeros.
-#  #'
-#  #' @return A [TMB::MakeADFun()] object.  Relevant methods are: `zeta$fn(phi)`, `zeta$gr()`, and `zeta$he()`.
-#  zeta = function(phi0) {...}
-#  
-#  #' @description Calculate the variance estimator for the parameter fitting method.
-#  #'
-#  #' @param phi Vector of normalized PSD parameters.
-#  #' @param zeta Log of normalization parameter.
-#  #' @param to_theta If `TRUE`, calculates the variance in the inferential basis.  Otherwise, uses the computational basis.
-#  #'
-#  #' @return A variance matrix of size `n_phi x n_phi`.
-#  vcov = function(phi, zeta, to_theta = FALSE) {...}
-#  
-#  #' @description Model object constructor.
-#  #'
-#  #' @param freq Frequency vector.
-#  #' @param Ypsd Periodogram vector.
-#  #' @param est_type Type of estimator: "lp", "nls", or "mle".
-#  #' @param bin_size Bin size.
-#  #' @param bin_type Type of bin: "mean" or "median".
-#  #' @param ctor_args Optional list of additional arguments to TMB `UFun()` constructor.
-#  initialize = function(freq, Ypsd,
-#                        est_type = c("lp", "nls", "mle"),
-#                        bin_size = 100,
-#                        bin_type = c("mean", "median"),
-#                        ctor_args = NULL) {...}
-
 ## ----tmb_test-----------------------------------------------------------------
 # construct the model object
 ou_obj <- ou_model$new(freq = psd_emp$freq, Ypsd = psd_emp$Ypsd,
@@ -211,47 +131,16 @@ U_tmb <- ou_ufun$fn(log(theta0[1])) # evaluate at frequencies for lp estimator
 U_r <- ou_psd(freq = psd_bin$freq, alpha = theta0[1], beta = 1)
 range(U_tmb - U_r)
 
-## ----helper_fn----------------------------------------------------------------
-#` Helper function to convert a value of `phi_est` into `eta_coef` and `eta_vcov`.
-#` @param phi Value of `phi`.
-#` @param obj Model object created by `ou_model`.
-#` @return List with elements `coef` and `vcov` of parameters on the computational basis, `eta = (phi, zeta)`.
-to_fit <- function(phi, obj) {
-  fit <- list(phi = phi, zeta = obj$nlp()$simulate(phi)$zeta)
-  fit <- list(coef = c(phi = fit$phi, zeta = fit$zeta),
-              vcov = obj$vcov(phi = fit$phi, zeta = fit$zeta))
-  rownames(fit$vcov) <- colnames(fit$vcov) <- names(fit$coef)
-  fit
-}
-# Helper function to convert the fitted parameter `phi` which is on the computational basis (log-transformed) into the natural parameter `theta` for the OU model
-#' @param phi Value of `phi`
-#' @param obj Model object created by `ou_model`
-#' @return A list with elements `coef`, `vcov`, and `se`.
-to_est <- function(phi, obj) {
-  zeta <- obj$nlp()$simulate(phi)$zeta
-  coef <- obj$to_theta(phi,zeta)
-  vcov <- obj$vcov(phi, zeta, to_theta = TRUE)
-  # change of variables
-  # he <- obj$nll()$he(c(phi, zeta))
-  # out <- chol2inv(chol(he))
-  # jac_trans <- numDeriv::jacobian(func = function(eta) {
-  #         obj$to_theta(phi = eta[1],
-  #                       zeta = eta[2])
-  # }, x = c(phi, zeta))
-  # vcov <- jac_trans %*% out %*% t(jac_trans)
-  colnames(vcov) <- rownames(vcov) <- names(coef)
-  se <- sqrt(diag(vcov))
-  list(coef = coef, se = se, vcov = vcov)
-}
-
 ## ----mle_fit------------------------------------------------------------------
 # instantiate TMB object for profile likelihood
 ou_obj$set_est(est_type = "mle")
 ou_nlp <- ou_obj$nlp()
 
 opt <- optimize(f = ou_nlp$fn, lower = log(.1), upper = log(10))
-mle_fit <- to_fit(opt$min, ou_obj) # estimates in the computational/log-transformed basis
-mle_est <- to_est(opt$min, ou_obj) # estimates in the "inferential basis"
+mle_fit <- ou_obj$to_est(opt$min, to_theta = FALSE) # estimates in the computational/log-transformed basis
+print(mle_fit)
+mle_est <- ou_obj$to_est(opt$min, to_theta = TRUE) # estimates in the "inferential basis"
+print(mle_est)
 
 plot(psd_bin$freq, psd_bin$Ypsd, type = "l", log = "xy",
      xlab = "Frequency (Hz)", ylab = "PSD")
@@ -264,8 +153,8 @@ ou_obj$set_est(est_type = "lp", bin_size = bin_size)
 ou_nlp <- ou_obj$nlp()
 
 opt <- optimize(f = ou_nlp$fn, lower = log(.1), upper = log(10))
-lp_fit <- to_fit(opt$min, ou_obj)
-lp_est <- to_est(opt$min, ou_obj)
+lp_fit <- ou_obj$to_est(opt$min) # to_theta = FALSE by default
+lp_est <- ou_obj$to_est(opt$min, to_theta = TRUE)
 
 plot(psd_bin$freq, psd_bin$Ypsd, type = "l", log = "xy",
      xlab = "Frequency (Hz)", ylab = "PSD")
@@ -278,8 +167,8 @@ ou_obj$set_est(est_type = "nls", bin_size = bin_size)
 ou_nlp <- ou_obj$nlp()
 
 opt <- optimize(f = ou_nlp$fn, lower = log(.1), upper = log(10))
-nls_fit <- to_fit(opt$min, ou_obj)
-nls_est <- to_est(opt$min, ou_obj)
+nls_fit <- ou_obj$to_est(opt$min)
+nls_est <- ou_obj$to_est(opt$min, to_theta = TRUE)
 
 plot(psd_bin$freq, psd_bin$Ypsd, type = "l", log = "xy",
      xlab = "Frequency (Hz)", ylab = "PSD")
@@ -304,4 +193,7 @@ disp <- cbind(true = c(theta0[1], NA, theta0[2], NA), disp)
 disp <- t(disp)
 colnames(disp) <- c("alpha_est", "alpha_se", "beta_est", "beta_se")
 signif(disp, 3)
+
+## ----ou_ufun, echo = FALSE, results = "asis"----------------------------------
+cat("```cpp", readLines("OU_Model.hpp"), "```", sep = "\n")
 

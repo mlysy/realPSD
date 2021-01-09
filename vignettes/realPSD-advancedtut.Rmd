@@ -370,13 +370,13 @@ If you still remember the OU example in the [quick tutorial](http://htmlpreview.
 #define TMB_OBJECTIVE_PTR this
 ```
 
-This is a workaround to let the TMB object pointer find the current model object (which is not built into the **realPSD** package). Here we specifically used one line `UFun<type>(N)` as the return. In this way the memory will be allocated only once, and the C++ compiler knows to move instead of copying the object.
+This is a workaround to let the TMB object pointer find the current model object (which is not built into the **realPSD** package). Here we specifically used one line `UFun<type>(N)` as the return. In this way, the memory will be allocated only once, and the C++ compiler knows to move instead of copying the object.
 
 ## Compile-on-the-fly
 
 To compile any user-defined model object on-the-fly, we make use of [whisker](https://github.com/edwindj/whisker) to automatically create a template C++ file which is needed for **TMB** to compile the model correctly. The template was designed in a similar way as proposed by `r github_link("TMBtools")`.
 
-This technique has already been included into the built-in function `realPSD::make_psd_model`. Thus, users do not need to worry about how to realize this themselves. As we've already used in the OU example, by calling `make_psd_model` as follows
+This technique has already been included into the built-in function `make_psd_model()`. Thus, users do not need to worry about how to realize this themselves. As we've already used in the OU example, by calling `make_psd_model` as follows
 
 ```{r, ou_make_psd_model, eval = FALSE}
 # create c++ file
@@ -405,11 +405,11 @@ To let users to directly deal with **TMB** or the `FitMethods.hpp` in **realPSD*
   - `show_model` for any SHOW model (see the example above)
   - `shof_model` for any SHO model with $1/f$ noise (see the example above)
 
-One can easily create a model object by using the `new()` method in the above R6 base classes. Therefore, fitting any PSD models or specifically any SHOW/SHOF models using **realPSD** is a very consistent process. If you are insterested in how we realized this, please check out the source code of `psd_model.R`. For more details about R6 class, one can see [here](https://r6.r-lib.org/index.html). For more details about how we defined the base class and how to use the methods therein, please see the documentation for each class.
+One can easily create a model object by using the `new()` method in the above R6 base classes. Therefore, fitting any PSD models or specifically any SHOW/SHOF models using **realPSD** is a very consistent process. If you are insterested in how we realized this, please check out the source code of `psd_model()`. For more details about R6 class, one can see [here](https://r6.r-lib.org/index.html). For more details about how we defined the base class and how to use the methods therein, please see the documentation for each class.
 
 ## List of Built-in Fitting Methods
 
-For general users, the fitting methods specified in `FitMethods.hpp` are hidden. You don't really need to know the underlying details, since **realPSD** has already handled (by using R6 class) choosing the proper fitting methods for you. But for adavanced users who are insterested in using `TMB::MakeADFun` directly, one can specify `method` as
+For general users, the fitting methods specified in `FitMethods.hpp` are hidden. You don't really need to know the underlying details, since **realPSD** has already handled (by using R6 class) choosing the proper fitting methods for you. But for adavanced users who are insterested in using `TMB::MakeADFun()` directly, one can specify `method` as
 
  - `UFun`: evaluate U function $U(\f, \pph)$.
  - `MLE_ufun`: evaluate U function $U_k(\pph)$ for MLE method.

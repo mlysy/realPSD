@@ -35,6 +35,7 @@ SHOF model class.
 \item \out{<span class="pkg-link" data-pkg="realPSD" data-topic="psd_model" data-id="resid">}\href{../../realPSD/html/psd_model.html#method-resid}{\code{realPSD::psd_model$resid()}}\out{</span>}
 \item \out{<span class="pkg-link" data-pkg="realPSD" data-topic="psd_model" data-id="set_est">}\href{../../realPSD/html/psd_model.html#method-set_est}{\code{realPSD::psd_model$set_est()}}\out{</span>}
 \item \out{<span class="pkg-link" data-pkg="realPSD" data-topic="psd_model" data-id="set_psd">}\href{../../realPSD/html/psd_model.html#method-set_psd}{\code{realPSD::psd_model$set_psd()}}\out{</span>}
+\item \out{<span class="pkg-link" data-pkg="realPSD" data-topic="psd_model" data-id="to_est">}\href{../../realPSD/html/psd_model.html#method-to_est}{\code{realPSD::psd_model$to_est()}}\out{</span>}
 \item \out{<span class="pkg-link" data-pkg="realPSD" data-topic="psd_model" data-id="ufun">}\href{../../realPSD/html/psd_model.html#method-ufun}{\code{realPSD::psd_model$ufun()}}\out{</span>}
 \item \out{<span class="pkg-link" data-pkg="realPSD" data-topic="psd_model" data-id="vcov">}\href{../../realPSD/html/psd_model.html#method-vcov}{\code{realPSD::psd_model$vcov()}}\out{</span>}
 \item \out{<span class="pkg-link" data-pkg="realPSD" data-topic="psd_model" data-id="zeta">}\href{../../realPSD/html/psd_model.html#method-zeta}{\code{realPSD::psd_model$zeta()}}\out{</span>}

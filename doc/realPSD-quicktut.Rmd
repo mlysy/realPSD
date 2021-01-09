@@ -158,21 +158,17 @@ curve(ou_psd(freq = x, alpha = theta0[1], beta = theta0[2]),
 
 # Create the OU Model Object
 
-## Write the OU model header file in C++
+## Write the OU model Header File in C++
 
-To provide efficient estimation for general parametric PSD models, **realPSD** requires you to write your own model in a standalone C++ header file (with extension `.hpp`). Here we have it ready for you. 
-
-```{r ou_ufun, echo = FALSE, results = "asis"}
-cat("```cpp", readLines("OU_Model.hpp"), "```", sep = "\n")
-```
+To provide efficient estimation for general parametric PSD models, **realPSD** requires you to write your own model in a standalone C++ header file (with extension `.hpp`). The file has been written for you and put in the Appendix for your reference. 
 
 Basically, we defined a `UFun` class within our own namespace `ou` to avoid any potential scope conflict with the **realPSD** package. Later whenever we refer to this class, we will use `ou::UFun` to emphasize its namespace. The `ou::UFun` class is nothing fancy but just a collection of necessary data and functions we need to evaluate the PSD of the OU process. In our specific example, we need to provide 
 
-  - the length of the simulated time series `N` which is supplied via the constructor function `UFun(int N)`
-  - a vector of frequencies `f` which is supplied via function `set_f`
-  - a function `eval` to evaluate the PSD. 
+  - the length of the simulated time series `N` which is supplied via the constructor `UFun::UFun(int N)`;
+  - a vector of frequencies `f` which is supplied via the public method `UFun::set_f()`;
+  - a public method `UFun::eval()` to evaluate the PSD.
 
-If you look at the definition of `eval` function
+Consider the definition of `UFun::eval()` method
 
 ```C++
 /// @param[out] U Normalized PSD vector of size `N`.
@@ -186,28 +182,71 @@ inline void UFun<Type>::eval(RefMatrix<Type> U, cRefMatrix<Type>& phi) {
 }
 ```
 
-you will notice it is basically the C++ translation of the R function `ou_psd`. The only difference is that for numerical purposes, we define the PSD as $S(f) = \beta^2 U(f)$ where 
+you will notice it is basically the C++ translation of the R function `ou_psd()`. The only difference is about normalization. We write the PSD as $S(f) = \beta^2 U(f)$ where 
 $$
 U(f) = \frac{1}{(2\pi f)^2 + \alpha^2}
 $$
 is the normalized PSD we are using in **realPSD**.
 
-The private member variables `f_`, `f2_` and `scale_` can be understood as some intermediary variables to help us create the function `eval` eventually. But we don't need them to be accessed outside of the class `ou::UFun`, so they are private. These variables are by no means mandatory but just for convenience. You should think about how to create your own private members based on your specific model. 
+The private members `f_`, `f2_` and `scale_` can be understood as some intermediary variables to help us create the method `UFun::eval()` eventually. But we don't need them to be accessed outside of the class `ou::UFun`, so they are private. These variables are by no means mandatory but just for convenience. You should think about how to create your own private members based on your specific model. 
 
-As for `RefMatrix<Type>`, it is a user-defined data type used by **realPSD** to help users make use of data types in C++ [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page) library. You can understand `RefMatrix<Type>` simply as a built-in data type for matrix. Please make sure you have the line `#include "realPSD/utils.hpp"` at the beginning of your header file. Then you header file will automatically include some tools to facilitate your job.
+As for `RefMatrix<Type>` and `cRefMatrix<Type>`, they are pre-defined data types used by **realPSD** to help users make use of data types in the C++ [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page) library. Just make sure you have the line `#include "realPSD/utils.hpp"` at the beginning of your header file. Then the compiler will automatically include the utility tools provided by **realPSD** to facilitate your job. In `realPSD/utils.hpp`, we defined
 
-You may also notice that we have an external constructor `template<class Type> UFun<Type> make_Ufun(...)` for `ou::UFun` class. Just copy and paste this function to the end of your header file (still within the namespace), it will help you get around some technical issues involved in `r cran_link("TMB")`. For more details, please see the [advanced tutorial](http://htmlpreview.github.io/?https://github.com/mlysy/realPSD/blob/devel-ferris-prerelease/doc/realPSD-advancedtut.html).
+```C++
+/// Typedef equivalent to `Ref <MatrixXd<Type> >`.
+template <class Type>
+using RefMatrix = Eigen::Ref <Eigen::Matrix<Type, Eigen::Dynamic, Eigen::Dynamic> >;
+/// Typedef equivalent to `const Ref <const MatrixXd<Type> >`
+template <class Type>
+using cRefMatrix = const Eigen::Ref <const Eigen::Matrix<Type, Eigen::Dynamic, Eigen::Dynamic> >;
+```
+
+You can understand both `RefMatrix<Type>` and `cRefMatrix<Type>` simply as built-in data types for matrix. But the difference is that `RefMatrix<Type>` should be used for something we need to make changes to whereas `cRefMatrix<Type>` should be used for some constants we don't change. A `const` keyword in C++ basically means a "promise" that we will not make any changes. That is why we declared
+
+```C++
+/// Evaluate the normalized PSD.
+  void eval(RefMatrix<Type> U, cRefMatrix<Type>& phi);
+```
+
+in which `RefMatrix<Type> U` is used for storing the value of the normalized PSD and may potentially be changed, thus it is [passed by value](https://www.educative.io/edpresso/pass-by-value-vs-pass-by-reference) whereas `cRefMatrix<Type>& phi` is used for pointing to the parameters elsewhere and is [passed by reference](https://www.educative.io/edpresso/pass-by-value-vs-pass-by-reference) (notice the `&` in `cRefMatrix<Type>&`) since we don't need to change the parameters inside `UFun::eval()`. This distinction makes the code more efficient since we don't have to hard-copy the constant objects everytime we call `UFun::eval()`. Similarly, we also have `RefVector` and `cRefVector` for vector data types in  `realPSD/utils.hpp`.
+
+```C++
+/// Typedef equivalent to `Ref <VectorXd<Type> >`.
+template <class Type>
+using RefVector = Eigen::Ref <Eigen::Matrix<Type, Eigen::Dynamic, 1> >;
+/// Typedef equivalent to `const Ref <const VectorXd<Type> >`
+template <class Type>
+using cRefVector = const Eigen::Ref <const Eigen::Matrix<Type, Eigen::Dynamic, 1> >;
+``` 
+
+Besides, users are free to use `zero_matrix<Type>(int n, int p)` to initialize an `nxp` matrix with zeros, which is another useful tool given in `realPSD/utils.hpp`. 
+
+```C++
+/// Create `matrix<Type>` of zeros.
+///
+/// @param[in] n Integer number of rows.
+/// @param[in] p Integer number of columns.
+/// @return A `matrix<Type>` of size `n x p` initialized with zeros.
+template<class Type>
+matrix<Type> zero_matrix(int n, int p) {
+  matrix<Type> out(n,p);
+  out.setZero();
+  return out;
+}
+```
+
+You may notice that we have an external constructor `UFun<Type> make_Ufun()` for `ou::UFun` class. Just copy and paste this function to the end of your header file (still within the namespace), it will help you get around some technical issues involved in `r cran_link("TMB")`. For more details, please see the [advanced tutorial](http://htmlpreview.github.io/?https://github.com/mlysy/realPSD/blob/devel-ferris-prerelease/doc/realPSD-advancedtut.html).
 
 To summarize, you can follow the steps below to create a model header file:
 
 1. Create an empty C++ header file with extension `.hpp` and name it whatever you like. In our example, we name the file `OU_Model.hpp`. Put it under the current working directory.
 2. Give a name to your namespace to wrap your model class. Usually the namespace is named according to your model, e.g. `ou` in our example.
-3. Create a `UFun` class within your namespace. It is recommended to define the class as a template class in the way as shown in our example, i.e. `template <class Type>
+3. Create a `ou::UFun` class within your namespace. It is recommended to define the class as a template class in the way as shown in our example, i.e. `template <class Type>
   class UFun {...};`. It would enable you to make use of the data types given by C++ [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page) library. 
-4. Create necessary public members (variables or functions) to get data from outside and to evaluate your normalized PSD, i.e. the U(f) function and necessary private members for internal computation. Usually it is a good idea to make your own constructor (instead of using the default constructor) to initialize some private data members as we did in the example. 
-5. The rest of the file should be just a simple copy-and-paste of the above example header file.
+4. Create necessary public members (variables or functions) to get data from outside and to evaluate your normalized PSD. Think about how to create some private members for internal computation. Usually it is a good idea to make your own constructor (instead of using the default constructor) to initialize some private data members as we did in the example. 
+5. The rest of the file should be just a simple copy-and-paste of the example header file.
 
-## Compile the OU model
+## Compile the OU Model
 
 Now let's compile the header file and create the `ou_model` object as follows:
 
@@ -231,7 +270,7 @@ Now we explain the above input arguments of `make_psd_model` in detail:
 - `class`: Model class with name scope (if any), i.e. `ou::UFun` as shown above.
 - `ctor`: Name of the external constructor in the model header file with name scope (if any). In our example, it is `ou::make_Ufun`.
 - `include`: Additional include directive path, usually package specific, in this example, the path to `FitMethods.hpp`.
-- `standalone`: If `TRUE` creates a standalone `cpp` file to pass to `TMB::compile()`.  Otherwise, creates an `hpp` header file to be placed in a package created with **TMBtools**.
+- `standalone`: If `TRUE` creates a standalone `.cpp` file to pass to `TMB::compile()`.  Otherwise, creates an `.hpp` header file to be placed in a package created with **TMBtools**.
 
 **Step 2:** After we have the necessary C++ file `OU_FitMethods.cpp`, we can compile it by using the following code. It will call `r cran_link("TMB")` to compile the model object. Just copy and paste the code for your own project. All you need to change is the name of the file.
 
@@ -277,89 +316,9 @@ ou_model <- R6::R6Class(
 )
 ```
 
-Here `classname` is user-defined and we call it "ou_model". It will be an object inherit from an existing built-in R6 class object `psd_model` provided by **realPSD**, so we set `inherit = realPSD::psd_model`. `tmb_model_` should be the same as the `model` input in `make_psd_model` and `tmb_DLL_` should be the same as the name of the automatically generated C++ file in the above **Step 1**, i.e. "OU_FitMethods" in our case. We can add public methods specifically for the OU model as shown above (i.e. `to_theta`, `to_phi`). Please note that `to_theta` should be treated as a reserved keyword for converting parameters from their computational basis ($\log$ transformed parameterization $\phi$ and $\zeta$) back to the inferential basis (natural parameterization $\theta$). If one specify `to_theta = TRUE` in method `vcov()` for the object model, then it will try to find a method called `to_theta` when converting the standard error estimates by using the sandwich estimator.
+Here `classname` is user-defined and we call it "ou_model". It will be an object inherit from an existing built-in R6 class object `realPSD::psd_model` provided by **realPSD**, so we set `inherit = realPSD::psd_model`. `tmb_model_` should be the same as the `model` input in `make_psd_model()` and `tmb_DLL_` should be the same as the name of the automatically generated C++ file in the above **Step 1**, i.e. "OU_FitMethods" in our case. We can add public methods specifically for the OU model as shown above. Please note that `to_theta` should be treated as a reserved keyword for converting parameters from their computational basis ($\log$ transformed parameterization $\phi$ and $\zeta$) back to the inferential basis (natural parameterization $\theta$). 
 
 For more details about R6 class, please see [here](https://r6.r-lib.org/index.html).
-
-For further references, we list here the public members (with the function body omitted) of the base R6 class `realPSD::psd_model` which can be useful for our later model estimation.
-
-```{r public_list_psd_class, eval = FALSE}
-#' @description Specify the estimator.
-#'
-#' @param est_type Type of estimator: "lp", "nls", or "mle".
-#' @param bin_size Bin size.
-#' @param bin_type Type of bin: "mean" or "median".
-set_est = function(est_type = c("lp", "nls", "mle"),
-                   bin_size = 100,
-                   bin_type = c("mean", "median")) {...}
-#' @description Set the periodogram data.
-#'
-#' @param freq Frequency vector.
-#' @param Ypsd Periodogram vector.
-set_psd = function(freq, Ypsd) {...}
-
-#' @description Negative profile loglikelihood constructor.
-#'
-#' @param phi0 Vector with which to initialize `phi`.  If missing, a vector of zeros.
-#'
-#' @return A [TMB::MakeADFun()] object.  Relevant methods are: `nlp$fn(phi)`, `nlp$gr(phi)`, `nlp$he(phi)`, and `nlp$simulate(phi)$zeta`, which returns the conditional optimum of `zeta` given `phi`.
-nlp = function(phi0) {...}
-
-
-#' @description Negative loglikelihood constructor.
-#'
-#' @param phi0 Vector with which to initialize `phi`.  If missing, a vector of zeros.
-#' @param zeta0 Scalar with which to initialize `zeta`.  If missing, zero.
-#'
-#' @return A [TMB::MakeADFun()] object.  Relevant methods are: `nll$fn(phi)`, `nll$gr()`, and `nll$he()`.
-nll = function(phi0, zeta0) {...}
-
-
-#' @description Residual constructor.
-#'
-#' @param phi0 Vector with which to initialize `phi`.  If missing, a vector of zeros.
-#' @param zeta0 Scalar with which to initialize `zeta`.  If missing, zero.
-#'
-#' @return A [TMB::MakeADFun()] object.  Relevant methods are: `resid$fn(phi)` and `resid$gr(phi)`.
-resid = function(phi0, zeta0) {...}
-
-#' @description Normalized PSD constructor.
-#'
-#' @param phi0 Vector with which to initialize `phi`.  If missing, a vector of zeros.
-#'
-#' @return A [TMB::MakeADFun()] object.  Relevant methods are: `ufun$fn(phi)` and `ufun$gr(phi)`.
-ufun = function(phi0) {...}
-
-#' @description Calculate the optimal value of the log normalizing constant.
-#'
-#' @param phi0 Vector with which to initialize `phi`.  If missing, a vector of zeros.
-#'
-#' @return A [TMB::MakeADFun()] object.  Relevant methods are: `zeta$fn(phi)`, `zeta$gr()`, and `zeta$he()`.
-zeta = function(phi0) {...}
-
-#' @description Calculate the variance estimator for the parameter fitting method.
-#'
-#' @param phi Vector of normalized PSD parameters.
-#' @param zeta Log of normalization parameter.
-#' @param to_theta If `TRUE`, calculates the variance in the inferential basis.  Otherwise, uses the computational basis.
-#'
-#' @return A variance matrix of size `n_phi x n_phi`.
-vcov = function(phi, zeta, to_theta = FALSE) {...}
-
-#' @description Model object constructor.
-#'
-#' @param freq Frequency vector.
-#' @param Ypsd Periodogram vector.
-#' @param est_type Type of estimator: "lp", "nls", or "mle".
-#' @param bin_size Bin size.
-#' @param bin_type Type of bin: "mean" or "median".
-#' @param ctor_args Optional list of additional arguments to TMB `UFun()` constructor.
-initialize = function(freq, Ypsd,
-                      est_type = c("lp", "nls", "mle"),
-                      bin_size = 100,
-                      bin_type = c("mean", "median"),
-                      ctor_args = NULL) {...}
-```
 
 ## Testing
 
@@ -377,7 +336,9 @@ U_r <- ou_psd(freq = psd_bin$freq, alpha = theta0[1], beta = 1)
 range(U_tmb - U_r)
 ```
 
-Note that we used R6 class to initialize the OU model object by using the method `ou_model$new()` . The input arguments can be found in the `initialize` method listed above for the R6 base class `realPSD::psd_model`.
+Note that we used R6 `realPSD::psd_model` class to initialize the OU model object by its public method `ou_model$new()` . Then we used the class method `psd_model$ufun()` to get the normalized PSD. Essentially speaking, `psd_model$ufun()` returns a `TMB::MakeADFun()` object which has its own method `ufun$fn()`, thus we can evaluate the PSD at frequencies for LP estimator as given above.
+
+<!-- The input arguments can be found in the `initialize` method listed above for the R6 base class `realPSD::psd_model`. -->
 
 It is always a good idea to do this kind of tests in the process of building your own model. The R package `r cran_link("testthat")` is great for this purpose. For more details about unit tests, please see [here](https://testthat.r-lib.org).
 
@@ -385,42 +346,6 @@ It is always a good idea to do this kind of tests in the process of building you
 # Parameter Estimation 
 
 Now we are ready to fit the OU model by using **realPSD**. Three methods are provided, i.e. maximum likelihood estimation (MLE), log periodogram estimation (LP), non-linear least squares estimation (NLS). The theoretical background of these three methods is summarized in the [advanced tutorial](http://htmlpreview.github.io/?https://github.com/mlysy/realPSD/blob/devel-ferris-prerelease/doc/realPSD-advancedtut.html). More technical details can be found in this [preprint]().
-
-Before we start to fit the OU PSD, let's first define some helper functions to help us convert parameters.
-
-```{r helper_fn}
-#` Helper function to convert a value of `phi_est` into `eta_coef` and `eta_vcov`.
-#` @param phi Value of `phi`.
-#` @param obj Model object created by `ou_model`.
-#` @return List with elements `coef` and `vcov` of parameters on the computational basis, `eta = (phi, zeta)`.
-to_fit <- function(phi, obj) {
-  fit <- list(phi = phi, zeta = obj$nlp()$simulate(phi)$zeta)
-  fit <- list(coef = c(phi = fit$phi, zeta = fit$zeta),
-              vcov = obj$vcov(phi = fit$phi, zeta = fit$zeta))
-  rownames(fit$vcov) <- colnames(fit$vcov) <- names(fit$coef)
-  fit
-}
-# Helper function to convert the fitted parameter `phi` which is on the computational basis (log-transformed) into the natural parameter `theta` for the OU model
-#' @param phi Value of `phi`
-#' @param obj Model object created by `ou_model`
-#' @return A list with elements `coef`, `vcov`, and `se`.
-to_est <- function(phi, obj) {
-  zeta <- obj$nlp()$simulate(phi)$zeta
-  coef <- obj$to_theta(phi,zeta)
-  vcov <- obj$vcov(phi, zeta, to_theta = TRUE)
-  # change of variables
-  # he <- obj$nll()$he(c(phi, zeta))
-  # out <- chol2inv(chol(he))
-  # jac_trans <- numDeriv::jacobian(func = function(eta) {
-  #         obj$to_theta(phi = eta[1],
-  #                       zeta = eta[2])
-  # }, x = c(phi, zeta))
-  # vcov <- jac_trans %*% out %*% t(jac_trans)
-  colnames(vcov) <- rownames(vcov) <- names(coef)
-  se <- sqrt(diag(vcov))
-  list(coef = coef, se = se, vcov = vcov)
-}
-```
 
 ## MLE
 
@@ -432,8 +357,10 @@ ou_obj$set_est(est_type = "mle")
 ou_nlp <- ou_obj$nlp()
 
 opt <- optimize(f = ou_nlp$fn, lower = log(.1), upper = log(10))
-mle_fit <- to_fit(opt$min, ou_obj) # estimates in the computational/log-transformed basis
-mle_est <- to_est(opt$min, ou_obj) # estimates in the "inferential basis"
+mle_fit <- ou_obj$to_est(opt$min, to_theta = FALSE) # estimates in the computational/log-transformed basis
+print(mle_fit)
+mle_est <- ou_obj$to_est(opt$min, to_theta = TRUE) # estimates in the "inferential basis"
+print(mle_est)
 
 plot(psd_bin$freq, psd_bin$Ypsd, type = "l", log = "xy",
      xlab = "Frequency (Hz)", ylab = "PSD")
@@ -441,7 +368,36 @@ curve(ou_psd(freq = x, alpha = exp(mle_fit$coef[1]), beta = exp(mle_fit$coef[2]/
       col = "red", add = TRUE)
 ```
 
-As we can see, the fitted curve fits the simulated data very well.
+Let us explain the above code line by line.
+
+  1. Instantiate a model object for profile likelihood by using the method `psd_model$set_est()`. It has three arguments: 
+
+      - `est_type` which specifies one of the three estimators `lp`, `nls` and `mle`,
+      - `bin_size` which is the bin size for frequency compression, by default is set to 100,
+      - `bin_type` which specifies one of the two binning type `mean` and `median`.
+
+  2. Apply the method `psd_model$nlp()` to construct the negative profile loglikelihood object. Remeber the result is itself an object which has some relevant methods: 
+
+      - `nlp$fn(phi)` which allows you to evaluate the likelihood at given parameter `phi` value. There are also many other relevant methods,
+      - `nlp$gr(phi)` which gives you the numerical gradient at the given parameter `phi` value,
+      - `nlp$he(phi)` which gives you the numerical hessian at the given parameter `phi` value,
+      - `nlp$simulate(phi)$zeta` which returns the conditional optimum of `zeta` given `phi`.
+
+  3. Apply the built-in `stats::optimize` method to obtain the optimal parameter values `opt`. Here we didn't supply any gradient-based information, so the optimization method is basically a type of derivative-free line search algorithm in one-dimension by specifying both the lower and upper end points. For more details, please refer to the documentation of `stats::optimize`.
+
+  4. Call the method `psd_model$to_est()` with `to_theta = FALSE` (by default) to obtain a list with elements `coef` and `vcov` in the computational basis. 
+  
+  5. Print out the result given in step 4, which helps you see the process more clearly.
+  
+  6. Call the method `psd_model$to_est()` with `to_theta = TRUE` to obtain another list with elements `coef` and `vcov` in the inferential basis. Please note that in order to get accurate `vcov` in the inferential basis, we have to use sandwich estimator to convert the $\log$ scaled `vcov` instead of just `exp()` the `vcov` in the computational basis. For details, one can check out the source code of `psd_model$vcov()`.
+
+  7. Similarly, we can print out the result given in step 6.
+
+  8. Plot the empirical PSD based on our simulated data.
+  
+  9. Add the fitted PSD curve based on the estimates. Note that in our estimation, we used the computational basis (i.e. $\log$ transformed parameters) for numerical purposes, so remember to convert them back to the inferential basis to get the correct curve. 
+
+Now we can see that the fitted curve fits the simulated data very well.
 
 ## LP
 
@@ -453,8 +409,8 @@ ou_obj$set_est(est_type = "lp", bin_size = bin_size)
 ou_nlp <- ou_obj$nlp()
 
 opt <- optimize(f = ou_nlp$fn, lower = log(.1), upper = log(10))
-lp_fit <- to_fit(opt$min, ou_obj)
-lp_est <- to_est(opt$min, ou_obj)
+lp_fit <- ou_obj$to_est(opt$min) # to_theta = FALSE by default
+lp_est <- ou_obj$to_est(opt$min, to_theta = TRUE)
 
 plot(psd_bin$freq, psd_bin$Ypsd, type = "l", log = "xy",
      xlab = "Frequency (Hz)", ylab = "PSD")
@@ -464,7 +420,7 @@ curve(ou_psd(freq = x, alpha = exp(lp_fit$coef[1]), beta = exp(lp_fit$coef[2]/2)
 
 ## NLS
 
-We can implement the NLS method using the following code.
+In the same spirit, we can implement the NLS method using the following code.
 
 ```{r nls_fit}
 # instantiate TMB object for profile likelihood
@@ -472,8 +428,8 @@ ou_obj$set_est(est_type = "nls", bin_size = bin_size)
 ou_nlp <- ou_obj$nlp()
 
 opt <- optimize(f = ou_nlp$fn, lower = log(.1), upper = log(10))
-nls_fit <- to_fit(opt$min, ou_obj)
-nls_est <- to_est(opt$min, ou_obj)
+nls_fit <- ou_obj$to_est(opt$min)
+nls_est <- ou_obj$to_est(opt$min, to_theta = TRUE)
 
 plot(psd_bin$freq, psd_bin$Ypsd, type = "l", log = "xy",
      xlab = "Frequency (Hz)", ylab = "PSD")
@@ -506,4 +462,10 @@ disp <- cbind(true = c(theta0[1], NA, theta0[2], NA), disp)
 disp <- t(disp)
 colnames(disp) <- c("alpha_est", "alpha_se", "beta_est", "beta_se")
 signif(disp, 3)
+```
+
+# Appendix
+
+```{r ou_ufun, echo = FALSE, results = "asis"}
+cat("```cpp", readLines("OU_Model.hpp"), "```", sep = "\n")
 ```

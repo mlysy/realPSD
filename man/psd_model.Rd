@@ -43,6 +43,7 @@ Base class for PSD models.
 \item \href{#method-zeta}{\code{psd_model$zeta()}}
 \item \href{#method-vcov}{\code{psd_model$vcov()}}
 \item \href{#method-new}{\code{psd_model$new()}}
+\item \href{#method-to_est}{\code{psd_model$to_est()}}
 \item \href{#method-clone}{\code{psd_model$clone()}}
 }
 }
@@ -250,6 +251,28 @@ Model object constructor.
 \item{\code{ctor_args}}{Optional list of additional arguments to TMB \code{UFun()} constructor.}
 }
 \if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-to_est"></a>}}
+\if{latex}{\out{\hypertarget{method-to_est}{}}}
+\subsection{Method \code{to_est()}}{
+Method to convert the fitted parameter \code{phi} to estimates coefficients and covariances (either on the natural scale or on the log scale) for report.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{psd_model$to_est(phi, to_theta = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{phi}}{Value of \code{phi}.}
+
+\item{\code{to_theta}}{If \code{TRUE}, calculates the variance in the inferential basis.  Otherwise, uses the computational basis.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A list with elements \code{coef} and \code{vcov}. If \code{to_theta = TRUE}, in the inferential basis, otherwise in the computational basis.
 }
 }
 \if{html}{\out{<hr>}}

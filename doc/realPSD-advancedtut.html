@@ -376,12 +376,12 @@ p(if)
 <span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  }</span>
 <span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="pp">#undef TMB_OBJECTIVE_PTR</span></span>
 <span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="pp">#define TMB_OBJECTIVE_PTR </span><span class="kw">this</span></span></code></pre></div>
-<p>This is a workaround to let the TMB object pointer find the current model object (which is not built into the <strong>realPSD</strong> package). Here we specifically used one line <code>UFun&lt;type&gt;(N)</code> as the return. In this way the memory will be allocated only once, and the C++ compiler knows to move instead of copying the object.</p>
+<p>This is a workaround to let the TMB object pointer find the current model object (which is not built into the <strong>realPSD</strong> package). Here we specifically used one line <code>UFun&lt;type&gt;(N)</code> as the return. In this way, the memory will be allocated only once, and the C++ compiler knows to move instead of copying the object.</p>
 </div>
 <div id="compile-on-the-fly" class="section level2">
 <h2>Compile-on-the-fly</h2>
 <p>To compile any user-defined model object on-the-fly, we make use of <a href="https://github.com/edwindj/whisker">whisker</a> to automatically create a template C++ file which is needed for <strong>TMB</strong> to compile the model correctly. The template was designed in a similar way as proposed by <a href="https://github.com/mlysy/TMBtools"><strong>TMBtools</strong></a>.</p>
-<p>This technique has already been included into the built-in function <code>realPSD::make_psd_model</code>. Thus, users do not need to worry about how to realize this themselves. As we’ve already used in the OU example, by calling <code>make_psd_model</code> as follows</p>
+<p>This technique has already been included into the built-in function <code>make_psd_model()</code>. Thus, users do not need to worry about how to realize this themselves. As we’ve already used in the OU example, by calling <code>make_psd_model</code> as follows</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># create c++ file</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>ou_cpp <span class="ot">&lt;-</span> <span class="fu">make_psd_model</span>(<span class="at">model =</span> <span class="st">&quot;OU&quot;</span>,</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>                         <span class="at">header =</span> <span class="st">&quot;OU_Model.hpp&quot;</span>,</span>
@@ -430,11 +430,11 @@ p(if)
 <li><code>show_model</code> for any SHOW model (see the example above)</li>
 <li><code>shof_model</code> for any SHO model with <span class="math inline">\(1/f\)</span> noise (see the example above)</li>
 </ul>
-<p>One can easily create a model object by using the <code>new()</code> method in the above R6 base classes. Therefore, fitting any PSD models or specifically any SHOW/SHOF models using <strong>realPSD</strong> is a very consistent process. If you are insterested in how we realized this, please check out the source code of <code>psd_model.R</code>. For more details about R6 class, one can see <a href="https://r6.r-lib.org/index.html">here</a>. For more details about how we defined the base class and how to use the methods therein, please see the documentation for each class.</p>
+<p>One can easily create a model object by using the <code>new()</code> method in the above R6 base classes. Therefore, fitting any PSD models or specifically any SHOW/SHOF models using <strong>realPSD</strong> is a very consistent process. If you are insterested in how we realized this, please check out the source code of <code>psd_model()</code>. For more details about R6 class, one can see <a href="https://r6.r-lib.org/index.html">here</a>. For more details about how we defined the base class and how to use the methods therein, please see the documentation for each class.</p>
 </div>
 <div id="list-of-built-in-fitting-methods" class="section level2">
 <h2>List of Built-in Fitting Methods</h2>
-<p>For general users, the fitting methods specified in <code>FitMethods.hpp</code> are hidden. You don’t really need to know the underlying details, since <strong>realPSD</strong> has already handled (by using R6 class) choosing the proper fitting methods for you. But for adavanced users who are insterested in using <code>TMB::MakeADFun</code> directly, one can specify <code>method</code> as</p>
+<p>For general users, the fitting methods specified in <code>FitMethods.hpp</code> are hidden. You don’t really need to know the underlying details, since <strong>realPSD</strong> has already handled (by using R6 class) choosing the proper fitting methods for you. But for adavanced users who are insterested in using <code>TMB::MakeADFun()</code> directly, one can specify <code>method</code> as</p>
 <ul>
 <li><p><code>UFun</code>: evaluate U function <span class="math inline">\(U(f, {\boldsymbol{\varphi}})\)</span>.</p></li>
 <li><p><code>MLE_ufun</code>: evaluate U function <span class="math inline">\(U_k({\boldsymbol{\varphi}})\)</span> for MLE method.</p></li>
