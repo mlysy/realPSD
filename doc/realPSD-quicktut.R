@@ -131,6 +131,40 @@ U_tmb <- ou_ufun$fn(log(theta0[1])) # evaluate at frequencies for lp estimator
 U_r <- ou_psd(freq = psd_bin$freq, alpha = theta0[1], beta = 1)
 range(U_tmb - U_r)
 
+## ----helper_for_debug, echo = FALSE, eval = FALSE-----------------------------
+#  #` Helper function to convert a value of `phi_est` into `eta_coef` and `eta_vcov`.
+#  #` @param phi Value of `phi`.
+#  #` @param obj Model object created by `ou_model`.
+#  #` @return List with elements `coef` and `vcov` of parameters on the computational basis, `eta = (phi, zeta)`.
+#  to_fit <- function(phi, obj) {
+#    fit <- list(phi = phi, zeta = obj$nlp()$simulate(phi)$zeta)
+#    fit <- list(coef = c(phi = fit$phi, zeta = fit$zeta),
+#                vcov = obj$vcov(phi = fit$phi, zeta = fit$zeta))
+#    rownames(fit$vcov) <- colnames(fit$vcov) <- names(fit$coef)
+#    fit
+#  }
+#  # Helper function to convert the fitted parameter `phi` which is on the computational basis (log-transformed) into the natural parameter `theta` for the OU model
+#  #' @param phi Value of `phi`
+#  #' @param obj Model object created by `ou_model`
+#  #' @return A list with elements `coef`, `vcov`, and `se`.
+#  to_est <- function(phi, obj) {
+#    zeta <- obj$nlp()$simulate(phi)$zeta
+#    coef <- obj$to_theta(phi,zeta)
+#    vcov <- obj$vcov(phi, zeta, to_theta = TRUE)
+#    # change of variables
+#    # he <- obj$nll()$he(c(phi, zeta))
+#    # out <- chol2inv(chol(he))
+#    # jac_trans <- numDeriv::jacobian(func = function(eta) {
+#    #         obj$to_theta(phi = eta[1],
+#    #                       zeta = eta[2])
+#    # }, x = c(phi, zeta))
+#    # vcov <- jac_trans %*% out %*% t(jac_trans)
+#    colnames(vcov) <- rownames(vcov) <- names(coef)
+#    # se <- sqrt(diag(vcov))
+#    # list(coef = coef, se = se, vcov = vcov)
+#    list(coef = coef, vcov = vcov)
+#  }
+
 ## ----mle_fit------------------------------------------------------------------
 # instantiate TMB object for profile likelihood
 ou_obj$set_est(est_type = "mle")
