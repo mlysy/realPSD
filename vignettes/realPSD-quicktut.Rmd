@@ -376,8 +376,9 @@ to_est <- function(phi, obj) {
   # }, x = c(phi, zeta))
   # vcov <- jac_trans %*% out %*% t(jac_trans)
   colnames(vcov) <- rownames(vcov) <- names(coef)
-  se <- sqrt(diag(vcov))
-  list(coef = coef, se = se, vcov = vcov)
+  # se <- sqrt(diag(vcov))
+  # list(coef = coef, se = se, vcov = vcov)
+  list(coef = coef, vcov = vcov)
 }
 ```
 
