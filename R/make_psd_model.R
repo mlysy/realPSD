@@ -20,7 +20,7 @@ make_psd_model <- function(model, header, class, ctor, standalone = TRUE) {
   ## }
   ## if(dir.exists(path)) error(paste0(path, "already exists!"))
   # read template header file
-  template <- readLines(system.file("include", "realPSD", "MOdel_Template.hpp",
+  template <- readLines(system.file("include", "realPSD", "Model_Template.hpp",
                                     package = "realPSD"))
   # set up whisker render
   settings <- list(
