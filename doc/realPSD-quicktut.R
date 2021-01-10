@@ -58,6 +58,7 @@ dt <- 1/fs # interobservation time
 N <- floor(fs/frange[1]) # number of observations
 
 # time domain simulation
+set.seed(314159) # just for reproducibility
 Xt <- ou_sim(gamma = theta0[1], mu = 0, sigma = theta0[2], dt = dt, n_obs = N)
 
 ## ----psd_emp------------------------------------------------------------------
