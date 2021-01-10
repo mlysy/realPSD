@@ -27,7 +27,7 @@ github_link <- function(pkg) pkg_link(pkg, "github")
 require(realPSD)
 require(TMB)
 require(R6)
-require(tidyverse)
+require(dplyr)
 # get current working directory
 wd <- getwd()
 # invisibly copy OU_Model.hpp from realPSD to the current working directory
