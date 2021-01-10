@@ -1,14 +1,14 @@
 Package: realPSD
 Type: Package
 Title: Robust and Efficient Calibration of Parametric Power Spectral Density (PSD) Models
-Version: 0.0.0.9000
+Version: 0.0.1.000
 Date: 2021-01-04
 Authors@R: c(person("Feiyu", "Zhu", role = "aut"),
              person("Martin", "Lysy", role = c("aut", "cre"),
-                    email = "f28zhu@uwaterloo.ca"))
-Description: Provides robust and efficient calibration of any parametric power spectral density (PSD) models, especially for dynamical processes with extremely large observations. Three built-in estimation methods are provided: maximum likelihood estimation (MLE) based on Whittle-type likelihood, log-periodogram estimation and nonlinear least squares estimation (NLS). The package also provides a routine for removing most electronic noise in an automated pre-processing step, which would be very useful for spectral analysis based on recordings contaminated by various sources of instrumental noise in real-world applications.
+                    email = "mlysy@uwaterloo.ca"))
+Description: Provides robust and efficient calibration of any parametric power spectral density (PSD) models, especially for dynamical processes with extremely large number of observations. Three built-in estimation methods are provided: maximum likelihood estimation (MLE) based on Whittle-type likelihood, log-periodogram estimation and nonlinear least squares estimation (NLS). The package also provides a routine for removing most electronic noise in an automated pre-processing step, which would be very useful for spectral analysis based on recordings contaminated by various sources of instrumental noise in real-world applications.
 License: GPL-3
-Imports: TMB, Rcpp (>= 1.0.1), fftw, numDeriv, whisker, R6, utils, stats
+Imports: TMB (>= 1.7.18), Rcpp (>= 1.0.1), fftw, numDeriv, whisker, R6, utils, stats
 LinkingTo: TMB, Rcpp
 Suggests: 
     knitr,
