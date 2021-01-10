@@ -1,6 +1,6 @@
 ---
 title: "**realPSD**: Theory and Design Principles"
-author: "Martin Lysy, Feiyu Zhu"
+author: "Feiyu Zhu, Martin Lysy"
 date: "`r Sys.Date()`"
 output:
   rmarkdown::html_vignette:

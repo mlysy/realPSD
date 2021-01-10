@@ -1,6 +1,6 @@
 ---
 title: "**realPSD**: Getting Started"
-author: "Martin Lysy, Feiyu Zhu"
+author: "Feiyu Zhu, Martin Lysy"
 date: "`r Sys.Date()`"
 output:
   html_vignette:
