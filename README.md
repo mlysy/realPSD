@@ -31,6 +31,6 @@ test_pacakge("realPSD")
 
 ### Tutorials
 
-- [`realPSD-quicktut`](http://htmlpreview.github.io/?https://github.com/mlysy/realPSD/blob/devel-ferris-prerelease/doc/realPSD-quicktut.html): A quick tutorial teaches you how to use **realPSD** by showing you how to build and estimate an Ornstein-Uhlenbeck (OU) model step by step.
-- [`realPSD-advancedtut`](http://htmlpreview.github.io/?https://github.com/mlysy/realPSD/blob/devel-ferris-prerelease/doc/realPSD-advancedtut.html): An Advanced tutorial explains the theoretical results behind estimation methods supplied by the package and also the design pattern of **realPSD** that handles the **TMB** interface to R effectively, which allows users to build any model without restrictions.
+- [`realPSD-quicktut`](http://htmlpreview.github.io/?https://github.com/mlysy/realPSD/blob/master/doc/realPSD-quicktut.html): A quick tutorial teaches you how to use **realPSD** by showing you how to build and estimate an Ornstein-Uhlenbeck (OU) model step by step.
+- [`realPSD-advancedtut`](http://htmlpreview.github.io/?https://github.com/mlysy/realPSD/blob/master/doc/realPSD-advancedtut.html): An Advanced tutorial explains the theoretical results behind estimation methods supplied by the package and also the design pattern of **realPSD** that handles the **TMB** interface to R effectively, which allows users to build any model without restrictions.
 
