@@ -1,4 +1,22 @@
-## TODO List
+# TODO List
+
+# Current
+
+- [ ] `tmb_model_` does not need to be a mandatory member of `psd_model`.  It is really just for compatibility with models provided by packages built with **TMBtools**.  Could achieve the same outcome (telling `TMB::MakeADFun()` which **TMBtools** `model` to look for) using the `ctor_args` of the derived class constructor.
+
+- [ ] The `set_f()` member of `{PSD}_Model.hpp` currently seems to be redundant.  That is, at no point in the current implementation do we need to "reset" the frequency basis, so users are currently duplicating code to set frequencies in `set_f()` and the constructor.
+
+	Should probably wait for some time before making a breaking change to the interface of the package.
+	
+	But one thing we can do now is call `set_f()` from within the constructor in all provided models and examples.  At least this way there's no code duplication, i.e., we're showing users best programming practices.
+
+- [ ] `sim_time()` should support thinning and truncating of the generated time series.  That is, if you want `N` observations at sampling frequency `fs`, generate `N_fac * N` observations at sampling frequency `fs_fac * fs`, then thin/truncate appropriately.  The larger `N_fac` and `fs_fac`, the more accurate the approximation invoked by `sim_time()`.
+
+- [ ] Add examples for R functions.  Do this with `@example`, not `@examples`.  See [here](https://r-pkgs.org/man.html) for details.
+
+- [ ] Add CARFIMA model to package.
+
+# Depreciated
 
 - [ ] Settle on some naming conventions.
 
