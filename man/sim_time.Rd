@@ -4,19 +4,19 @@
 \alias{sim_time}
 \title{Simulate a Gaussian time-domain signal from its continuous-time PSD.}
 \usage{
-sim_time(fs, N, fseq, cpsd)
+sim_time(fs, N, freq, psd)
 }
 \arguments{
 \item{fs}{Sampling frequency.}
 
 \item{N}{Total number of observations.}
 
-\item{fseq}{Vector of (ordered) frequencies at which the continuous-time PSD is provided.}
+\item{freq}{Vector of (ordered) frequencies at which the continuous-time PSD is provided.}
 
-\item{cpsd}{Vector of continuous-time PSD values corresponding to \code{fseq}.}
+\item{psd}{Vector of continuous-time PSD values corresponding to \code{freq}.}
 }
 \value{
-Simulated time series (real numeric vector).
+Simulated time series. A real numeric vector of length \code{N}.
 }
 \description{
 Simulate a Gaussian time-domain signal from its continuous-time PSD.
