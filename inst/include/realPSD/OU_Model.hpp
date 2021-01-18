@@ -21,11 +21,11 @@ namespace ou {
     matrix<Type> f_; ///>column vector of frequencies.
     matrix<Type> f2_; ///> column vector of squared frequencies.
     Type scale_; ///> Scaling factor for frequencies.
+    /// Set frequency vector.
+    void set_f(cRefMatrix<Type>& f);
   public:
     /// Constructor.
     UFun(int N, cRefMatrix<Type>& f);
-    /// Set frequency vector.
-    void set_f(cRefMatrix<Type>& f);
     /// Evaluate the normalized PSD.
     void eval(RefMatrix<Type> U, cRefMatrix<Type>& phi);
   };

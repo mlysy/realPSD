@@ -32,13 +32,13 @@ namespace realPSD {
       // internal variables
       int N_; ///> problem dimensions
       matrix<Type> f2_; ///> Vector of squared frequencies.
+      /// Set frequency vector.
+      void set_f(cRefMatrix<Type>& f);
     public:
       /// Constructor.
       UFun(int N, cRefMatrix<Type>& f);
       // /// TMB-specific constructor.
       // UFun(int N, objective_function<Type>* obj);
-      /// Set frequency vector.
-      void set_f(cRefMatrix<Type>& f);
       /// Evaluate the normalized PSD.
       void eval(RefMatrix<Type> U, cRefMatrix<Type>& phi);
     };
