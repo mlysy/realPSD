@@ -26,7 +26,7 @@ namespace realPSD {
       matrix<Type> logf_; ///> Vector of log frequencies.
     public:
       /// Constructor.
-      UFun(int N);
+      UFun(int N, cRefMatrix<Type>& f);
       // /// TMB-specific constructor.
       // UFun(int N, objective_function<Type>* obj);
       /// Set frequency vector.
@@ -36,10 +36,11 @@ namespace realPSD {
     };
 
     template<class Type>
-    inline UFun<Type>::UFun(int N) {
+    inline UFun<Type>::UFun(int N, cRefMatrix<Type>& f) {
       N_ = N;
-      f2_ = zero_matrix<Type>(N_,1);
-      logf_ = zero_matrix<Type>(N_,1);
+      // f2_ = zero_matrix<Type>(N_,1);
+      // logf_ = zero_matrix<Type>(N_,1);
+      set_f(f);
     }
 
     template<class Type>
@@ -69,7 +70,18 @@ namespace realPSD {
     /// only regular functions.  Therefore, the following "external" constructor is used.
     template<class Type>
     UFun<Type> make_Ufun(int N, objective_function<Type>* obj) {
-      return UFun<Type>(N);
+      // pick method
+      DATA_STRING(method);
+      // assign f or fbar based on different methods
+      if(method == "UFun" || method.find("MLE_") == 0) {
+        DATA_MATRIX(f);
+        return UFun<Type>(N, f);
+      } else if(method.find("LP_") == 0 || method.find("NLS_") == 0) {
+        DATA_MATRIX(fbar);
+        return UFun<Type>(N, fbar);
+      } else {
+        error("Unknown method."); 
+      }
     }
 
     #undef TMB_OBJECTIVE_PTR
