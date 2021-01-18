@@ -166,7 +166,7 @@ To provide efficient estimation for general parametric PSD models, **realPSD** r
 Basically, we defined a `UFun` class within our own namespace `ou` to avoid any potential scope conflict with the **realPSD** package. Later whenever we refer to this class, we will use `ou::UFun` to emphasize its namespace. The `ou::UFun` class is nothing fancy but just a collection of necessary data and functions we need to evaluate the PSD of the OU process. In our specific example, we need to provide 
 
   - the length of the simulated time series `N` which is supplied via the constructor `UFun::UFun(int N)`;
-  - a vector of frequencies `f` which is supplied via the public method `UFun::set_f()`;
+  - a vector of frequencies `f` which is supplied via the public method `UFun::set_f()`; [**Note: this method is not necessary since users should not be required to duplicate the code to set frequencies themselves. This implementation has been incorporated into the constructor. For now let's still keep it as a public method.**]
   - a public method `UFun::eval()` to evaluate the PSD.
 
 Consider the definition of `UFun::eval()` method
@@ -177,7 +177,6 @@ Consider the definition of `UFun::eval()` method
 template <class Type>
 inline void UFun<Type>::eval(RefMatrix<Type> U, cRefMatrix<Type>& phi) {
   U = (scale_ * f2_).array() + exp(Type(2.0)*phi(0,0));
-  // U = exp(Type(2.0)*phi(1,0)) / U.array();
   U = U.array().inverse();
   return;
 }
@@ -334,6 +333,7 @@ ou_ufun <- ou_obj$ufun() # TMB method corresponding to UFun.eval()
 U_tmb <- ou_ufun$fn(log(theta0[1])) # evaluate at frequencies for lp estimator
 # same calculation in R
 U_r <- ou_psd(freq = psd_bin$freq, alpha = theta0[1], beta = 1)
+# U_r <- ou_psd(freq = psd_emp$freq, alpha = theta0[1], beta = 1) # use this line if est_type = "mle"
 range(U_tmb - U_r)
 ```
 

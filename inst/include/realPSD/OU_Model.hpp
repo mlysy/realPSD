@@ -23,7 +23,7 @@ namespace ou {
     Type scale_; ///> Scaling factor for frequencies.
   public:
     /// Constructor.
-    UFun(int N);
+    UFun(int N, cRefMatrix<Type>& f);
     /// Set frequency vector.
     void set_f(cRefMatrix<Type>& f);
     /// Evaluate the normalized PSD.
@@ -32,10 +32,9 @@ namespace ou {
 
   /// @param[in] N Number of frequency/PSD observations.
   template<class Type>
-  inline UFun<Type>::UFun(int N) {
+  inline UFun<Type>::UFun(int N, cRefMatrix<Type>& f) {
     N_ = N;
-    f_ = zero_matrix<Type>(N_, 1);
-    f2_ = zero_matrix<Type>(N_,1);
+    set_f(f);
     scale_ = Type(4.0 * EIGEN_PI * EIGEN_PI);
   }
 
@@ -71,7 +70,18 @@ namespace ou {
   /// @return An `ou::UFun` object.
   template<class Type>
   UFun<Type> make_Ufun(int N, objective_function<Type>* obj) {
-    return UFun<Type>(N);
+    // pick method
+    DATA_STRING(method);
+    // assign f or fbar based on different methods
+    if(method == "UFun" || method.find("MLE_") == 0) {
+      DATA_MATRIX(f);
+      return UFun<Type>(N, f);
+    } else if(method.find("LP_") == 0 || method.find("NLS_") == 0) {
+      DATA_MATRIX(fbar);
+      return UFun<Type>(N, fbar);
+    } else {
+      error("Unknown method."); 
+    }
   }
 #undef TMB_OBJECTIVE_PTR
 #define TMB_OBJECTIVE_PTR this

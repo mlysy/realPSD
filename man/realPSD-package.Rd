@@ -16,5 +16,11 @@ Authors:
   \item Feiyu Zhu
 }
 
+Other contributors:
+\itemize{
+  \item Bryan Yates [contributor]
+  \item Aleks Labuda [contributor]
+}
+
 }
 \keyword{internal}
