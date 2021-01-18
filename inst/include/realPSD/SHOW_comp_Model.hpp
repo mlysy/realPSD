@@ -40,7 +40,7 @@ namespace realPSD {
       // /// TMB-specific constructor.
       // UFun(int N, objective_function<Type>* obj);
       /// Evaluate the normalized PSD.
-      void eval(RefMatrix<Type> U, RefMatrix<Type>& phi);
+      void eval(RefMatrix<Type> U, cRefMatrix<Type>& phi);
     };
 
     template<class Type>
