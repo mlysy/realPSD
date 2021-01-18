@@ -130,6 +130,7 @@ ou_ufun <- ou_obj$ufun() # TMB method corresponding to UFun.eval()
 U_tmb <- ou_ufun$fn(log(theta0[1])) # evaluate at frequencies for lp estimator
 # same calculation in R
 U_r <- ou_psd(freq = psd_bin$freq, alpha = theta0[1], beta = 1)
+# U_r <- ou_psd(freq = psd_emp$freq, alpha = theta0[1], beta = 1) # use this line if est_type = "mle"
 range(U_tmb - U_r)
 
 ## ----helper_for_debug, echo = FALSE, eval = FALSE-----------------------------
