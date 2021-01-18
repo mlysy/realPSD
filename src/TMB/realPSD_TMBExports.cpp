@@ -6,7 +6,6 @@
 #include "SHOW_comp.hpp"
 #include "SHOW_log.hpp"
 #include "SHOW_nat.hpp"
-#include "SHOW_test.hpp"
 #include "SHOWF_log.hpp"
 #include "SHOWF_nat.hpp"
 
@@ -21,8 +20,6 @@ Type objective_function<Type>::operator() () {
     return SHOW_log(this);
   } else if(model == "SHOW_nat") {
     return SHOW_nat(this);
-  } else if(model == "SHOW_test") {
-    return SHOW_test(this);
   } else if(model == "SHOWF_log") {
     return SHOWF_log(this);
   } else if(model == "SHOWF_nat") {
