@@ -4,7 +4,7 @@
 
 - [ ] `tmb_model_` does not need to be a mandatory member of `psd_model`.  It is really just for compatibility with models provided by packages built with **TMBtools**.  Could achieve the same outcome (telling `TMB::MakeADFun()` which **TMBtools** `model` to look for) using the `ctor_args` of the derived class constructor.
 
-- [ ] The `set_f()` member of `{PSD}_Model.hpp` currently seems to be redundant.  That is, at no point in the current implementation do we need to "reset" the frequency basis, so users are currently duplicating code to set frequencies in `set_f()` and the constructor.
+- [x] The `set_f()` member of `{PSD}_Model.hpp` currently seems to be redundant.  That is, at no point in the current implementation do we need to "reset" the frequency basis, so users are currently duplicating code to set frequencies in `set_f()` and the constructor.
 
 	Should probably wait for some time before making a breaking change to the interface of the package.
 	
