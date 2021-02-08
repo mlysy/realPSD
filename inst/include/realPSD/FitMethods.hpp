@@ -17,7 +17,7 @@ namespace realPSD {
 
   template<class Type, class UFun>
   Type FitMethods(objective_function<Type>* obj,
-		  UFun (*make_Ufun)(cRefMatrix<Type>* , objective_function<Type>*)) {
+		  UFun (*make_Ufun)(cRefMatrix<Type>& , objective_function<Type>*)) {
     // pick method
     DATA_STRING(method);
     if(method == "UFun") {
