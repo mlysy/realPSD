@@ -12,7 +12,7 @@
 
 <meta name="author" content="Feiyu Zhu, Martin Lysy" />
 
-<meta name="date" content="2021-01-18" />
+<meta name="date" content="2021-02-08" />
 
 <title>realPSD: Theory and Design Principles</title>
 
@@ -134,7 +134,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 
 <h1 class="title toc-ignore"><strong>realPSD</strong>: Theory and Design Principles</h1>
 <h4 class="author">Feiyu Zhu, Martin Lysy</h4>
-<h4 class="date">2021-01-18</h4>
+<h4 class="date">2021-02-08</h4>
 
 
 <div id="TOC">
@@ -365,72 +365,80 @@ p(if)
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#define TMB_OBJECTIVE_PTR </span>obj</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// External constructor for `ou::UFun` objects.</span></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">///</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// The arguments to this function are always `N` and `obj`.  Inside the function, we can specify additional TMB macros (`DATA_VECTOR`, etc.), to obtain inputs to the `UFun` constructor.</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// The arguments to this function are always `f` and `obj`.  Inside the function, we can specify additional TMB macros (`DATA_VECTOR`, etc.), to obtain inputs to the `UFun` constructor.</span></span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="co">///</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// </span><span class="an">@param[in]</span><span class="co"> </span><span class="cv">N</span><span class="co"> Number of frequency/psd observations.</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// </span><span class="an">@param[in]</span><span class="co"> </span><span class="cv">f</span><span class="co"> Frequency vector of size `N`.</span></span>
 <span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// </span><span class="an">@param[in]</span><span class="co"> </span><span class="cv">obj</span><span class="co"> Pointer to the TMB object.</span></span>
 <span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// </span><span class="an">@return</span><span class="co"> An `ou::UFun` object.</span></span>
 <span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span>&lt;<span class="kw">class</span> Type&gt;</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  UFun&lt;Type&gt; make_Ufun(<span class="dt">int</span> N, objective_function&lt;Type&gt;* obj) {</span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    <span class="co">// pick method</span></span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    DATA_STRING(method);</span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    <span class="co">// assign f or fbar based on different methods</span></span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(method == <span class="st">&quot;UFun&quot;</span> || method.find(<span class="st">&quot;MLE_&quot;</span>) == <span class="dv">0</span>) {</span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>      DATA_MATRIX(f);</span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> UFun&lt;Type&gt;(N, f);</span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> <span class="cf">if</span>(method.find(<span class="st">&quot;LP_&quot;</span>) == <span class="dv">0</span> || method.find(<span class="st">&quot;NLS_&quot;</span>) == <span class="dv">0</span>) {</span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>      DATA_MATRIX(fbar);</span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> UFun&lt;Type&gt;(N, fbar);</span>
-<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> {</span>
-<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>      error(<span class="st">&quot;Unknown method.&quot;</span>); </span>
-<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="pp">#undef TMB_OBJECTIVE_PTR</span></span>
-<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="pp">#define TMB_OBJECTIVE_PTR </span><span class="kw">this</span></span></code></pre></div>
-<p>This is a workaround to let the TMB object pointer find the current model object (which is not built into the <strong>realPSD</strong> package). Here we specifically used one line <code>UFun&lt;type&gt;(N)</code> as the return. In this way, the memory will be allocated only once, and the C++ compiler knows to move instead of copying the object.</p>
-<p>Since different methods use different names (<code>f</code> or <code>fbar</code>) for the frequency data, we need to choose the correct name for the frequency data before we can initialize the constructor.</p>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  UFun&lt;Type&gt; make_Ufun(cRefMatrix&lt;Type&gt;&amp; f, objective_function&lt;Type&gt;* obj) {</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    <span class="co">// DATA_MATRIX(extra_arg); // get extra_arg from R</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    <span class="co">// return UFun&lt;Type&gt;(f, extra_arg);</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> UFun&lt;Type&gt;(f);</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="pp">#undef TMB_OBJECTIVE_PTR</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="pp">#define TMB_OBJECTIVE_PTR </span><span class="kw">this</span></span></code></pre></div>
+<p>This is a workaround to let the TMB object pointer find the current model object (which is not built into the <strong>realPSD</strong> package). Here we specifically used one line <code>UFun&lt;type&gt;(f)</code> as the return. In this way, the memory will be allocated only once, and the C++ compiler knows to move instead of copying the object.</p>
+<p>If users want to get additional data, they can modify <code>make_Ufun</code> as follows:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode c++"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#undef TMB_OBJECTIVE_PTR</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="pp">#define TMB_OBJECTIVE_PTR </span>obj</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// External constructor for `ou::UFun` objects.</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">///</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// The arguments to this function are always `f` and `obj`.  Inside the function, we can specify additional TMB macros (`DATA_VECTOR`, etc.), to obtain inputs to the `UFun` constructor.</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="co">///</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// </span><span class="an">@param[in]</span><span class="co"> </span><span class="cv">f</span><span class="co"> Frequency vector of size `N`.</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// </span><span class="an">@param[in]</span><span class="co"> </span><span class="cv">obj</span><span class="co"> Pointer to the TMB object.</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// </span><span class="an">@return</span><span class="co"> An `ou::UFun` object.</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span>&lt;<span class="kw">class</span> Type&gt;</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  UFun&lt;Type&gt; make_Ufun(cRefMatrix&lt;Type&gt;&amp; f, objective_function&lt;Type&gt;* obj) {</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    DATA_MATRIX(extra_arg); <span class="co">// get extra_arg from R</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> UFun&lt;Type&gt;(f, extra_arg);</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="pp">#undef TMB_OBJECTIVE_PTR</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="pp">#define TMB_OBJECTIVE_PTR </span><span class="kw">this</span></span></code></pre></div>
+<p>where we returned the overloaded constructor.</p>
 </div>
 <div id="compile-on-the-fly" class="section level2">
 <h2>Compile-on-the-fly</h2>
 <p>To compile any user-defined model object on-the-fly, we make use of <a href="https://github.com/edwindj/whisker">whisker</a> to automatically create a template C++ file which is needed for <strong>TMB</strong> to compile the model correctly. The template was designed in a similar way as proposed by <a href="https://github.com/mlysy/TMBtools"><strong>TMBtools</strong></a>.</p>
 <p>This technique has already been included into the built-in function <code>make_psd_model()</code>. Thus, users do not need to worry about how to realize this themselves. As we’ve already used in the OU example, by calling <code>make_psd_model</code> as follows</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># create c++ file</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>ou_cpp <span class="ot">&lt;-</span> <span class="fu">make_psd_model</span>(<span class="at">model =</span> <span class="st">&quot;OU&quot;</span>,</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>                         <span class="at">header =</span> <span class="st">&quot;OU_Model.hpp&quot;</span>,</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">class =</span> <span class="st">&quot;ou::UFun&quot;</span>,</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>                         <span class="at">ctor =</span> <span class="st">&quot;ou::make_Ufun&quot;</span>,</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>                         <span class="at">standalone =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># create c++ file</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>ou_cpp <span class="ot">&lt;-</span> <span class="fu">make_psd_model</span>(<span class="at">model =</span> <span class="st">&quot;OU&quot;</span>,</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>                         <span class="at">header =</span> <span class="st">&quot;OU_Model.hpp&quot;</span>,</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">class =</span> <span class="st">&quot;ou::UFun&quot;</span>,</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>                         <span class="at">ctor =</span> <span class="st">&quot;ou::make_Ufun&quot;</span>,</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>                         <span class="at">standalone =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
 <p><strong>realPSD</strong> automatically generate a <code>.cpp</code> file under the current working directory (named <code>OU_FitMethods.cpp</code>) which contains the following content.</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">/// </span><span class="an">@file</span><span class="co"> OU_Generics.hpp</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co">/// </span><span class="an">@brief</span><span class="co"> Generic code which supplies everything needed to the **TMB** compiler for `OU`.</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;TMB.hpp&gt;</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&quot;realPSD/FitMethods.hpp&quot;</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&quot;OU_Model.hpp&quot;</span><span class="pp"> </span><span class="co">// model class definition</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co">// #include &quot;&quot; // the generic package code</span></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="pp">#undef TMB_OBJECTIVE_PTR</span></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="pp">#define TMB_OBJECTIVE_PTR </span>obj</span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span>&lt;<span class="kw">class</span> Type&gt;</span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>Type OU_Generics(objective_function&lt;Type&gt;* obj) {</span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> realPSD::FitMethods&lt;Type, ou::UFun&lt;Type&gt; &gt;(obj, ou::make_Ufun&lt;Type&gt;);</span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="pp">#undef TMB_OBJECTIVE_PTR</span></span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="pp">#define TMB_OBJECTIVE_PTR </span><span class="kw">this</span></span>
-<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span>&lt;<span class="kw">class</span> Type&gt;</span>
-<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>Type objective_function&lt;Type&gt;::<span class="kw">operator</span>() () {</span>
-<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>  DATA_STRING(model);</span>
-<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span>(model == <span class="st">&quot;OU&quot;</span>) {</span>
-<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> OU_Generics&lt;Type&gt;(<span class="kw">this</span>);</span>
-<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
-<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>    error(<span class="st">&quot;Unknown model.&quot;</span>);</span>
-<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> Type(<span class="fl">0.0</span>);</span>
-<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">/// </span><span class="an">@file</span><span class="co"> OU_Generics.hpp</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co">/// </span><span class="an">@brief</span><span class="co"> Generic code which supplies everything needed to the **TMB** compiler for `OU`.</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&lt;TMB.hpp&gt;</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&quot;realPSD/FitMethods.hpp&quot;</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="pp">#include </span><span class="im">&quot;OU_Model.hpp&quot;</span><span class="pp"> </span><span class="co">// model class definition</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="co">// #include &quot;&quot; // the generic package code</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="pp">#undef TMB_OBJECTIVE_PTR</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="pp">#define TMB_OBJECTIVE_PTR </span>obj</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span>&lt;<span class="kw">class</span> Type&gt;</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>Type OU_Generics(objective_function&lt;Type&gt;* obj) {</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> realPSD::FitMethods&lt;Type, ou::UFun&lt;Type&gt; &gt;(obj, ou::make_Ufun&lt;Type&gt;);</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="pp">#undef TMB_OBJECTIVE_PTR</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a><span class="pp">#define TMB_OBJECTIVE_PTR </span><span class="kw">this</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="kw">template</span>&lt;<span class="kw">class</span> Type&gt;</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>Type objective_function&lt;Type&gt;::<span class="kw">operator</span>() () {</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>  DATA_STRING(model);</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span>(model == <span class="st">&quot;OU&quot;</span>) {</span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> OU_Generics&lt;Type&gt;(<span class="kw">this</span>);</span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>    error(<span class="st">&quot;Unknown model.&quot;</span>);</span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> Type(<span class="fl">0.0</span>);</span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <p>This template allows users to put their models in separate header files from each other and compile the model using <strong>TMB</strong> correctly.</p>
 </div>
 <div id="wrap-the-model-object-by-r6-class" class="section level2">

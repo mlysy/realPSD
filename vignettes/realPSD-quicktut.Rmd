@@ -165,7 +165,7 @@ To provide efficient estimation for general parametric PSD models, **realPSD** r
 
 Basically, we defined a `UFun` class within our own namespace `ou` to avoid any potential scope conflict with the **realPSD** package. Later whenever we refer to this class, we will use `ou::UFun` to emphasize its namespace. The `ou::UFun` class is nothing fancy but just a collection of necessary data and functions we need to evaluate the PSD of the OU process. In our specific example, we need to provide 
 
-  - the length of the simulated time series `N` and frequencies `f` which are supplied via the constructor `UFun::UFun(int N, cRefMatrix<Type>&f)`;
+  - the length of the simulated time series `N` and frequencies `f` which are supplied via the constructor `UFun::UFun(cRefMatrix<Type>&f)` (inside the constructor `set_f()` is called to set internally `N_ = f.size()`);
   - a public method `UFun::eval()` to evaluate the PSD.
 
 Consider the definition of `UFun::eval()` method
@@ -234,7 +234,7 @@ matrix<Type> zero_matrix(int n, int p) {
 }
 ```
 
-You may notice that we have an external constructor `UFun<Type> make_Ufun()` for `ou::UFun` class. Just copy and paste this function to the end of your header file (still within the namespace), it will help you get around some technical issues involved in `r cran_link("TMB")`. For more details, please see the [advanced tutorial](http://htmlpreview.github.io/?https://github.com/mlysy/realPSD/blob/devel-ferris-prerelease/doc/realPSD-advancedtut.html).
+You may notice that we have an overloaded constructor `UFun(cRefMatrix<Type>& f, cRefMatrix<Type>& extra_arg)` and an external constructor `UFun<Type> make_Ufun()` for `ou::UFun` class. The overloaded constructor allows users to get additional data into their model. The external constructor helps you get around some technical issues involved in `r cran_link("TMB")`. For more details, please see the [advanced tutorial](http://htmlpreview.github.io/?https://github.com/mlysy/realPSD/blob/devel-ferris-prerelease/doc/realPSD-advancedtut.html).
 
 To summarize, you can follow the steps below to create a model header file:
 

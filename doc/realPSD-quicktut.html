@@ -12,7 +12,7 @@
 
 <meta name="author" content="Feiyu Zhu, Martin Lysy" />
 
-<meta name="date" content="2021-01-18" />
+<meta name="date" content="2021-02-08" />
 
 <title>realPSD: Getting Started</title>
 
@@ -134,7 +134,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 
 <h1 class="title toc-ignore"><strong>realPSD</strong>: Getting Started</h1>
 <h4 class="author">Feiyu Zhu, Martin Lysy</h4>
-<h4 class="date">2021-01-18</h4>
+<h4 class="date">2021-02-08</h4>
 
 
 <div id="TOC">
@@ -234,7 +234,7 @@ MathJax.Hub.Config({
 <p>To provide efficient estimation for general parametric PSD models, <strong>realPSD</strong> requires you to write your own model in a standalone C++ header file (with extension <code>.hpp</code>). The file has been written for you and put in the Appendix for your reference.</p>
 <p>Basically, we defined a <code>UFun</code> class within our own namespace <code>ou</code> to avoid any potential scope conflict with the <strong>realPSD</strong> package. Later whenever we refer to this class, we will use <code>ou::UFun</code> to emphasize its namespace. The <code>ou::UFun</code> class is nothing fancy but just a collection of necessary data and functions we need to evaluate the PSD of the OU process. In our specific example, we need to provide</p>
 <ul>
-<li>the length of the simulated time series <code>N</code> and frequencies <code>f</code> which are supplied via the constructor <code>UFun::UFun(int N, cRefMatrix&lt;Type&gt;&amp;f)</code>;</li>
+<li>the length of the simulated time series <code>N</code> and frequencies <code>f</code> which are supplied via the constructor <code>UFun::UFun(cRefMatrix&lt;Type&gt;&amp;f)</code> (inside the constructor <code>set_f()</code> is called to set internally <code>N_ = f.size()</code>);</li>
 <li>a public method <code>UFun::eval()</code> to evaluate the PSD.</li>
 </ul>
 <p>Consider the definition of <code>UFun::eval()</code> method</p>
@@ -279,7 +279,7 @@ U(f) = \frac{1}{(2\pi f)^2 + \alpha^2}
 <span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  out.setZero();</span>
 <span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> out;</span>
 <span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
-<p>You may notice that we have an external constructor <code>UFun&lt;Type&gt; make_Ufun()</code> for <code>ou::UFun</code> class. Just copy and paste this function to the end of your header file (still within the namespace), it will help you get around some technical issues involved in <a href="https://CRAN.R-project.org/package=TMB"><strong>TMB</strong></a>. For more details, please see the <a href="http://htmlpreview.github.io/?https://github.com/mlysy/realPSD/blob/devel-ferris-prerelease/doc/realPSD-advancedtut.html">advanced tutorial</a>.</p>
+<p>You may notice that we have an overloaded constructor <code>UFun(cRefMatrix&lt;Type&gt;&amp; f, cRefMatrix&lt;Type&gt;&amp; extra_arg)</code> and an external constructor <code>UFun&lt;Type&gt; make_Ufun()</code> for <code>ou::UFun</code> class. The overloaded constructor allows users to get additional data into their model. The external constructor helps you get around some technical issues involved in <a href="https://CRAN.R-project.org/package=TMB"><strong>TMB</strong></a>. For more details, please see the <a href="http://htmlpreview.github.io/?https://github.com/mlysy/realPSD/blob/devel-ferris-prerelease/doc/realPSD-advancedtut.html">advanced tutorial</a>.</p>
 <p>To summarize, you can follow the steps below to create a model header file:</p>
 <ol style="list-style-type: decimal">
 <li>Create an empty C++ header file with extension <code>.hpp</code> and name it whatever you like. In our example, we name the file <code>OU_Model.hpp</code>. Put it under the current working directory.</li>
@@ -522,72 +522,73 @@ U(f) = \frac{1}{(2\pi f)^2 + \alpha^2}
 <span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a>    matrix&lt;Type&gt; <span class="va">f_</span>; <span class="co">///&gt;column vector of frequencies.</span></span>
 <span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a>    matrix&lt;Type&gt; <span class="va">f2_</span>; <span class="co">///&gt; column vector of squared frequencies.</span></span>
 <span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a>    Type <span class="va">scale_</span>; <span class="co">///&gt; Scaling factor for frequencies.</span></span>
-<span id="cb18-24"><a href="#cb18-24" aria-hidden="true" tabindex="-1"></a>    <span class="co">/// Set frequency vector.</span></span>
-<span id="cb18-25"><a href="#cb18-25" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span> set_f(cRefMatrix&lt;Type&gt;&amp; f);</span>
-<span id="cb18-26"><a href="#cb18-26" aria-hidden="true" tabindex="-1"></a>  <span class="kw">public</span>:</span>
-<span id="cb18-27"><a href="#cb18-27" aria-hidden="true" tabindex="-1"></a>    <span class="co">/// Constructor.</span></span>
-<span id="cb18-28"><a href="#cb18-28" aria-hidden="true" tabindex="-1"></a>    UFun(<span class="dt">int</span> N, cRefMatrix&lt;Type&gt;&amp; f);</span>
-<span id="cb18-29"><a href="#cb18-29" aria-hidden="true" tabindex="-1"></a>    <span class="co">/// Evaluate the normalized PSD.</span></span>
-<span id="cb18-30"><a href="#cb18-30" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span> eval(RefMatrix&lt;Type&gt; U, cRefMatrix&lt;Type&gt;&amp; phi);</span>
-<span id="cb18-31"><a href="#cb18-31" aria-hidden="true" tabindex="-1"></a>  };</span>
-<span id="cb18-32"><a href="#cb18-32" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-33"><a href="#cb18-33" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// </span><span class="an">@param[in]</span><span class="co"> </span><span class="cv">N</span><span class="co"> Number of frequency/PSD observations.</span></span>
-<span id="cb18-34"><a href="#cb18-34" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span>&lt;<span class="kw">class</span> Type&gt;</span>
-<span id="cb18-35"><a href="#cb18-35" aria-hidden="true" tabindex="-1"></a>  <span class="kw">inline</span> UFun&lt;Type&gt;::UFun(<span class="dt">int</span> N, cRefMatrix&lt;Type&gt;&amp; f) {</span>
-<span id="cb18-36"><a href="#cb18-36" aria-hidden="true" tabindex="-1"></a>    N_ = N;</span>
-<span id="cb18-37"><a href="#cb18-37" aria-hidden="true" tabindex="-1"></a>    set_f(f);</span>
-<span id="cb18-38"><a href="#cb18-38" aria-hidden="true" tabindex="-1"></a>    <span class="va">scale_</span> = Type(<span class="fl">4.0</span> * EIGEN_PI * EIGEN_PI);</span>
-<span id="cb18-39"><a href="#cb18-39" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb18-40"><a href="#cb18-40" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-41"><a href="#cb18-41" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// </span><span class="an">@param[in]</span><span class="co"> </span><span class="cv">f</span><span class="co"> Frequency vector of size `N`.</span></span>
-<span id="cb18-42"><a href="#cb18-42" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span>&lt;<span class="kw">class</span> Type&gt;</span>
-<span id="cb18-43"><a href="#cb18-43" aria-hidden="true" tabindex="-1"></a>  <span class="kw">inline</span> <span class="dt">void</span> UFun&lt;Type&gt;::set_f(cRefMatrix&lt;Type&gt;&amp; f) {</span>
-<span id="cb18-44"><a href="#cb18-44" aria-hidden="true" tabindex="-1"></a>    N_ = f.size();</span>
-<span id="cb18-45"><a href="#cb18-45" aria-hidden="true" tabindex="-1"></a>    <span class="va">f_</span> = zero_matrix&lt;Type&gt;(N_,<span class="dv">1</span>);</span>
-<span id="cb18-46"><a href="#cb18-46" aria-hidden="true" tabindex="-1"></a>    <span class="va">f_</span> = f;</span>
-<span id="cb18-47"><a href="#cb18-47" aria-hidden="true" tabindex="-1"></a>    <span class="va">f2_</span> = zero_matrix&lt;Type&gt;(N_,<span class="dv">1</span>);</span>
-<span id="cb18-48"><a href="#cb18-48" aria-hidden="true" tabindex="-1"></a>    <span class="va">f2_</span> = f.cwiseProduct(f);</span>
-<span id="cb18-49"><a href="#cb18-49" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span>;</span>
-<span id="cb18-50"><a href="#cb18-50" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb18-51"><a href="#cb18-51" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-52"><a href="#cb18-52" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// </span><span class="an">@param[out]</span><span class="co"> </span><span class="cv">U</span><span class="co"> Normalized PSD vector of size `N`.</span></span>
-<span id="cb18-53"><a href="#cb18-53" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// </span><span class="an">@param[in]</span><span class="co"> </span><span class="cv">phi</span><span class="co"> Computational basis parameters.  Here we have `phi = log(alpha)`.</span></span>
-<span id="cb18-54"><a href="#cb18-54" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> &lt;<span class="kw">class</span> Type&gt;</span>
-<span id="cb18-55"><a href="#cb18-55" aria-hidden="true" tabindex="-1"></a>  <span class="kw">inline</span> <span class="dt">void</span> UFun&lt;Type&gt;::eval(RefMatrix&lt;Type&gt; U, cRefMatrix&lt;Type&gt;&amp; phi) {</span>
-<span id="cb18-56"><a href="#cb18-56" aria-hidden="true" tabindex="-1"></a>    U = (<span class="va">scale_</span> * <span class="va">f2_</span>).array() + exp(Type(<span class="fl">2.0</span>)*phi(<span class="dv">0</span>,<span class="dv">0</span>));</span>
-<span id="cb18-57"><a href="#cb18-57" aria-hidden="true" tabindex="-1"></a>    <span class="co">// U = exp(Type(2.0)*phi(1,0)) / U.array();</span></span>
-<span id="cb18-58"><a href="#cb18-58" aria-hidden="true" tabindex="-1"></a>    U = U.array().inverse();</span>
+<span id="cb18-24"><a href="#cb18-24" aria-hidden="true" tabindex="-1"></a>    matrix&lt;Type&gt; <span class="va">extra_arg_</span>; <span class="co">///&gt; Vector of extra arguments</span></span>
+<span id="cb18-25"><a href="#cb18-25" aria-hidden="true" tabindex="-1"></a>    <span class="co">/// Set frequency vector.</span></span>
+<span id="cb18-26"><a href="#cb18-26" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span> set_f(cRefMatrix&lt;Type&gt;&amp; f);</span>
+<span id="cb18-27"><a href="#cb18-27" aria-hidden="true" tabindex="-1"></a>  <span class="kw">public</span>:</span>
+<span id="cb18-28"><a href="#cb18-28" aria-hidden="true" tabindex="-1"></a>    <span class="co">/// Constructor.</span></span>
+<span id="cb18-29"><a href="#cb18-29" aria-hidden="true" tabindex="-1"></a>    UFun(cRefMatrix&lt;Type&gt;&amp; f);</span>
+<span id="cb18-30"><a href="#cb18-30" aria-hidden="true" tabindex="-1"></a>    UFun(cRefMatrix&lt;Type&gt;&amp; f, cRefMatrix&lt;Type&gt;&amp; extra_arg);</span>
+<span id="cb18-31"><a href="#cb18-31" aria-hidden="true" tabindex="-1"></a>    <span class="co">/// Evaluate the normalized PSD.</span></span>
+<span id="cb18-32"><a href="#cb18-32" aria-hidden="true" tabindex="-1"></a>    <span class="dt">void</span> eval(RefMatrix&lt;Type&gt; U, cRefMatrix&lt;Type&gt;&amp; phi);</span>
+<span id="cb18-33"><a href="#cb18-33" aria-hidden="true" tabindex="-1"></a>  };</span>
+<span id="cb18-34"><a href="#cb18-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-35"><a href="#cb18-35" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// </span><span class="an">@param[in]</span><span class="co"> </span><span class="cv">f</span><span class="co"> Frequency vector of size `N`.</span></span>
+<span id="cb18-36"><a href="#cb18-36" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span>&lt;<span class="kw">class</span> Type&gt;</span>
+<span id="cb18-37"><a href="#cb18-37" aria-hidden="true" tabindex="-1"></a>  <span class="kw">inline</span> UFun&lt;Type&gt;::UFun(cRefMatrix&lt;Type&gt;&amp; f) {</span>
+<span id="cb18-38"><a href="#cb18-38" aria-hidden="true" tabindex="-1"></a>    set_f(f); <span class="co">// note that this will also set `N_`</span></span>
+<span id="cb18-39"><a href="#cb18-39" aria-hidden="true" tabindex="-1"></a>    <span class="va">scale_</span> = Type(<span class="fl">4.0</span> * EIGEN_PI * EIGEN_PI);</span>
+<span id="cb18-40"><a href="#cb18-40" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb18-41"><a href="#cb18-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-42"><a href="#cb18-42" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// </span><span class="an">@param[in]</span><span class="co"> </span><span class="cv">f</span><span class="co"> Frequency vector of size `N`.</span></span>
+<span id="cb18-43"><a href="#cb18-43" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// </span><span class="an">@param[in]</span><span class="co"> </span><span class="cv">extra_arg</span><span class="co"> Additional argument vector.</span></span>
+<span id="cb18-44"><a href="#cb18-44" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span>&lt;<span class="kw">class</span> Type&gt;</span>
+<span id="cb18-45"><a href="#cb18-45" aria-hidden="true" tabindex="-1"></a>  <span class="kw">inline</span> UFun&lt;Type&gt;::UFun(cRefMatrix&lt;Type&gt;&amp; f, cRefMatrix&lt;Type&gt;&amp; extra_arg) {</span>
+<span id="cb18-46"><a href="#cb18-46" aria-hidden="true" tabindex="-1"></a>    set_f(f); <span class="co">// note that this will also set `N_`</span></span>
+<span id="cb18-47"><a href="#cb18-47" aria-hidden="true" tabindex="-1"></a>    <span class="va">scale_</span> = Type(<span class="fl">4.0</span> * EIGEN_PI * EIGEN_PI);</span>
+<span id="cb18-48"><a href="#cb18-48" aria-hidden="true" tabindex="-1"></a>    <span class="va">extra_arg_</span> = extra_arg; <span class="co">// additional constructor arguments</span></span>
+<span id="cb18-49"><a href="#cb18-49" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb18-50"><a href="#cb18-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-51"><a href="#cb18-51" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// </span><span class="an">@param[in]</span><span class="co"> </span><span class="cv">f</span><span class="co"> Frequency vector of size `N`.</span></span>
+<span id="cb18-52"><a href="#cb18-52" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span>&lt;<span class="kw">class</span> Type&gt;</span>
+<span id="cb18-53"><a href="#cb18-53" aria-hidden="true" tabindex="-1"></a>  <span class="kw">inline</span> <span class="dt">void</span> UFun&lt;Type&gt;::set_f(cRefMatrix&lt;Type&gt;&amp; f) {</span>
+<span id="cb18-54"><a href="#cb18-54" aria-hidden="true" tabindex="-1"></a>    N_ = f.size();</span>
+<span id="cb18-55"><a href="#cb18-55" aria-hidden="true" tabindex="-1"></a>    <span class="va">f_</span> = zero_matrix&lt;Type&gt;(N_,<span class="dv">1</span>);</span>
+<span id="cb18-56"><a href="#cb18-56" aria-hidden="true" tabindex="-1"></a>    <span class="va">f_</span> = f;</span>
+<span id="cb18-57"><a href="#cb18-57" aria-hidden="true" tabindex="-1"></a>    <span class="va">f2_</span> = zero_matrix&lt;Type&gt;(N_,<span class="dv">1</span>);</span>
+<span id="cb18-58"><a href="#cb18-58" aria-hidden="true" tabindex="-1"></a>    <span class="va">f2_</span> = f.cwiseProduct(f);</span>
 <span id="cb18-59"><a href="#cb18-59" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span>;</span>
 <span id="cb18-60"><a href="#cb18-60" aria-hidden="true" tabindex="-1"></a>  }</span>
 <span id="cb18-61"><a href="#cb18-61" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-62"><a href="#cb18-62" aria-hidden="true" tabindex="-1"></a><span class="pp">#undef TMB_OBJECTIVE_PTR</span></span>
-<span id="cb18-63"><a href="#cb18-63" aria-hidden="true" tabindex="-1"></a><span class="pp">#define TMB_OBJECTIVE_PTR </span>obj</span>
-<span id="cb18-64"><a href="#cb18-64" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// External constructor for `ou::UFun` objects.</span></span>
-<span id="cb18-65"><a href="#cb18-65" aria-hidden="true" tabindex="-1"></a>  <span class="co">///</span></span>
-<span id="cb18-66"><a href="#cb18-66" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// The arguments to this function are always `N` and `obj`.  Inside the function, we can specify additional TMB macros (`DATA_VECTOR`, etc.), to obtain inputs to the `UFun` constructor.</span></span>
-<span id="cb18-67"><a href="#cb18-67" aria-hidden="true" tabindex="-1"></a>  <span class="co">///</span></span>
-<span id="cb18-68"><a href="#cb18-68" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// </span><span class="an">@param[in]</span><span class="co"> </span><span class="cv">N</span><span class="co"> Number of frequency/psd observations.</span></span>
-<span id="cb18-69"><a href="#cb18-69" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// </span><span class="an">@param[in]</span><span class="co"> </span><span class="cv">obj</span><span class="co"> Pointer to the TMB object.</span></span>
-<span id="cb18-70"><a href="#cb18-70" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// </span><span class="an">@return</span><span class="co"> An `ou::UFun` object.</span></span>
-<span id="cb18-71"><a href="#cb18-71" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span>&lt;<span class="kw">class</span> Type&gt;</span>
-<span id="cb18-72"><a href="#cb18-72" aria-hidden="true" tabindex="-1"></a>  UFun&lt;Type&gt; make_Ufun(<span class="dt">int</span> N, objective_function&lt;Type&gt;* obj) {</span>
-<span id="cb18-73"><a href="#cb18-73" aria-hidden="true" tabindex="-1"></a>    <span class="co">// pick method</span></span>
-<span id="cb18-74"><a href="#cb18-74" aria-hidden="true" tabindex="-1"></a>    DATA_STRING(method);</span>
-<span id="cb18-75"><a href="#cb18-75" aria-hidden="true" tabindex="-1"></a>    <span class="co">// assign f or fbar based on different methods</span></span>
-<span id="cb18-76"><a href="#cb18-76" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(method == <span class="st">&quot;UFun&quot;</span> || method.find(<span class="st">&quot;MLE_&quot;</span>) == <span class="dv">0</span>) {</span>
-<span id="cb18-77"><a href="#cb18-77" aria-hidden="true" tabindex="-1"></a>      DATA_MATRIX(f);</span>
-<span id="cb18-78"><a href="#cb18-78" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> UFun&lt;Type&gt;(N, f);</span>
-<span id="cb18-79"><a href="#cb18-79" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> <span class="cf">if</span>(method.find(<span class="st">&quot;LP_&quot;</span>) == <span class="dv">0</span> || method.find(<span class="st">&quot;NLS_&quot;</span>) == <span class="dv">0</span>) {</span>
-<span id="cb18-80"><a href="#cb18-80" aria-hidden="true" tabindex="-1"></a>      DATA_MATRIX(fbar);</span>
-<span id="cb18-81"><a href="#cb18-81" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> UFun&lt;Type&gt;(N, fbar);</span>
-<span id="cb18-82"><a href="#cb18-82" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> {</span>
-<span id="cb18-83"><a href="#cb18-83" aria-hidden="true" tabindex="-1"></a>      error(<span class="st">&quot;Unknown method.&quot;</span>); </span>
-<span id="cb18-84"><a href="#cb18-84" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb18-85"><a href="#cb18-85" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb18-86"><a href="#cb18-86" aria-hidden="true" tabindex="-1"></a><span class="pp">#undef TMB_OBJECTIVE_PTR</span></span>
-<span id="cb18-87"><a href="#cb18-87" aria-hidden="true" tabindex="-1"></a><span class="pp">#define TMB_OBJECTIVE_PTR </span><span class="kw">this</span></span>
-<span id="cb18-88"><a href="#cb18-88" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb18-89"><a href="#cb18-89" aria-hidden="true" tabindex="-1"></a>} <span class="co">// end namespace ou</span></span></code></pre></div>
+<span id="cb18-62"><a href="#cb18-62" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// </span><span class="an">@param[out]</span><span class="co"> </span><span class="cv">U</span><span class="co"> Normalized PSD vector of size `N`.</span></span>
+<span id="cb18-63"><a href="#cb18-63" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// </span><span class="an">@param[in]</span><span class="co"> </span><span class="cv">phi</span><span class="co"> Computational basis parameters.  Here we have `phi = log(alpha)`.</span></span>
+<span id="cb18-64"><a href="#cb18-64" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span> &lt;<span class="kw">class</span> Type&gt;</span>
+<span id="cb18-65"><a href="#cb18-65" aria-hidden="true" tabindex="-1"></a>  <span class="kw">inline</span> <span class="dt">void</span> UFun&lt;Type&gt;::eval(RefMatrix&lt;Type&gt; U, cRefMatrix&lt;Type&gt;&amp; phi) {</span>
+<span id="cb18-66"><a href="#cb18-66" aria-hidden="true" tabindex="-1"></a>    U = (<span class="va">scale_</span> * <span class="va">f2_</span>).array() + exp(Type(<span class="fl">2.0</span>)*phi(<span class="dv">0</span>,<span class="dv">0</span>));</span>
+<span id="cb18-67"><a href="#cb18-67" aria-hidden="true" tabindex="-1"></a>    <span class="co">// U = exp(Type(2.0)*phi(1,0)) / U.array();</span></span>
+<span id="cb18-68"><a href="#cb18-68" aria-hidden="true" tabindex="-1"></a>    U = U.array().inverse();</span>
+<span id="cb18-69"><a href="#cb18-69" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span>;</span>
+<span id="cb18-70"><a href="#cb18-70" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb18-71"><a href="#cb18-71" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-72"><a href="#cb18-72" aria-hidden="true" tabindex="-1"></a><span class="pp">#undef TMB_OBJECTIVE_PTR</span></span>
+<span id="cb18-73"><a href="#cb18-73" aria-hidden="true" tabindex="-1"></a><span class="pp">#define TMB_OBJECTIVE_PTR </span>obj</span>
+<span id="cb18-74"><a href="#cb18-74" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// External constructor for `ou::UFun` objects.</span></span>
+<span id="cb18-75"><a href="#cb18-75" aria-hidden="true" tabindex="-1"></a>  <span class="co">///</span></span>
+<span id="cb18-76"><a href="#cb18-76" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// The arguments to this function are always `f` and `obj`.  Inside the function, we can specify additional TMB macros (`DATA_VECTOR`, etc.), to obtain inputs to the `UFun` constructor.</span></span>
+<span id="cb18-77"><a href="#cb18-77" aria-hidden="true" tabindex="-1"></a>  <span class="co">///</span></span>
+<span id="cb18-78"><a href="#cb18-78" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// </span><span class="an">@param[in]</span><span class="co"> </span><span class="cv">f</span><span class="co"> Frequency vector of size `N`.</span></span>
+<span id="cb18-79"><a href="#cb18-79" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// </span><span class="an">@param[in]</span><span class="co"> </span><span class="cv">obj</span><span class="co"> Pointer to the TMB object.</span></span>
+<span id="cb18-80"><a href="#cb18-80" aria-hidden="true" tabindex="-1"></a>  <span class="co">/// </span><span class="an">@return</span><span class="co"> An `ou::UFun` object.</span></span>
+<span id="cb18-81"><a href="#cb18-81" aria-hidden="true" tabindex="-1"></a>  <span class="kw">template</span>&lt;<span class="kw">class</span> Type&gt;</span>
+<span id="cb18-82"><a href="#cb18-82" aria-hidden="true" tabindex="-1"></a>  UFun&lt;Type&gt; make_Ufun(cRefMatrix&lt;Type&gt;&amp; f, objective_function&lt;Type&gt;* obj) {</span>
+<span id="cb18-83"><a href="#cb18-83" aria-hidden="true" tabindex="-1"></a>    <span class="co">// DATA_MATRIX(extra_arg); // get extra_arg from R</span></span>
+<span id="cb18-84"><a href="#cb18-84" aria-hidden="true" tabindex="-1"></a>    <span class="co">// return UFun&lt;Type&gt;(f, extra_arg);</span></span>
+<span id="cb18-85"><a href="#cb18-85" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> UFun&lt;Type&gt;(f);</span>
+<span id="cb18-86"><a href="#cb18-86" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb18-87"><a href="#cb18-87" aria-hidden="true" tabindex="-1"></a><span class="pp">#undef TMB_OBJECTIVE_PTR</span></span>
+<span id="cb18-88"><a href="#cb18-88" aria-hidden="true" tabindex="-1"></a><span class="pp">#define TMB_OBJECTIVE_PTR </span><span class="kw">this</span></span>
+<span id="cb18-89"><a href="#cb18-89" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb18-90"><a href="#cb18-90" aria-hidden="true" tabindex="-1"></a>} <span class="co">// end namespace ou</span></span></code></pre></div>
 </div>
 
 

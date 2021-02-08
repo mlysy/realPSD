@@ -357,33 +357,45 @@ If you still remember the OU example in the [quick tutorial](http://htmlpreview.
 #define TMB_OBJECTIVE_PTR obj
   /// External constructor for `ou::UFun` objects.
   ///
-  /// The arguments to this function are always `N` and `obj`.  Inside the function, we can specify additional TMB macros (`DATA_VECTOR`, etc.), to obtain inputs to the `UFun` constructor.
+  /// The arguments to this function are always `f` and `obj`.  Inside the function, we can specify additional TMB macros (`DATA_VECTOR`, etc.), to obtain inputs to the `UFun` constructor.
   ///
-  /// @param[in] N Number of frequency/psd observations.
+  /// @param[in] f Frequency vector of size `N`.
   /// @param[in] obj Pointer to the TMB object.
   /// @return An `ou::UFun` object.
   template<class Type>
-  UFun<Type> make_Ufun(int N, objective_function<Type>* obj) {
-    // pick method
-    DATA_STRING(method);
-    // assign f or fbar based on different methods
-    if(method == "UFun" || method.find("MLE_") == 0) {
-      DATA_MATRIX(f);
-      return UFun<Type>(N, f);
-    } else if(method.find("LP_") == 0 || method.find("NLS_") == 0) {
-      DATA_MATRIX(fbar);
-      return UFun<Type>(N, fbar);
-    } else {
-      error("Unknown method."); 
-    }
+  UFun<Type> make_Ufun(cRefMatrix<Type>& f, objective_function<Type>* obj) {
+    // DATA_MATRIX(extra_arg); // get extra_arg from R
+    // return UFun<Type>(f, extra_arg);
+    return UFun<Type>(f);
   }
 #undef TMB_OBJECTIVE_PTR
 #define TMB_OBJECTIVE_PTR this
 ```
 
-This is a workaround to let the TMB object pointer find the current model object (which is not built into the **realPSD** package). Here we specifically used one line `UFun<type>(N)` as the return. In this way, the memory will be allocated only once, and the C++ compiler knows to move instead of copying the object. 
+This is a workaround to let the TMB object pointer find the current model object (which is not built into the **realPSD** package). Here we specifically used one line `UFun<type>(f)` as the return. In this way, the memory will be allocated only once, and the C++ compiler knows to move instead of copying the object. 
 
-Since different methods use different names (`f` or `fbar`) for the frequency data, we need to choose the correct name for the frequency data before we can initialize the constructor.
+If users want to get additional data, they can modify `make_Ufun` as follows:
+
+```C++
+#undef TMB_OBJECTIVE_PTR
+#define TMB_OBJECTIVE_PTR obj
+  /// External constructor for `ou::UFun` objects.
+  ///
+  /// The arguments to this function are always `f` and `obj`.  Inside the function, we can specify additional TMB macros (`DATA_VECTOR`, etc.), to obtain inputs to the `UFun` constructor.
+  ///
+  /// @param[in] f Frequency vector of size `N`.
+  /// @param[in] obj Pointer to the TMB object.
+  /// @return An `ou::UFun` object.
+  template<class Type>
+  UFun<Type> make_Ufun(cRefMatrix<Type>& f, objective_function<Type>* obj) {
+    DATA_MATRIX(extra_arg); // get extra_arg from R
+    return UFun<Type>(f, extra_arg);
+  }
+#undef TMB_OBJECTIVE_PTR
+#define TMB_OBJECTIVE_PTR this
+```
+
+where we returned the overloaded constructor.
 
 ## Compile-on-the-fly
 
