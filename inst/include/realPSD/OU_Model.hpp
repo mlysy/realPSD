@@ -26,16 +26,23 @@ namespace ou {
     void set_f(cRefMatrix<Type>& f);
   public:
     /// Constructor.
+    UFun(cRefMatrix<Type>& f);
     UFun(cRefMatrix<Type>& f, cRefMatrix<Type>& extra_arg);
     /// Evaluate the normalized PSD.
     void eval(RefMatrix<Type> U, cRefMatrix<Type>& phi);
   };
 
   /// @param[in] f Frequency vector of size `N`.
+  template<class Type>
+  inline UFun<Type>::UFun(cRefMatrix<Type>& f) {
+    set_f(f); // note that this will also set `N_`
+    scale_ = Type(4.0 * EIGEN_PI * EIGEN_PI);
+  }
+
+  /// @param[in] f Frequency vector of size `N`.
   /// @param[in] extra_arg Additional argument vector.
   template<class Type>
   inline UFun<Type>::UFun(cRefMatrix<Type>& f, cRefMatrix<Type>& extra_arg) {
-    // N_ = N;
     set_f(f); // note that this will also set `N_`
     scale_ = Type(4.0 * EIGEN_PI * EIGEN_PI);
     extra_arg_ = extra_arg; // additional constructor arguments
@@ -73,8 +80,9 @@ namespace ou {
   /// @return An `ou::UFun` object.
   template<class Type>
   UFun<Type> make_Ufun(cRefMatrix<Type>& f, objective_function<Type>* obj) {
-    DATA_MATRIX(extra_arg); // get extra_arg from R
-    return UFun<Type>(f, extra_arg);
+    // DATA_MATRIX(extra_arg); // get extra_arg from R
+    // return UFun<Type>(f, extra_arg);
+    return UFun<Type>(f);
   }
 #undef TMB_OBJECTIVE_PTR
 #define TMB_OBJECTIVE_PTR this

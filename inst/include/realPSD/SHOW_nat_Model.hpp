@@ -40,6 +40,7 @@ namespace realPSD {
       void set_f(cRefMatrix<Type>& f);
     public:
       /// Constructor.
+      UFun(cRefMatrix<Type>& f);
       UFun(cRefMatrix<Type>& f, cRefMatrix<Type>& extra_arg);
       // /// TMB-specific constructor.
       // UFun(int N, objective_function<Type>* obj);
@@ -48,9 +49,12 @@ namespace realPSD {
     };
 
     template<class Type>
+    inline UFun<Type>::UFun(cRefMatrix<Type>& f) {
+      set_f(f);
+    }
+
+    template<class Type>
     inline UFun<Type>::UFun(cRefMatrix<Type>& f, cRefMatrix<Type>& extra_arg) {
-      // N_ = N;
-      // f2_ = zero_matrix<Type>(N_,1);
       set_f(f);
       extra_arg_ = extra_arg;
     }
@@ -93,8 +97,9 @@ namespace realPSD {
     /// only regular functions.  Therefore, the following "external" constructor is used.
     template<class Type>
     UFun<Type> make_Ufun(cRefMatrix<Type>& f, objective_function<Type>* obj) {
-      DATA_MATRIX(extra_arg);
-      return UFun<Type>(f, extra_arg);
+      // DATA_MATRIX(extra_arg);
+      // return UFun<Type>(f, extra_arg);
+      return UFun<Type>(f);
     }
 
     #undef TMB_OBJECTIVE_PTR
