@@ -21,7 +21,7 @@ namespace ou {
     matrix<Type> f_; ///>column vector of frequencies.
     matrix<Type> f2_; ///> column vector of squared frequencies.
     Type scale_; ///> Scaling factor for frequencies.
-    matrix<Type> extra_arg_; // vector of additional arguments
+    matrix<Type> extra_arg_; ///> Vector of extra arguments
     /// Set frequency vector.
     void set_f(cRefMatrix<Type>& f);
   public:
@@ -68,7 +68,7 @@ namespace ou {
   ///
   /// The arguments to this function are always `f` and `obj`.  Inside the function, we can specify additional TMB macros (`DATA_VECTOR`, etc.), to obtain inputs to the `UFun` constructor.
   ///
-  /// @param[in] N Number of frequency/psd observations.
+  /// @param[in] f Frequency vector of size `N`.
   /// @param[in] obj Pointer to the TMB object.
   /// @return An `ou::UFun` object.
   template<class Type>
