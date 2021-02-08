@@ -27,7 +27,7 @@ namespace realPSD {
       // calculate U
       int N = f.size();
       // UFun Ufun(N, obj);
-      UFun Ufun = make_Ufun(N, obj);
+      UFun Ufun = make_Ufun(f, obj);
       // Ufun.set_f(f);
       matrix<Type> U(N,1);
       Ufun.eval(U, phi);
@@ -45,7 +45,7 @@ namespace realPSD {
       int N = fbar.size();
       matrix<Type> Ubar(N,1);
       // UFun Ufun(N, obj);
-      UFun Ufun = make_Ufun(N, obj);
+      UFun Ufun = make_Ufun(fbar, obj);
       // Ufun.set_f(fbar);
       Ufun.eval(Ubar, phi);
       // Ubar = Ubar * fs;
@@ -89,7 +89,7 @@ namespace realPSD {
       int N = f.size();
       matrix<Type> U(N,1);
       // UFun Ufun(N, obj);
-      UFun Ufun = make_Ufun(N, obj);
+      UFun Ufun = make_Ufun(f, obj);
       // Ufun.set_f(f);
       Ufun.eval(U, phi);
       // U = U * fs;
@@ -137,7 +137,7 @@ namespace realPSD {
       int N = fbar.size();
       matrix<Type> Ubar(N,1);
       // UFun Ufun(N, obj);
-      UFun Ufun = make_Ufun(N, obj);
+      UFun Ufun = make_Ufun(fbar, obj);
       // Ufun.set_f(fbar);
       Ufun.eval(Ubar, phi);
       // Ubar = Ubar * fs;
