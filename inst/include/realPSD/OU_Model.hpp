@@ -21,21 +21,24 @@ namespace ou {
     matrix<Type> f_; ///>column vector of frequencies.
     matrix<Type> f2_; ///> column vector of squared frequencies.
     Type scale_; ///> Scaling factor for frequencies.
+    matrix<Type> extra_arg_; // vector of additional arguments
     /// Set frequency vector.
     void set_f(cRefMatrix<Type>& f);
   public:
     /// Constructor.
-    UFun(int N, cRefMatrix<Type>& f);
+    UFun(cRefMatrix<Type>& f, cRefMatrix<Type>& extra_arg);
     /// Evaluate the normalized PSD.
     void eval(RefMatrix<Type> U, cRefMatrix<Type>& phi);
   };
 
-  /// @param[in] N Number of frequency/PSD observations.
+  /// @param[in] f Frequency vector of size `N`.
+  /// @param[in] extra_arg Additional argument vector.
   template<class Type>
-  inline UFun<Type>::UFun(int N, cRefMatrix<Type>& f) {
-    N_ = N;
-    set_f(f);
+  inline UFun<Type>::UFun(cRefMatrix<Type>& f, cRefMatrix<Type>& extra_arg) {
+    // N_ = N;
+    set_f(f); // note that this will also set `N_`
     scale_ = Type(4.0 * EIGEN_PI * EIGEN_PI);
+    extra_arg_ = extra_arg; // additional constructor arguments
   }
 
   /// @param[in] f Frequency vector of size `N`.
@@ -63,25 +66,15 @@ namespace ou {
 #define TMB_OBJECTIVE_PTR obj
   /// External constructor for `ou::UFun` objects.
   ///
-  /// The arguments to this function are always `N` and `obj`.  Inside the function, we can specify additional TMB macros (`DATA_VECTOR`, etc.), to obtain inputs to the `UFun` constructor.
+  /// The arguments to this function are always `f` and `obj`.  Inside the function, we can specify additional TMB macros (`DATA_VECTOR`, etc.), to obtain inputs to the `UFun` constructor.
   ///
   /// @param[in] N Number of frequency/psd observations.
   /// @param[in] obj Pointer to the TMB object.
   /// @return An `ou::UFun` object.
   template<class Type>
-  UFun<Type> make_Ufun(int N, objective_function<Type>* obj) {
-    // pick method
-    DATA_STRING(method);
-    // assign f or fbar based on different methods
-    if(method == "UFun" || method.find("MLE_") == 0) {
-      DATA_MATRIX(f);
-      return UFun<Type>(N, f);
-    } else if(method.find("LP_") == 0 || method.find("NLS_") == 0) {
-      DATA_MATRIX(fbar);
-      return UFun<Type>(N, fbar);
-    } else {
-      error("Unknown method."); 
-    }
+  UFun<Type> make_Ufun(cRefMatrix<Type>& f, objective_function<Type>* obj) {
+    DATA_MATRIX(extra_arg); // get extra_arg from R
+    return UFun<Type>(f, extra_arg);
   }
 #undef TMB_OBJECTIVE_PTR
 #define TMB_OBJECTIVE_PTR this
