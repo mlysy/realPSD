@@ -32,11 +32,12 @@ namespace realPSD {
       // internal variables
       int N_; ///> problem dimensions
       matrix<Type> f2_; ///> Vector of squared frequencies.
+      matrix<Type> extra_arg_; ///> Vector of extra arguments.
       /// Set frequency vector.
       void set_f(cRefMatrix<Type>& f);
     public:
       /// Constructor.
-      UFun(int N, cRefMatrix<Type>& f);
+      UFun(cRefMatrix<Type>& f, cRefMatrix<Type>& extra_arg);
       // /// TMB-specific constructor.
       // UFun(int N, objective_function<Type>* obj);
       /// Evaluate the normalized PSD.
@@ -44,10 +45,11 @@ namespace realPSD {
     };
 
     template<class Type>
-    inline UFun<Type>::UFun(int N, cRefMatrix<Type>& f) {
-      N_ = N;
+    inline UFun<Type>::UFun(cRefMatrix<Type>& f, cRefMatrix<Type>& extra_arg) {
+      // N_ = N;
       // f2_ = zero_matrix<Type>(N_,1);
       set_f(f);
+      extra_arg_ = extra_arg;
     }
 
     template<class Type>
@@ -76,19 +78,9 @@ namespace realPSD {
     /// The `PARAMETER` macro does not work properly inside class methods, 
     /// only regular functions.  Therefore, the following "external" constructor is used.
     template<class Type>
-    UFun<Type> make_Ufun(int N, objective_function<Type>* obj) {
-      // pick method
-      DATA_STRING(method);
-      // assign f or fbar based on different methods
-      if(method == "UFun" || method.find("MLE_") == 0) {
-        DATA_MATRIX(f);
-        return UFun<Type>(N, f);
-      } else if(method.find("LP_") == 0 || method.find("NLS_") == 0) {
-        DATA_MATRIX(fbar);
-        return UFun<Type>(N, fbar);
-      } else {
-        error("Unknown method."); 
-      }
+    UFun<Type> make_Ufun(cRefMatrix<Type>& f, objective_function<Type>* obj) {
+      DATA_MATRIX(extra_arg);
+      return UFun<Type>(f, extra_arg);
     }
 
     #undef TMB_OBJECTIVE_PTR
